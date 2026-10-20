@@ -506,6 +506,10 @@ function pickView(){DAYS=state.view==="close"&&hasLive()?ALL.slice(0,-1):ALL}
 function nyParts(date){const f=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(date);const o={};f.forEach(p=>o[p.type]=p.value);return{wd:o.weekday,min:(+o.hour%24)*60+(+o.minute)}}
 function marketOpen(date=new Date()){const p=nyParts(date);return !["Sat","Sun"].includes(p.wd)&&p.min>=570&&p.min<960}
 // VIX's overnight session: 20:15 ET (Sun-Thu) to 9:15 ET (Mon-Fri)
+// "YYYY-MM-DD HH:MM" in New York time -> Date
+function nyDate(s){const m=/^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d)/.exec(s||"");if(!m)return null;const u=Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5]);
+  const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(new Date(u)).forEach(x=>p[x.type]=x.value);
+  return new Date(u+(u-Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)))}
 function vixNight(date=new Date()){const p=nyParts(date),wd=p.wd;return (!["Sat","Sun"].includes(wd)&&p.min<555)||(["Sun","Mon","Tue","Wed","Thu"].includes(wd)&&p.min>=1215)}
 function renderStatus(){
   if(!D)return;
@@ -543,7 +547,7 @@ function renderTop(){
   // ±1σ and ±2σ of the standard normal distribution: Φ(−2)=2.275%, Φ(−1)=15.866%
   const SIG=[[2.275,"−2σ","2.28%","s2"],[15.866,"−1σ","15.87%","s1"],[84.134,"+1σ","84.13%","s1"],[97.725,"+2σ","97.72%","s2"]];
   // realtime: each indicator's last update (SKEW estimate, VIX quote, CAPE from the S&P 500)
-  const L=isLive&&D.live?D.live:{}, at=o=>o&&o.at&&o.date===last.n&&!o.carried?`<em class="ut">${esc(t("asOfTime",fmtTime(new Date(o.at),{hour:"2-digit",minute:"2-digit"})))}</em>`:"";
+  const L=isLive&&D.live?D.live:{}, at=o=>{const d=o&&o.date===last.n&&!o.carried?(o.at?new Date(o.at):nyDate(o.time)):null;return d?`<em class="ut">${esc(t("asOfTime",fmtTime(d,{hour:"2-digit",minute:"2-digit"})))}</em>`:""};
   const UT={skew:at(L.skew),vix:at(L.vix),cape:at(L.spx)};
   const row=(k,name,raw,v)=>`<div class="ind">
     <div class="top"><span class="nm">${name}<small>${raw}</small>${UT[k]||""}</span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
@@ -631,7 +635,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v32";
+const APP_VER="mri-v33";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
