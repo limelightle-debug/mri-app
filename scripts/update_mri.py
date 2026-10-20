@@ -40,13 +40,13 @@ session = requests.Session()
 session.headers.update({"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"})
 
 
-def get(url, **kw):
+def get(url, timeout=30, tries=3, **kw):
     last = None
-    for attempt in range(3):
+    for attempt in range(tries):
         if attempt:
             time.sleep(4 * attempt)
         try:
-            r = session.get(url, timeout=30, **kw)
+            r = session.get(url, timeout=timeout, **kw)
             if r.status_code == 200:
                 return r
             last = f"HTTP {r.status_code}"
@@ -102,9 +102,34 @@ def multpl_monthly(path):
     return out
 
 
+def stooq_spx_daily():
+    text = get("https://stooq.com/q/d/l/?s=%5Espx&i=d", timeout=60, tries=2).text
+    out = {}
+    for row in csv.DictReader(io.StringIO(text)):
+        try:
+            y, m, d = map(int, row["Date"].split("-"))
+            out[y * 10000 + m * 100 + d] = float(row["Close"])
+        except (KeyError, ValueError):
+            continue
+    if len(out) < 500:
+        raise RuntimeError(f"stooq ^SPX: only {len(out)} days")
+    return out
+
+
+def spx_daily():
+    """S&P 500 daily closes from the first source that answers; also says which one it was."""
+    errors = []
+    for name, fn in (("Cboe", lambda: cboe_history("SPX")), ("FRED", fred_spx_daily), ("stooq", stooq_spx_daily)):
+        try:
+            return fn(), name
+        except (RuntimeError, ValueError) as e:
+            errors.append(f"{name}: {e}"[:160])
+    raise RuntimeError("S&P 500 daily: " + " | ".join(errors))
+
+
 def fred_spx_daily():
     """S&P 500 daily closes from FRED (about the last ten years)."""
-    text = get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500").text
+    text = get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500", timeout=90, tries=2).text
     out = {}
     for row in csv.reader(io.StringIO(text)):
         if len(row) < 2 or not re.match(r"\d{4}-\d{2}-\d{2}$", row[0]):
@@ -147,7 +172,8 @@ def load_sources(cache):
     out["cape_m"] = multpl_monthly("shiller-pe")
     out["spx_m"] = multpl_monthly("s-p-500-historical-prices")
     spx = {int(k): v for k, v in (cache.get("spx") or {}).items()}
-    spx.update(fred_spx_daily())  # keeps everything collected so far, adds the latest ten years
+    got, out["spxSource"] = spx_daily()
+    spx.update(got)  # keeps everything collected so far, adds what the source has
     out["spx"] = spx
     return out, True
 
@@ -273,7 +299,7 @@ def build():
 
     last_m = max(st["vix"])
     data = {
-        "source": "Cboe, multpl.com, FRED",
+        "source": f"Cboe, multpl.com, {src.get('spxSource', '')}",
         "stats": {k: {"month": max(v), "mean": sig(v[max(v)][0], 7), "devMean": sig(v[max(v)][1], 6),
                       "devSD": sig(v[max(v)][2], 6)} for k, v in st.items()},
         "live": live,
