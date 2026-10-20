@@ -137,7 +137,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .sched tr.now td:first-child{color:var(--accent);font-weight:700}
 .sched .note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6}
 .vtitle.paused{align-items:center}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{display:flex;flex-direction:column;line-height:1.35}.vtitle.paused span i{font-style:normal}
-.vtitle{display:flex;align-items:baseline;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.vtitle{display:flex;align-items:center;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line);min-height:58px;box-sizing:content-box}
 .vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
 .vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
 .vtitle.live b{color:var(--accent)}
@@ -684,7 +684,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v40";
+const APP_VER="mri-v41";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
