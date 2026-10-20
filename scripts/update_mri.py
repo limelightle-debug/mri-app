@@ -287,6 +287,9 @@ def build():
     ind = {"vix": Indicator({m: r["vix"] for m, r in months.items()}, True, True),
            "skew": Indicator({m: r["skew"] for m, r in months.items()}, True, False),
            "cape": Indicator({m: r["cape"] for m, r in months.items()}, False, False)}
+    # the S&P 500 itself, scored the same way (month-end closes, no log), for comparison on the chart
+    spx_me = {m: v for m, v in month_ends(spx).items() if m <= cur_m}
+    ind_spx = Indicator(spx_me, False, False)
 
     # daily CAPE: the month's average S&P 500 close so far divided by the month's E10
     # (E10 = month average / month-end CAPE); at the month's end it equals that month's CAPE.
@@ -307,10 +310,12 @@ def build():
             e10 = avg[m] / months[m]["cape"]
         cape = months[m]["cape"] if d == last_day and m == cur_m and cape_m.get(m) else (acc[0] / acc[1]) / e10
         vr, sr, cr = ind["vix"].score(m, vix[d]), ind["skew"].score(m, skew[d]), ind["cape"].score(m, cape)
+        pr = ind_spx.score(m, spx[d])
         if None in (vr, sr, cr):
             continue
         rows.append([d, sig(vix[d], 5), sig(skew[d], 5), sig(cape, 5), round(vr, 5), round(sr, 5), round(cr, 5),
-                     round((vr + sr + cr) / 3, 5), sig(spx[d], 6)])
+                     round((vr + sr + cr) / 3, 5), sig(spx[d], 6),
+                     None if pr is None else round(pr, 5)])
     if not rows:
         raise RuntimeError("no days with all three indicators")
 

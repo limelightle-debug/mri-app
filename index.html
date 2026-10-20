@@ -83,6 +83,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 .legend i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .readout{font-size:12px;color:var(--ink2);height:40px;overflow:hidden;margin:4px 2px 2px;font-variant-numeric:tabular-nums}
 .rrow{display:flex;gap:14px;white-space:nowrap;line-height:20px}
+.readout small{font-family:var(--f-tick);font-stretch:82%;font-size:11.5px;opacity:.8}
 .readout b{font-family:var(--f-tick);font-stretch:82%;color:var(--ink);font-size:13px}
 .chart{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
@@ -173,6 +174,10 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
           <button type="button" data-show="mri">MRI</button>
           <button type="button" data-show="all">内訳も</button>
         </div>
+        <div class="seg" id="spxm" role="group" aria-label="S&amp;P500" hidden>
+          <button type="button" data-spx="split">S&amp;P 分ける</button>
+          <button type="button" data-spx="over">重ねる</button>
+        </div>
       </div>
       <div class="period">
         <input type="month" id="from" aria-label="始点（年月）">
@@ -256,6 +261,10 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       </table>
       <p>インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
 
+      <h3>チャートの S&amp;P500</h3>
+      <p>チャートの S&amp;P500 は、株価そのものではなく、3指標と<b>同じ計算</b>（月末終値、当月はその日の値、10年の乖離率、乖離率の平均によるトレンド補正、Φ による確率化）で 0〜100 にしたものです。対数はとらず、CAPE と同じく値をそのまま使います。100 に近いほど、株価が10年の傾向から見て上に外れていることを表します。</p>
+      <p>MRI と同じ目盛りで比べられるように、「分ける」では MRI の下に別の欄で、「重ねる」では同じ欄に描きます。</p>
+
       <h3>読むときの注意（構造的な問題）</h3>
       <p>この計算は、乖離率の平均を差し引くことで、指標の水準のゆるやかな変化（トレンド）を補正しています。ただし、乖離率の平均も過去10年分なので、<b>補正は10年の窓の速さでしか追いつけません</b>。水準が急に変わったときや、暴落が窓に入ったり出たりするときには、トレンド補正をかけても影響は避けられません。指標ごとの事情は次のとおりです。</p>
       <ul>
@@ -290,11 +299,11 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const store={get(k,d){try{const v=localStorage.getItem("mri."+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("mri."+k,v)}catch(e){}}};
 let D=null, DAYS=[], loading=false;
 const SHOW_FROM=20190101;
-const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),show:store.get("show","mri"),from:store.get("from",""),to:store.get("to",""),ci:null};
+const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),show:store.get("show","mri"),spx:store.get("spx","split"),from:store.get("from",""),to:store.get("to",""),ci:null};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
 const COL={};
-function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink","hot","c-spx"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
+function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink","hot","c-spx","panel"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
 const LEVELS=[[.2,"Very Low","l1","#fff"],[.4,"Low","l2","#fff"],[.6,"Medium","l3","#000"],[.8,"High","l4","#fff"],[2,"Very High","l5","#fff"]];
 const level=v=>LEVELS.find(l=>v<l[0]);
 const colorOf=v=>COL[level(v)[2]];
@@ -303,7 +312,7 @@ const pc=v=>(v*100).toFixed(2)+"%";
 function setData(d){
   D=d;
   // shown from 2019: before that the windows still held the 2008-09 crash (see 算出方法)
-  DAYS=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri,spx])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri,spx}});
+  DAYS=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri,spx,pr])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri,spx,pr:pr==null?null:pr}});
 }
 
 /* ---------- status ---------- */
@@ -351,7 +360,10 @@ function renderChart(){
   document.querySelectorAll("#show button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.show===state.show));
   const all=state.show==="all";
   const S=[["MRI","mri","ink",2.2]].concat(all?[["SKEW","sr","c-skew",1.3],["VIX","vr","c-vix",1.3],["CAPE","cr","c-cape",1.3]]:[]);
-  const hasSpx=DAYS.some(b=>b.spx);
+  // the S&P 500 scored the same way as the indicators (0-100): overlaid, or in its own panel below
+  const hasSpx=DAYS.some(b=>b.pr!=null), split=hasSpx&&state.spx==="split";
+  document.querySelectorAll("#spxm button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.spx===state.spx));
+  $("spxm").hidden=!hasSpx;
   $("leg").innerHTML=S.map(([n,,c])=>`<span><i style="background:${COL[c]}"></i>${n}</span>`).join("")+(hasSpx?`<span><i style="background:${COL["c-spx"]}"></i>S&amp;P500</span>`:"");
   const el=$("chart"), B=shown(); if(!B.length){el.innerHTML="";return}
   // start and end year-month: the shown span, editable to pick any period
@@ -359,31 +371,36 @@ function renderChart(){
   [fm,tm].forEach(i=>{i.min=lo;i.max=hi});
   if(document.activeElement!==fm)fm.value=B[0].d.slice(0,7);
   if(document.activeElement!==tm)tm.value=B[B.length-1].d.slice(0,7);
-  const W=Math.max(300,el.clientWidth), H=W<560?Math.round(W*.72):360;
-  const ML=hasSpx?46:4,MR=40,MT=6,MB=22, PW=W-ML-MR, PH=H-MT-MB, n=B.length, x=i=>ML+(n<2?PW/2:PW*i/(n-1));
+  const W=Math.max(300,el.clientWidth), PH=W<560?Math.round(W*.72)-28:332, GAP=22, PH2=split?Math.round(PH*.45):0;
+  const ML=4,MR=40,MT=6,MB=22, PW=W-ML-MR, n=B.length, x=i=>ML+(n<2?PW/2:PW*i/(n-1));
+  const T2=MT+PH+GAP, BOT=split?T2+PH2:MT+PH, H=BOT+MB;
   const y=d3.scaleLinear().domain([0,1]).range([MT+PH,MT]);
+  const yp=split?d3.scaleLinear().domain([0,1]).range([T2+PH2,T2]):y;
   let g="";
-  // level bands
-  [[0,.2,"l1"],[.2,.4,"l2"],[.4,.6,"l3"],[.6,.8,"l4"],[.8,1,"l5"]].forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${y(b)}" width="${PW}" height="${y(a)-y(b)}" fill="${COL[c]}" opacity=".13"/>`});
+  const BANDS=[[0,.2,"l1"],[.2,.4,"l2"],[.4,.6,"l3"],[.6,.8,"l4"],[.8,1,"l5"]];
+  BANDS.forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${y(b)}" width="${PW}" height="${y(a)-y(b)}" fill="${COL[c]}" opacity=".13"/>`});
   [0,.2,.4,.6,.8,1].forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${ML+PW+6}" y="${y(v)+4}">${v*100}</text>`});
+  if(split){
+    BANDS.forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${yp(b)}" width="${PW}" height="${yp(a)-yp(b)}" fill="${COL[c]}" opacity=".09"/>`});
+    [0,.5,1].forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${yp(v)}" y2="${yp(v)}" opacity=".6"/><text class="ax" x="${ML+PW+6}" y="${yp(v)+4}">${v*100}</text>`});
+    g+=`<text class="ax" x="${ML+4}" y="${T2-6}" style="fill:${COL["c-spx"]};font-weight:700">S&amp;P500</text>`;
+  }
   let lastLab="";const span=(B[n-1].t-B[0].t)/864e5;
-  B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==lastLab){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" opacity=".4"/><text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":+lab.slice(5)+"月")}</text>`}lastLab=lab});
+  B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==lastLab){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0){g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" opacity=".4"/>`;if(split)g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${T2}" y2="${BOT}" opacity=".4"/>`;g+=`<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":+lab.slice(5)+"月")}</text>`}}lastLab=lab});
+  const line=(k,sc)=>{let d="";B.forEach((b,i)=>{if(b[k]!=null)d+=(d?"L":"M")+x(i).toFixed(1)+" "+sc(b[k]).toFixed(1)});return d};
   let p="";
-  // S&P 500 on its own scale (left axis), under the MRI lines
-  if(hasSpx){const vs=B.map(b=>b.spx).filter(v=>v);if(vs.length){
-    const y2=d3.scaleLinear().domain(d3.extent(vs)).nice(5).range([MT+PH,MT]);
-    y2.ticks(5).forEach(v=>{g+=`<text class="ax" x="${ML-6}" y="${y2(v)+4}" text-anchor="end" style="fill:${COL["c-spx"]}">${v>=1e4?(v/1e3).toFixed(v%1e3?1:0)+"k":v.toLocaleString("en-US")}</text>`});
-    let d="";B.forEach((b,i)=>{if(b.spx)d+=(d?"L":"M")+x(i).toFixed(1)+" "+y2(b.spx).toFixed(1)});
-    p+=`<path d="${d}" fill="none" stroke="${COL["c-spx"]}" stroke-width="${n>800?1.1:1.6}" stroke-linejoin="round" opacity=".95"/>`;
-    el._y2=y2}}
-  [...S].reverse().forEach(([,k,c,w])=>{p+=`<path d="${B.map((b,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(b[k]).toFixed(1)).join("")}" fill="none" stroke="${COL[c]}" stroke-width="${n>800?w*.6:w}" stroke-linejoin="round" opacity="${k==="mri"?1:n>800?.6:.85}"/>`});
+  if(hasSpx)p+=`<path d="${line("pr",yp)}" fill="none" stroke="${COL["c-spx"]}" stroke-width="${n>800?1.1:1.6}" stroke-linejoin="round" opacity="${split?1:.9}"/>`;
+  [...S].reverse().forEach(([,k,c,w])=>{const sw=n>800?w*.6:w;
+    // overlaid: a dark edge keeps the MRI line readable where it crosses the S&P 500
+    if(k==="mri"&&hasSpx&&!split)p+=`<path d="${line(k,y)}" fill="none" stroke="${COL.panel}" stroke-width="${sw+3}" stroke-linejoin="round"/>`;
+    p+=`<path d="${line(k,y)}" fill="none" stroke="${COL[c]}" stroke-width="${sw}" stroke-linejoin="round" opacity="${k==="mri"?1:n>800?.6:.85}"/>`});
   // red dots where MRI is above 80 (Very High)
   const dr=n>1500?1.4:n>500?1.9:2.6;
   B.forEach((b,i)=>{if(b.mri>.8)p+=`<circle cx="${x(i).toFixed(1)}" cy="${y(b.mri).toFixed(1)}" r="${dr}" fill="${COL.hot}"/>`});
   const ci=state.ci!=null&&state.ci<n?state.ci:null;let xh="";
-  if(ci!=null){xh=`<line class="xh" x1="${x(ci)}" x2="${x(ci)}" y1="${MT}" y2="${MT+PH}"/>`;S.forEach(([,k,c])=>{xh+=`<circle cx="${x(ci)}" cy="${y(B[ci][k])}" r="3.5" fill="${COL[c]}" stroke="var(--panel)" stroke-width="1.5"/>`});
-    if(hasSpx&&B[ci].spx&&el._y2)xh+=`<circle cx="${x(ci)}" cy="${el._y2(B[ci].spx)}" r="3.5" fill="${COL["c-spx"]}" stroke="var(--panel)" stroke-width="1.5"/>`}
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRIの日足チャート">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
+  if(ci!=null){xh=`<line class="xh" x1="${x(ci)}" x2="${x(ci)}" y1="${MT}" y2="${BOT}"/>`;S.forEach(([,k,c])=>{xh+=`<circle cx="${x(ci)}" cy="${y(B[ci][k])}" r="3.5" fill="${COL[c]}" stroke="var(--panel)" stroke-width="1.5"/>`});
+    if(hasSpx&&B[ci].pr!=null)xh+=`<circle cx="${x(ci)}" cy="${yp(B[ci].pr)}" r="3.5" fill="${COL["c-spx"]}" stroke="var(--panel)" stroke-width="1.5"/>`}
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRIの日足チャート">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${BOT-MT}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n};
   const b=B[ci!=null?ci:n-1], lv=level(b.mri);
   // days above 80 in the shown period; a tap picks the day on the chart
@@ -393,7 +410,7 @@ function renderChart(){
     hot.slice().reverse().map(([h,i])=>`<tr data-ci="${i}" class="${i===ci?"on":""}"><td>${h.d}</td><td class="m">${(h.mri*100).toFixed(2)}</td><td>${(h.sr*100).toFixed(1)}</td><td>${(h.vr*100).toFixed(1)}</td><td>${(h.cr*100).toFixed(1)}</td></tr>`).join("")
     }</tbody></table></div>`:`<div class="none">選択している期間に、80を超えた日はありません。</div>`);
   // always two rows, so the chart below never shifts
-  $("read").innerHTML=`<div class="rrow"><b>${b.d}</b><span>MRI <b style="color:${COL[lv[2]]}">${(b.mri*100).toFixed(2)}</b></span><span>${lv[1]}</span>${b.spx?`<span style="color:${COL["c-spx"]}">S&amp;P <b style="color:inherit">${b.spx.toLocaleString("en-US",{maximumFractionDigits:0})}</b></span>`:""}</div>
+  $("read").innerHTML=`<div class="rrow"><b>${b.d}</b><span>MRI <b style="color:${COL[lv[2]]}">${(b.mri*100).toFixed(2)}</b></span><span>${lv[1]}</span>${b.pr!=null?`<span style="color:${COL["c-spx"]}">S&amp;P <b style="color:inherit">${(b.pr*100).toFixed(1)}</b></span>`:""}</div>
     <div class="rrow"><span>SKEW <b>${(b.sr*100).toFixed(1)}</b></span><span>VIX <b>${(b.vr*100).toFixed(1)}</b></span><span>CAPE <b>${(b.cr*100).toFixed(1)}</b></span><span style="color:var(--muted)">${b.skew.toFixed(1)} / ${b.vix.toFixed(2)} / ${b.cape.toFixed(1)}</span></div>`;
 }
 
@@ -411,7 +428,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v13";
+const APP_VER="mri-v14";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -437,6 +454,7 @@ document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri")renderChart();window.scrollTo(0,0);return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
   const hr=e.target.closest("[data-ci]");if(hr){const i=+hr.dataset.ci;state.ci=state.ci===i?null:i;renderChart();return}
+  const sp=e.target.closest("[data-spx]");if(sp){state.spx=sp.dataset.spx;store.set("spx",state.spx);renderChart();return}
   const s=e.target.closest("[data-show]");if(s){state.show=s.dataset.show;store.set("show",state.show);renderChart();return}
 });
 // start/end year-month: picking either switches to that period
