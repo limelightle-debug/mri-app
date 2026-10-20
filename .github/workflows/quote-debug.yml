@@ -13,22 +13,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Dump
-        shell: bash
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python scripts/quote_dump.py /tmp/out
+      - name: Push to the debug branch
         run: |
-          mkdir -p /tmp/out
-          for s in VIX SKEW SPX; do curl -s -A "Mozilla/5.0" "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_$s.json" -o /tmp/out/$s.json || true; done
-          curl -s -A "Mozilla/5.0" "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json" -o /tmp/chain.json || true
-          python3 - <<'PY'
-          import json
-          j=json.load(open('/tmp/chain.json'));d=j.get('data',{});o=d.get('options',[])
-          json.dump({'top':{k:v for k,v in j.items() if k!='data'},'data':{k:v for k,v in d.items() if k!='options'},'n':len(o),'sample':o[:3]},open('/tmp/out/chain_head.json','w'),indent=1)
-          PY
-          date -u > /tmp/out/fetched_at.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q --orphan debug
-          git rm -rq --cached . && git clean -fdq
+          git rm -rq --cached . && git clean -fdqx
           cp /tmp/out/* .
           git add -A && git commit -qm "quote dump"
           git push -qf origin debug
