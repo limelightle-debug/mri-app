@@ -21,7 +21,7 @@
   /* the MRI's own navy palette and level colours (from the original app) */
   --bg:#0a0a1a; --panel:#111127; --ink:#f2f2f7; --ink2:#c4c4d4; --muted:#8a8aa6; --line:#2a2a4a; --chip:#1a1a36; --accent:#7fa8ff;
   --l1:#1a6b2a; --l2:#4CAF50; --l3:#FFC107; --l4:#FF5722; --l5:#B71C1C; --s1:#4CAF50; --s2:#FF9800;
-  --c-vix:#64b5f6; --c-skew:#ce93d8; --c-cape:#ffb74d;
+  --hot:#ff3030; --c-vix:#64b5f6; --c-skew:#ce93d8; --c-cape:#ffb74d;
   --f-tick:"Archivo","Helvetica Neue",Arial,sans-serif;
   --f-body:"LINE Seed JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
   color-scheme:dark;
@@ -263,7 +263,7 @@ const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),show:store
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
 const COL={};
-function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
+function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink","hot"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
 const LEVELS=[[.2,"Very Low","l1","#fff"],[.4,"Low","l2","#fff"],[.6,"Medium","l3","#000"],[.8,"High","l4","#fff"],[2,"Very High","l5","#fff"]];
 const level=v=>LEVELS.find(l=>v<l[0]);
 const colorOf=v=>COL[level(v)[2]];
@@ -329,6 +329,9 @@ function renderChart(){
   let lastLab="";const span=(B[n-1].t-B[0].t)/864e5;
   B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==lastLab){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" opacity=".4"/><text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":+lab.slice(5)+"月")}</text>`}lastLab=lab});
   let p="";[...S].reverse().forEach(([,k,c,w])=>{p+=`<path d="${B.map((b,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(b[k]).toFixed(1)).join("")}" fill="none" stroke="${COL[c]}" stroke-width="${n>800?w*.6:w}" stroke-linejoin="round" opacity="${k==="mri"?1:n>800?.6:.85}"/>`});
+  // red dots where MRI is above 80 (Very High)
+  const dr=n>1500?1.4:n>500?1.9:2.6;
+  B.forEach((b,i)=>{if(b.mri>.8)p+=`<circle cx="${x(i).toFixed(1)}" cy="${y(b.mri).toFixed(1)}" r="${dr}" fill="${COL.hot}"/>`});
   const ci=state.ci!=null&&state.ci<n?state.ci:null;let xh="";
   if(ci!=null){xh=`<line class="xh" x1="${x(ci)}" x2="${x(ci)}" y1="${MT}" y2="${MT+PH}"/>`;S.forEach(([,k,c])=>{xh+=`<circle cx="${x(ci)}" cy="${y(B[ci][k])}" r="3.5" fill="${COL[c]}" stroke="var(--panel)" stroke-width="1.5"/>`})}
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRIの日足チャート">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
@@ -353,7 +356,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v6";
+const APP_VER="mri-v7";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
