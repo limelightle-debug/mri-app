@@ -19,6 +19,7 @@ import requests
 
 NY = ZoneInfo("America/New_York")
 OUT = Path(__file__).resolve().parent.parent / "data" / "skew_calc.json"
+LOG = OUT.with_name("skew_log.csv")  # every estimate, to compare with the official closes
 CHAIN = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
 SKEW_Q = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_SKEW.json"
 RATE = 0.04  # risk-free rate; its effect on SKEW is small
@@ -154,6 +155,11 @@ def main():
            "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out]}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8")
+    new = not LOG.exists()
+    with LOG.open("a", encoding="utf-8") as f:
+        if new:
+            f.write("quote_time,estimate,official,official_time\n")
+        f.write(f"{res['quoteTime']},{res['skew']},{official.get('value', '')},{official.get('time', '')}\n")
     print(json.dumps(res, indent=1))
 
 
