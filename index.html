@@ -49,6 +49,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
 .hero .lab{font-size:11.5px;color:var(--muted);margin-bottom:6px}
 .level{display:inline-block;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700}
+.mrilab{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:26px;line-height:1;letter-spacing:.04em;color:var(--ink2);text-align:right;margin-bottom:6px}
 .big{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:52px;line-height:.95;font-variant-numeric:tabular-nums;text-align:right}
 .chg{font-family:var(--f-tick);font-stretch:82%;font-size:13px;color:var(--ink2);text-align:right;margin-top:4px}
 .ramp{position:relative;height:18px;border-radius:9px;background:linear-gradient(to right,var(--l1),var(--l2) 20%,var(--l3) 40%,var(--l4) 70%,var(--l5))}
@@ -136,7 +137,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
           <div class="level" id="level">---</div>
         </div>
         <div>
-          <div class="lab" style="text-align:right">MRI</div>
+          <div class="mrilab">MRI</div>
           <div class="big" id="mri">---</div>
           <div class="chg" id="chg"></div>
         </div>
@@ -342,7 +343,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v4";
+const APP_VER="mri-v5";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
