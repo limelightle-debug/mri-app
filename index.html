@@ -194,7 +194,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
    <div id="t-method" hidden>
     <section class="panel doc">
       <h3>MRI とは</h3>
-      <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値の10年平均からの乖離率が、<b>過去10年の乖離率の平均からどれだけ外れているか</b>を 0〜100% の確率で表し、その3つを平均したものです。平均からの乖離ではなく、<b>乖離の平均からの乖離</b>を見ています。</p>
+      <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値の10年平均からの乖離率が、<b>過去10年の乖離率の平均からどれだけ外れているか</b>を、正規分布の中での位置（パーセンタイル、0〜100）で表し、その3つを平均したものです。平均からの乖離ではなく、<b>乖離の平均からの乖離</b>を見ています。</p>
       <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
 
       <h3>使うデータ</h3>
@@ -223,7 +223,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
           <div class="eq">m<sub>t</sub> = ( d<sub>t−119</sub> + … + d<sub>t</sub> ) ÷ 120<br>s<sub>t</sub> = d<sub>t−119</sub> … d<sub>t</sub> の標準偏差<br><small style="margin:0">標本標準偏差（n−1 で割る）</small></div></li>
         <li><b>標準化</b>（乖離の平均からの乖離を、乖離の標準偏差で割る）
           <div class="eq">z<sub>t</sub> = ( d<sub>t</sub> − m<sub>t</sub> ) ÷ s<sub>t</sub></div></li>
-        <li><b>確率に変換</b>（標準正規分布の累積分布 Φ）
+        <li><b>パーセンタイルに変換</b>（標準正規分布の累積分布 Φ。z が分布の下から何%の位置にあるか）
           <div class="eq">SKEW = Φ( z )<br>CAPE = Φ( z )<br>VIX = 1 − Φ( z )</div>
           <p>VIX だけは逆向きです。VIX が10年の傾向より<b>低い</b>（楽観が強い）ほど、リスクを高く出します。</p></li>
         <li><b>MRI</b> = 3つの平均 × 100</li>
@@ -262,7 +262,8 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       <p>インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
 
       <h3>チャートの S&amp;P500</h3>
-      <p>チャートの S&amp;P500 は、株価そのものではなく、<b>トレンド補正後の値</b>です。3指標と<b>同じ計算</b>（月末終値、当月はその日の値、10年の乖離率、乖離率の平均によるトレンド補正、Φ による確率化）で 0〜100 にしたものです。対数はとらず、CAPE と同じく値をそのまま使います。100 に近いほど、株価が10年の傾向から見て上に外れていることを表します。偏差値（50＋10z）ではなく、z を標準正規分布の累積確率に直した値なので、50 が傾向どおり、84 が +1σ、98 が +2σ にあたります。</p>
+      <p>チャートの S&amp;P500 は、株価そのものではなく、<b>トレンド補正後の値</b>です。3指標と<b>同じ計算</b>（月末終値、当月はその日の値、10年の乖離率、乖離率の平均によるトレンド補正、Φ によるパーセンタイル化）で 0〜100 にしたものです。対数はとらず、CAPE と同じく値をそのまま使います。100 に近いほど、株価が10年の傾向から見て上に外れていることを表します。偏差値（50＋10z）ではなく、z を正規分布の中での位置（パーセンタイル）に直した値なので、50 が傾向どおり、84 が +1σ、98 が +2σ にあたります。</p>
+      <p class="note">MRI も S&amp;P500 も、上がる・下がる確率を表すものではありません。10年の傾向から見て、いまの値がどれだけ外れているかを表します。</p>
       <p>MRI と同じ目盛りで比べられるように、「分ける」では MRI の下に別の欄で、「重ねる」では同じ欄に描きます。</p>
 
       <h3>読むときの注意（構造的な問題）</h3>
@@ -383,7 +384,7 @@ function renderChart(){
   if(split){
     BANDS.forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${yp(b)}" width="${PW}" height="${yp(a)-yp(b)}" fill="${COL[c]}" opacity=".09"/>`});
     [0,.5,1].forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${yp(v)}" y2="${yp(v)}" opacity=".6"/><text class="ax" x="${ML+PW+6}" y="${yp(v)+4}">${v*100}</text>`});
-    g+=`<text class="ax" x="${ML+4}" y="${T2-6}" style="fill:${COL["c-spx"]};font-weight:700">S&amp;P500 <tspan style="font-weight:400">トレンド補正後の確率（0〜100）</tspan></text>`;
+    g+=`<text class="ax" x="${ML+4}" y="${T2-6}" style="fill:${COL["c-spx"]};font-weight:700">S&amp;P500 <tspan style="font-weight:400">トレンド補正後のパーセンタイル</tspan></text>`;
   }
   let lastLab="";const span=(B[n-1].t-B[0].t)/864e5;
   B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==lastLab){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0){g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" opacity=".4"/>`;if(split)g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${T2}" y2="${BOT}" opacity=".4"/>`;g+=`<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":+lab.slice(5)+"月")}</text>`}}lastLab=lab});
@@ -428,7 +429,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v16";
+const APP_VER="mri-v17";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
