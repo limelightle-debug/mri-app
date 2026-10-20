@@ -122,6 +122,17 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
 .h2t{font-style:normal}
 .ind .ut{font-style:normal;font-family:var(--f-tick);font-stretch:85%;font-size:11.5px;font-weight:600;color:var(--accent);margin-left:8px}
+.sched table{width:100%;border-collapse:collapse;margin-top:2px}
+.sched th{text-align:left;padding:14px 0 6px;font-size:13px;color:var(--ink);font-weight:700}
+.sched th small{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:8px}
+.sched tbody:first-child th{padding-top:4px}
+.sched td{padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2);vertical-align:top}
+.sched td:first-child{width:8.6em;color:var(--muted);font-size:11.5px;padding-top:7px}
+.sched td:last-child{font-family:var(--f-tick);font-stretch:88%;font-size:14px;line-height:1.5}
+.sched tr.now td{color:var(--ink)}
+.sched tr.now td:first-child{color:var(--accent);font-weight:700}
+.sched .note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6}
+.vtitle.paused{flex-wrap:wrap;row-gap:4px}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{flex-basis:100%}
 .vtitle{display:flex;align-items:baseline;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
 .vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
@@ -189,7 +200,9 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <div id="inds"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel sched" id="sched" hidden></section>
+
+    <section class="panel" id="chartbox">
       <h2><i class="h2t" data-i18n="trend">MRI の推移</i> <span data-i18n="daily">日足</span></h2>
       <div class="ctlrow">
         <div class="seg" id="range" role="group" aria-label="期間"></div>
@@ -459,12 +472,22 @@ const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
-  top:"上",bottom:"下",asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
+  top:"上",bottom:"下",paused:"停止中",pausedNext:(n,d)=>`停止中・次の開始 ${n}（${d} 確定値を表示）`,
+  sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
+   rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:15 → 翌 9:15","月〜金 9:15 → 22:15","月〜金 10:15 → 23:15"],
+         ["取引時間","5分ごと","月〜金 9:15 → 16:15","月〜金 22:15 → 翌 5:15","月〜金 23:15 → 翌 6:15"],
+         ["停止","確定値のみ","月〜木 16:15 → 20:15<br>金 16:15 → 日 20:15","火〜金 5:15 → 9:15<br>土 5:15 → 月 9:15","火〜金 6:15 → 10:15<br>土 6:15 → 月 10:15"]],
+   note:"その日の確定値は、SKEW の公式値が出る ET 17:00ごろ（日本時間 夏 6:00・冬 7:00ごろ）に入ります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
  en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
-  top:"Top",bottom:"Btm",asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
+  top:"Top",bottom:"Btm",paused:"Paused",pausedNext:(n,d)=>`Paused · next start ${n} (showing ${d} confirmed)`,
+  sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
+   rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:15 → 9:15","Mon–Fri 9:15 → 22:15","Mon–Fri 10:15 → 23:15"],
+         ["Session","Every 5 min","Mon–Fri 9:15 → 16:15","Mon–Fri 22:15 → 5:15","Mon–Fri 23:15 → 6:15"],
+         ["Paused","Confirmed only","Mon–Thu 16:15 → 20:15<br>Fri 16:15 → Sun 20:15","Tue–Fri 5:15 → 9:15<br>Sat 5:15 → Mon 9:15","Tue–Fri 6:15 → 10:15<br>Sat 6:15 → Mon 10:15"]],
+   note:"The day's confirmed value arrives with the official SKEW around 17:00 ET (about 6:00 Japan time in US summer, 7:00 in winter). US daylight time runs from the second Sunday of March to the first Sunday of November. No trading on US holidays."},asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
   loadFail:"Could not load the data. Please reopen in a while.",loadFailShort:"Loading failed",switchTo:"日本語"}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
 // times: Japanese in Japan time; English in New York time (the market's), marked ET
@@ -521,9 +544,9 @@ function renderStatus(){
 
 /* ---------- MRI and the three indicators ---------- */
 function renderViews(){
-  const el=$("views"),live=hasLive();el.hidden=!live;if(!live)return;
-  const c=ALL[ALL.length-2],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
-  const tm=fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"});
+  const el=$("views"),live=hasLive();el.hidden=false;
+  const c=live?ALL[ALL.length-2]:ALL[ALL.length-1],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
+  const tm=live?fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"}):t("paused");
   el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}${t("confirmed")}</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">${t("realtime")}<small>${tm}</small></button>`;
 }
 function renderTop(){
@@ -537,8 +560,11 @@ function renderTop(){
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const isLive=hasLive()&&last.n===liveDay();
   {const tm=fmtTime(new Date(D.updatedAt),{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
-   $("vtitle").className="vtitle"+(isLive?" live":"");
-   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":vixNight()?t("nightTag"):""}</span>`:`<b>${md(last.d)} ${t("confirmed")}</b>`;}
+   const paused=state.view!=="close"&&!isLive;
+   $("vtitle").className="vtitle"+(isLive?" live":paused?" paused":"");
+   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":vixNight()?t("nightTag"):""}</span>`
+     :paused?`<b>${t("realtime")}</b><span>${esc(t("pausedNext",fmtTime(nextStart(),{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"}),md(last.d)))}</span>`
+     :`<b>${md(last.d)} ${t("confirmed")}</b>`;}
   $("asof").textContent=`${md(last.d)}${!isLive?t("close"):marketOpen()?t("latest"):vixNight()?t("nightAsof"):t("prov")}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
@@ -629,13 +655,32 @@ function renderAll(){
   readColors();renderTabs();
   if(!D)return;
   $("app").hidden=false;$("empty").hidden=true;
-  renderStatus();renderTop();renderChart();
+  renderStatus();renderTop();renderSched();
+  if(state.view==="close")renderChart();
 }
+// realtime view: no chart, the schedule instead
+function renderSched(){
+  const live=state.view!=="close";$("sched").hidden=!live;$("chartbox").hidden=live;if(!live)return;
+  const summer=nyOffset()===-4,S=t("sched");
+  $("sched").innerHTML=`<h2><i class="h2t">${S.title}</i> <span>${summer?S.nowSummer:S.nowWinter}</span></h2>
+   <table>${S.rows.map(r=>`<tbody><tr><th colspan="2">${r[0]}<small>${r[1]}</small></th></tr>
+     <tr class="now"><td>${S.ny}</td><td>${r[2]}</td></tr>
+     <tr class="${summer?"now":""}"><td>${S.jpS}</td><td>${r[3]}</td></tr>
+     <tr class="${summer?"":"now"}"><td>${S.jpW}</td><td>${r[4]}</td></tr></tbody>`).join("")}</table>
+   <p class="note">${S.note}</p>`;
+}
+function nyOffset(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(d).forEach(x=>p[x.type]=x.value);
+  return Math.round((Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)-d.getTime())/36e5)}
+// the next start of realtime: VIX's overnight session at 20:15 ET (Sun-Thu), or 9:15 ET if it is before that on a weekday
+function nextStart(now=new Date()){
+  for(let k=0;k<7*96;k++){const d=new Date(Math.ceil(now.getTime()/9e5)*9e5+k*9e5),p=nyParts(d);
+    if(!["Sat","Sun"].includes(p.wd)&&p.min>=555&&p.min<975||vixNight(d))return d}
+  return now}
 
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v34";
+const APP_VER="mri-v35";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -658,8 +703,8 @@ async function load(){
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
-  const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri")renderChart();window.scrollTo(0,0);return}
-  const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderChart();return}
+  const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri"&&state.view==="close")renderChart();window.scrollTo(0,0);return}
+  const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();if(state.view==="close")renderChart();return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
   const hr=e.target.closest("[data-ci]");if(hr){const i=+hr.dataset.ci;state.ci=state.ci===i?null:i;renderChart();return}
 });
@@ -697,7 +742,7 @@ document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
   if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||state.ci==null)return;
   state.ci=null;if(D)renderChart()},true);
-let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D&&state.tab==="mri")renderChart()},80)}).observe($("app"));
+let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D&&state.tab==="mri"&&state.view==="close")renderChart()},80)}).observe($("app"));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
 // the data is published every 5 minutes during the US session; look for it every minute
 setInterval(()=>{if(document.visibilityState==="visible")load()},60*1000);
