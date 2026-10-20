@@ -467,8 +467,8 @@ const T={
   top:"Top",bottom:"Btm",asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
   loadFail:"Could not load the data. Please reopen in a while.",loadFailShort:"Loading failed",switchTo:"日本語"}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
-// dates: Japanese in Japan time; English in the viewer's own time zone
-const fmtTime=(d,o)=>new Intl.DateTimeFormat(LANG==="ja"?"ja-JP":"en-US",LANG==="ja"?{timeZone:"Asia/Tokyo",...o}:{hourCycle:"h23",...o}).format(d);
+// times: Japanese in Japan time; English in New York time (the market's), marked ET
+const fmtTime=(d,o)=>LANG==="ja"?new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",...o}).format(d):new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",...o}).format(d)+" ET";
 function applyLang(){
   document.documentElement.lang=LANG;
   document.querySelectorAll("[data-i18n]").forEach(e=>{e.innerHTML=t(e.dataset.i18n)});
@@ -635,7 +635,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v33";
+const APP_VER="mri-v34";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
