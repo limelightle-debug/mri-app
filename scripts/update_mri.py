@@ -324,6 +324,7 @@ def build():
 
 
 if __name__ == "__main__":
+    DATA.mkdir(exist_ok=True)
     try:
         build()
         result = {"ok": True}
