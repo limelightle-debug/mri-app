@@ -49,13 +49,16 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 /* MRI */
 .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
 .hero .lab{font-size:11.5px;color:var(--muted);margin-bottom:6px}
-.level{display:inline-block;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700}
+.hero .lab.rl{font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:8px;letter-spacing:.02em}
+.level{display:inline-block;padding:6px 16px;border-radius:20px;font-size:16px;font-weight:700}
 .mrilab{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:26px;line-height:1;letter-spacing:.04em;color:var(--ink2);text-align:right;margin-bottom:6px}
 .big{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:52px;line-height:.95;font-variant-numeric:tabular-nums;text-align:right}
 .chg{font-family:var(--f-tick);font-stretch:82%;font-size:13px;color:var(--ink2);text-align:right;margin-top:4px}
-.ramp{position:relative;height:18px;border-radius:9px;background:linear-gradient(to right,var(--l1),var(--l2) 20%,var(--l3) 40%,var(--l4) 70%,var(--l5))}
+.ramp{position:relative;height:18px;border-radius:9px;background:linear-gradient(to right,var(--l1) 10%,var(--l2) 30%,var(--l3) 50%,var(--l4) 70%,var(--l5) 90%)}
 .ramp .mk{position:absolute;top:50%;width:6px;height:26px;background:#fff;border-radius:3px;box-shadow:0 0 10px rgba(255,255,255,.9);transform:translate(-50%,-50%)}
-.ramp-l{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)}
+.ramp-l{position:relative;height:14px;margin-top:6px;font-size:10px;color:var(--muted)}
+.ramp-l span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.ramp-l span:first-child{transform:none;left:0!important}.ramp-l span:last-child{transform:none;left:auto!important;right:0}
 /* indicators */
 .ind{margin-bottom:18px}.ind:last-child{margin-bottom:4px}
 .ind .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
@@ -183,7 +186,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <div class="vtitle" id="vtitle"></div>
       <div class="hero">
         <div>
-          <div class="lab">Market Risk Level</div>
+          <div class="lab rl">Market Risk Level</div>
           <div class="level" id="level">---</div>
         </div>
         <div>
@@ -193,7 +196,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         </div>
       </div>
       <div class="ramp" id="ramp"></div>
-      <div class="ramp-l"><span>Very Low</span><span>Low</span><span>Medium</span><span>High</span><span>Very High</span></div>
+      <div class="ramp-l"><span style="left:10%">Very Low</span><span style="left:30%">Low</span><span style="left:50%">Medium</span><span style="left:70%">High</span><span style="left:90%">Very High</span></div>
     </section>
 
     <section class="panel">
@@ -681,7 +684,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v38";
+const APP_VER="mri-v39";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
