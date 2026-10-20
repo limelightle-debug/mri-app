@@ -30,7 +30,7 @@ import requests
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 OUT = DATA / "mri.json"
-CACHE = DATA / "sources.json"  # monthly and long histories, refreshed hourly
+CACHE = DATA / "sources.json"  # long histories, refreshed hourly; kept only for the run (not committed)
 STATUS = DATA / "status.json"
 NY = ZoneInfo("America/New_York")
 WINDOW = 120  # months
@@ -303,8 +303,6 @@ def build():
         "stats": {k: {"month": max(v), "mean": sig(v[max(v)][0], 7), "devMean": sig(v[max(v)][1], 6),
                       "devSD": sig(v[max(v)][2], 6)} for k, v in st.items()},
         "live": live,
-        # the statistics the March 2026 version of the app had fixed, for comparison
-        "check": {k: v.get(202602) for k, v in st.items()},
         "daily": rows,
     }
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
