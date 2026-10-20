@@ -1,0 +1,6 @@
+{
+  "redirects": [
+    { "source": "/(.*)", "destination": "https://limelightle-debug.github.io/mri-app/$1", "permanent": false }
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- vercel.json"
+}
