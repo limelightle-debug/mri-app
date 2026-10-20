@@ -121,6 +121,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .brand{padding-right:96px}
 
 .h2t{font-style:normal}
+.ind .ut{font-style:normal;font-family:var(--f-tick);font-stretch:85%;font-size:11.5px;font-weight:600;color:var(--accent);margin-left:8px}
 .vtitle{display:flex;align-items:baseline;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
 .vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
@@ -458,12 +459,12 @@ const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
-  top:"上",bottom:"下",spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
+  top:"上",bottom:"下",asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
  en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
-  top:"Top",bottom:"Btm",spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
+  top:"Top",bottom:"Btm",asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
   loadFail:"Could not load the data. Please reopen in a while.",loadFailShort:"Loading failed",switchTo:"日本語"}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
 // dates: Japanese in Japan time; English in the viewer's own time zone
@@ -541,8 +542,11 @@ function renderTop(){
     cape:[[8,"Crash"],[28,"Crack"],[50,"Valuation",1],[72,"Froth"],[92,"Bubble"]]};
   // ±1σ and ±2σ of the standard normal distribution: Φ(−2)=2.275%, Φ(−1)=15.866%
   const SIG=[[2.275,"−2σ","2.28%","s2"],[15.866,"−1σ","15.87%","s1"],[84.134,"+1σ","84.13%","s1"],[97.725,"+2σ","97.72%","s2"]];
+  // realtime: each indicator's last update (SKEW estimate, VIX quote, CAPE from the S&P 500)
+  const L=isLive&&D.live?D.live:{}, at=o=>o&&o.at&&o.date===last.n&&!o.carried?`<em class="ut">${esc(t("asOfTime",fmtTime(new Date(o.at),{hour:"2-digit",minute:"2-digit"})))}</em>`:"";
+  const UT={skew:at(L.skew),vix:at(L.vix),cape:at(L.spx)};
   const row=(k,name,raw,v)=>`<div class="ind">
-    <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
+    <div class="top"><span class="nm">${name}<small>${raw}</small>${UT[k]||""}</span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
     <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}</div>
     <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}</div>
     <div class="sig">${SIG.map(([x,a,b,c])=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small></div>`).join("")}</div>
@@ -550,7 +554,7 @@ function renderTop(){
     // during the session SKEW is estimated from the option quotes (Cboe publishes it after the close)
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
   const skTag=ls&&ls.estimate?t("est"):ls&&ls.carried?t("carried"):"";
-  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2),last.cr);
+  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2)+(L.spx&&L.spx.carried&&L.spx.date===last.n?t("carried"):""),last.cr);
 }
 
 /* ---------- daily chart ---------- */
@@ -627,7 +631,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v31";
+const APP_VER="mri-v32";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

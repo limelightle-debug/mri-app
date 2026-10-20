@@ -405,6 +405,12 @@ def build():
     # the last row is provisional while the day's SKEW is not official yet (estimated or carried)
     sk = live.get("skew", {})
     live_day = today if rows[-1][0] == today and sk.get("date") == today and (sk.get("estimate") or sk.get("carried")) else None
+    # each live value's time as an ISO timestamp (the quote times are New York time)
+    for v in live.values():
+        try:
+            v["at"] = datetime.strptime(v.get("time", ""), "%Y-%m-%d %H:%M").replace(tzinfo=NY).isoformat()
+        except ValueError:
+            pass
     data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "liveDay": live_day, "daily": rows}
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     if refreshed:
