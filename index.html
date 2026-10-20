@@ -288,8 +288,8 @@ function renderTop(){
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
     vix:[[8,"Panic"],[28,"Fear"],[50,"Emotion",1],[72,"Greed"],[92,"Euphoria"]],
     cape:[[8,"Crash"],[28,"Crack"],[50,"Valuation",1],[72,"Froth"],[92,"Bubble"]]};
-  // ±1σ and ±2σ of the normal distribution, as in the MRI workbook
-  const SIG=[[2.25,"−2σ","2.25%","s2"],[15.87,"−1σ","15.87%","s1"],[84.13,"+1σ","84.13%","s1"],[97.75,"+2σ","97.75%","s2"]];
+  // ±1σ and ±2σ of the standard normal distribution: Φ(−2)=2.275%, Φ(−1)=15.866%
+  const SIG=[[2.275,"−2σ","2.28%","s2"],[15.866,"−1σ","15.87%","s1"],[84.134,"+1σ","84.13%","s1"],[97.725,"+2σ","97.72%","s2"]];
   const row=(k,name,raw,v)=>`<div class="ind">
     <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
     <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}</div>
@@ -342,7 +342,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v3";
+const APP_VER="mri-v4";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
