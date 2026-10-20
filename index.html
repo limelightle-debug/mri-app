@@ -117,6 +117,10 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 /* tabs and the method page */
 .tabs{margin-top:10px;display:flex}
 .tabs button{flex:1}
+html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
+.brand{padding-right:64px}
+.lang{position:absolute;right:0;top:12px;appearance:none;border:1px solid var(--line);background:var(--chip);color:var(--ink2);font:700 12px/1 var(--f-tick);letter-spacing:.04em;padding:7px 10px;border-radius:8px;cursor:pointer}
+.h2t{font-style:normal}
 .vtitle{display:flex;align-items:baseline;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
 .vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
@@ -148,12 +152,13 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       <img class="avatar" src="icons/app-v3.png" alt="" width="42" height="42">
       <div style="min-width:0">
         <h1>Market Risk Index</h1>
-        <div class="status" id="status">読み込み中…</div>
+        <div class="status" id="status" data-i18n="loading">読み込み中…</div>
       </div>
     </div>
+    <button type="button" class="lang" id="lang" aria-label="Language"></button>
     <div class="seg tabs" id="tabs" role="group" aria-label="表示">
       <button type="button" data-tab="mri">MRI</button>
-      <button type="button" data-tab="method">算出方法</button>
+      <button type="button" data-tab="method" data-i18n="tabMethod">算出方法</button>
     </div>
   </header>
 
@@ -178,12 +183,12 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
     </section>
 
     <section class="panel">
-      <h2>インジケーター <span id="asof"></span></h2>
+      <h2><i class="h2t" data-i18n="indicators">インジケーター</i> <span id="asof"></span></h2>
       <div id="inds"></div>
     </section>
 
     <section class="panel">
-      <h2>MRI の推移 <span>日足</span></h2>
+      <h2><i class="h2t" data-i18n="trend">MRI の推移</i> <span data-i18n="daily">日足</span></h2>
       <div class="ctlrow">
         <div class="seg" id="range" role="group" aria-label="期間"></div>
       </div>
@@ -201,6 +206,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 
    <div id="t-method" hidden>
     <section class="panel doc">
+     <div class="l-ja">
       <h3>MRI とは</h3>
       <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値の10年平均からの乖離率が、<b>過去10年の乖離率の平均からどれだけ外れているか</b>を、正規分布の中での位置（パーセンタイル、0〜100）で表し、その3つを平均したものです。平均からの乖離ではなく、<b>乖離の平均からの乖離</b>を見ています。</p>
       <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
@@ -315,20 +321,157 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
         <li>乖離率を1本出すのに120か月が必要です。最初の乖離率は1999年12月です。</li>
         <li>その平均と標準偏差を出すのに、乖離率がさらに120本必要です。最初の乖離率から数えて120本目が2009年11月です。</li>
       </ul>
+     </div>
+     <div class="l-en">
+      <h3>What MRI is</h3>
+      <p>For each of SKEW, VIX and the Shiller PE (CAPE), MRI takes today's deviation from the 10-year average and measures <b>how far it sits from the average deviation of the past 10 years</b>. That distance is expressed as a position in the normal distribution (a percentile, 0 to 100), and MRI is the average of the three. It is not the deviation from the average, but <b>the deviation from the average deviation</b>.</p>
+      <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
+      <p class="note">MRI is not a probability of the market rising or falling. It shows how far the current values are from their 10-year trend.</p>
+
+      <h3>Confirmed and realtime</h3>
+      <p>The switch at the top of the MRI tab shows two values.</p>
+      <ul>
+        <li><b>Confirmed:</b> calculated up to the last day for which all three official closes are in. Cboe publishes SKEW only once a day, after the US close (around 17:00 ET), so a day is confirmed once that value is out.</li>
+        <li><b>Realtime:</b> the confirmed history plus the trading day in progress. Shown during the US session and VIX's overnight session. Some values are estimates (see "Realtime estimates").</li>
+      </ul>
+      <p>Between the official SKEW and the start of the overnight session (about 17:00 to 20:15 ET) and at weekends there is only the confirmed value, so the switch is hidden. The chart and the list of days above 80 follow the selected view.</p>
+
+      <h3>Data</h3>
+      <table>
+        <tr><th>Item</th><th>Confirmed</th><th>Realtime</th></tr>
+        <tr><td>VIX</td><td>Cboe official daily close (from 1990)</td><td>Cboe quote, about 15 min delayed, including the overnight session</td></tr>
+        <tr><td>SKEW</td><td>Cboe official daily close (from 1990)</td><td>Estimated from S&amp;P 500 options</td></tr>
+        <tr><td>S&amp;P 500</td><td>Cboe official daily close (from 1975)</td><td>About 15 min delayed in the session; estimated from S&amp;P 500 options overnight</td></tr>
+        <tr><td>CAPE</td><td>multpl.com monthly values (revised, from 1871)</td><td>Calculated from the S&amp;P 500 (see "Daily CAPE")</td></tr>
+      </table>
+      <p class="note">S&amp;P 500 options: Cboe's public quotes, about 15 minutes delayed.</p>
+
+      <h3>When it updates</h3>
+      <ul>
+        <li><b>US session (9:15 to 16:15 ET):</b> every 5 minutes</li>
+        <li><b>VIX overnight session (20:15 to 9:15 ET, Sunday to Thursday nights):</b> every 15 minutes</li>
+        <li><b>After the close:</b> one update that brings in the closes and the official SKEW</li>
+      </ul>
+
+      <h3>Monthly values</h3>
+      <p>The calculation works by month. Each month's value is the <b>close on its last trading day</b>. CAPE uses multpl.com's value for each month.</p>
+      <p>VIX and SKEW are converted to <b>common logarithms (log<sub>10</sub>)</b> first. CAPE is used as is. Below, this value is written x.</p>
+
+      <h3>Steps</h3>
+      <p>For any month t, the window is <b>the latest 120 months (10 years), including that month</b>.</p>
+      <ol>
+        <li><b>10-year average</b>
+          <div class="eq">μ<sub>t</sub> = ( x<sub>t−119</sub> + … + x<sub>t</sub> ) ÷ 120</div></li>
+        <li><b>Deviation</b> (how far from the 10-year average, in %)
+          <div class="eq">d<sub>t</sub> = ( x<sub>t</sub> − μ<sub>t</sub> ) ÷ μ<sub>t</sub></div>
+          <p>The deviation of each past month also uses the 120-month average ending in that month.</p></li>
+        <li><b>Mean and standard deviation of the deviations</b> (the same 120 months of d). The mean m is the trend correction: when an indicator's level drifts one way, its deviations stay skewed the same way, and m takes that skew out.
+          <div class="eq">m<sub>t</sub> = ( d<sub>t−119</sub> + … + d<sub>t</sub> ) ÷ 120<br>s<sub>t</sub> = standard deviation of d<sub>t−119</sub> … d<sub>t</sub><br><small style="margin:0">sample standard deviation (divided by n−1)</small></div></li>
+        <li><b>Standardise</b> (deviation from the average deviation, divided by the standard deviation of the deviations)
+          <div class="eq">z<sub>t</sub> = ( d<sub>t</sub> − m<sub>t</sub> ) ÷ s<sub>t</sub></div></li>
+        <li><b>Convert to a percentile</b> (the standard normal cumulative distribution Φ: what share of the distribution lies below z)
+          <div class="eq">SKEW = Φ( z )<br>CAPE = Φ( z )<br>VIX = 1 − Φ( z )</div>
+          <p>VIX alone is inverted: the <b>lower</b> VIX is against its 10-year trend (the more complacent the market), the higher the risk.</p></li>
+        <li><b>MRI</b> = the average of the three × 100</li>
+      </ol>
+      <p class="note">In Excel terms, this is the same as AVERAGE, STDEV (STDEV.S) and NORMDIST (cumulative TRUE).</p>
+
+      <h3>The current month (rolling calculation)</h3>
+      <p>The current month's row holds <b>the day's value (provisional)</b> without waiting for the month to end. The 119 months before it are confirmed month-end values.</p>
+      <p>Each day on the daily chart is the MRI calculated with that day's value as the current month's row. For example, the point for 15 October 2026 uses the 119 month-end values from November 2016 to September 2026 plus the value of 15 October. On a month's last trading day it equals that month's monthly MRI. Realtime values go into the current month's row the same way.</p>
+
+      <h3>Daily CAPE</h3>
+      <p>CAPE is only published monthly, so the daily value is calculated from the S&amp;P 500's daily closes:</p>
+      <div class="eq">E10<sub>month</sub> (10-year average earnings)<br>　= the month's average S&amp;P 500 close ÷ the month's CAPE</div><div class="eq">CAPE<sub>day</sub><br>　= average S&amp;P 500 close from the start of the month to that day ÷ E10<sub>month</sub></div>
+      <p>On the month's last day it equals the month's CAPE. For the current month, E10 is multpl.com's price for the month ÷ its CAPE. Today (realtime) is calculated the same way, with today's S&amp;P 500 added to the average. Because every day uses the same method, a confirmed day's CAPE does not change when the next day arrives.</p>
+      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. They can also differ slightly from the current-month CAPE shown on multpl.com, because the price average is taken differently.</p>
+
+      <h3>Realtime estimates</h3>
+      <p><b>SKEW:</b> Cboe calculates SKEW only once a day, after the close. So it is recalculated from S&amp;P 500 option quotes with Cboe's published method. The recalculated value does not match the official one exactly, so only its <b>change</b> since the previous close is used:</p>
+      <div class="eq">SKEW<sub>estimate</sub> = previous official close<br>　+ (recalculated now − recalculated at the previous close)</div>
+      <p>Differences in method show up about equally at the previous close and now, so they cancel out. The value at the close is saved after each session (16:15 to 20:00 ET). Without it, the previous official close is used as is.</p>
+      <p><b>Overnight S&amp;P 500:</b> the S&amp;P 500 index is only calculated during the US session. Overnight, the level the market expects (the forward, like a futures price) is worked out from S&amp;P 500 options, which do trade, and the previous close is moved by its ratio:</p>
+      <div class="eq">S&amp;P 500<sub>overnight</sub> = previous close<br>　× (expected level now ÷ expected level at the previous close)</div>
+      <p>"Estimate" next to an indicator marks these estimates; "Prev. close" marks a value carried from the previous official close. Estimates are replaced by official values once the day's closes are out.</p>
+
+      <h3>CAPE revisions and past values</h3>
+      <p>multpl.com revises the CAPE of recent months after publishing them, as S&amp;P 500 earnings become final and inflation data comes in. This app <b>recalculates the whole history with the latest revised values every time</b>.</p>
+      <p>So when CAPE is revised, values already shown change:</p>
+      <ul>
+        <li><b>The revised month:</b> its CAPE, daily CAPE (E10 changes) and MRI change.</li>
+        <li><b>Later months:</b> the revised value enters the 10-year averages of the next 120 months, and the deviations from those enter the means and standard deviations after that. CAPE risk and MRI for up to 239 months after the revised month shift slightly.</li>
+        <li><b>Earlier months:</b> unchanged, since they do not use the revised value.</li>
+      </ul>
+      <p>That is why an MRI value seen earlier may not match the same day on the chart now, and why tables kept with pre-revision values drift from the revised month on. The current month also moves a little when multpl.com updates its price or CAPE for the month.</p>
+
+      <h3>Risk levels and markers</h3>
+      <table>
+        <tr><th>MRI</th><th>Level</th></tr>
+        <tr><td>0–20</td><td><i class="lv" style="background:var(--l1)"></i>Very Low</td></tr>
+        <tr><td>20–40</td><td><i class="lv" style="background:var(--l2)"></i>Low</td></tr>
+        <tr><td>40–60</td><td><i class="lv" style="background:var(--l3)"></i>Medium</td></tr>
+        <tr><td>60–80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
+        <tr><td>80–100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
+      </table>
+      <p>On the chart, the MRI line has <b>red dots above 80</b>, <b>orange dots from 75</b> and <b>green dots at 20 or below</b>. The lines on the indicator bars mark z at ±1σ and ±2σ.</p>
+
+      <h3>Chart</h3>
+      <p>The chart has two windows, top and bottom. Tick boxes choose what each shows (MRI, SKEW, VIX, CAPE, S&amp;P 500), all on the same 0–100 scale. If nothing is ticked for the bottom window, only the top one is shown. Pick a period with the buttons or with start and end months.</p>
+      <p>The S&amp;P 500 on the chart is not the price but its <b>trend-corrected value</b>: the <b>same calculation</b> as the three indicators (month-end closes, today's value for the current month, 10-year deviation, trend correction by the average deviation, percentile by Φ), without logarithms, like CAPE. It is a percentile, not a deviation score (50 + 10z): 50 is on trend, 84 is +1σ and 98 is +2σ.</p>
+      <p>Below the chart is a list of the days in the period when MRI was above 80. Tap a row to pick that day on the chart.</p>
+
+      <h3>Caveats (structural issues)</h3>
+      <p>Subtracting the average deviation corrects slow changes in an indicator's level (trend). But that average also covers 10 years, so <b>the correction only catches up at the pace of the 10-year window</b>. When a level shifts quickly, or a crash enters or leaves the window, the trend correction cannot avoid the effect. By indicator:</p>
+      <ul>
+        <li><b>VIX:</b> averaged about 17 to 20 in the 1990s, 2010s and 2020s alike. It spikes in crises and always comes back, with no shift in level, so it is the most reliable.</li>
+        <li><b>SKEW:</b> yearly averages of 111 to 121 from 1990 to 2009, nearly flat. It started rising around 2013 and 145 to 150 is normal in the 2020s. While the level rises, deviations stay skewed upward; the correction removes part of it but not all, so its risk reads high.</li>
+        <li><b>CAPE:</b> from 17 to 20 in the early 1990s to the high 30s in the 2020s. The rise is gradual, so the correction works to some degree, but it has the same kind of problem as SKEW.</li>
+      </ul>
+      <p><b>The Lehman shock:</b> from 2013 to 2018, CAPE risk averaged above 90 every year, because the 10-year average still held CAPE values near 13 from 2008–09, pulling the average down. The Lehman collapse (September 2008) left the window in September 2018, and the low (March 2009) in March 2019. That is the main reason MRI was above 80 so often in 2011–2018; it does not reflect overheating alone. <b>So the chart starts in January 2019.</b></p>
+      <p class="note">The window for the mean and standard deviation of the deviations still holds deviations computed with crisis-era averages up to 2018. The effect is much smaller, but it only fully leaves the window around 2028.</p>
+
+      <h3>How far back it goes</h3>
+      <p>VIX and SKEW only go back to January 1990, so MRI can be calculated from <b>November 2009</b>. For the reasons above it does not work until 2018, so the chart starts in <b>January 2019</b>.</p>
+      <ul>
+        <li>One deviation needs 120 months; the first is December 1999.</li>
+        <li>Its mean and standard deviation need 120 more deviations; the 120th from the first is November 2009.</li>
+      </ul>
+     </div>
     </section>
    </div>
 
     <div class="foot">
-      <span class="labname"><img src="icons/lab.jpg" alt="" width="36" height="36">恐怖指数研究所</span>
+      <span class="labname"><img src="icons/lab.jpg" alt="" width="36" height="36"><span data-i18n="lab">恐怖指数研究所</span></span>
       <span><a href="https://limelightle-debug.github.io/tqqq/">TQQQ</a><a href="https://limelightle-debug.github.io/ndx-heatmap/">Nasdaq 100</a></span>
     </div>
   </div>
-  <div class="empty" id="empty">データを読み込んでいます…</div>
+  <div class="empty" id="empty" data-i18n="loadingData">データを読み込んでいます…</div>
 </div>
 
 <script src="d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+/* ---------- language (日本語 / English) ---------- */
+let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
+const T={
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+  r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
+  confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
+  top:"上",bottom:"下",spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
+  loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
+ en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+  r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
+  confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
+  top:"Top",bottom:"Btm",spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
+  loadFail:"Could not load the data. Please reopen in a while.",loadFailShort:"Loading failed",switchTo:"日本語"}};
+const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
+// dates: Japanese in Japan time; English in the viewer's own time zone
+const fmtTime=(d,o)=>new Intl.DateTimeFormat(LANG==="ja"?"ja-JP":"en-US",LANG==="ja"?{timeZone:"Asia/Tokyo",...o}:{hourCycle:"h23",...o}).format(d);
+function applyLang(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll("[data-i18n]").forEach(e=>{e.innerHTML=t(e.dataset.i18n)});
+  const b=document.getElementById("lang");if(b)b.textContent=t("switchTo");
+}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store={get(k,d){try{const v=localStorage.getItem("mri."+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("mri."+k,v)}catch(e){}}};
 let D=null, ALL=[], DAYS=[], loading=false;
@@ -338,7 +481,7 @@ function loadWin(){try{const w=JSON.parse(localStorage.getItem("mri.win"));if(Ar
 const SHOW_FROM=20190101;
 const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
-const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
+const RANGES=[["3M","r3M",63],["1Y","r1Y",252],["3Y","r3Y",756],["5Y","r5Y",1260],["ALL","rALL",0]];
 const COL={};
 function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink","hot","warm","cold","c-spx","panel"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
 const LEVELS=[[.2,"Very Low","l1","#fff"],[.4,"Low","l2","#fff"],[.6,"Medium","l3","#000"],[.8,"High","l4","#fff"],[2,"Very High","l5","#fff"]];
@@ -365,17 +508,17 @@ function vixNight(date=new Date()){const p=nyParts(date),wd=p.wd;return (!["Sat"
 function renderStatus(){
   if(!D)return;
   const d=new Date(D.updatedAt);
-  const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"}).format(d);
+  const tm=fmtTime(d,{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"});
   const open=marketOpen(), night=!open&&vixNight(), age=(Date.now()-d.getTime())/6e4, stale=open?age>45:night?age>90:age>4*1440;
-  $("status").innerHTML=`<span>更新 ${esc(t)}</span><span class="pill ${open?"open":night?"night":""}"><i></i>${open?"米国市場 取引中":night?"VIX 夜間取引中":"米国市場 時間外"}</span>${stale?`<span class="pill warn">更新が遅れています</span>`:""}`;
+  $("status").innerHTML=`<span>${esc(t("updated",tm))}</span><span class="pill ${open?"open":night?"night":""}"><i></i>${open?t("open"):night?t("night"):t("closed")}</span>${stale?`<span class="pill warn">${t("stale")}</span>`:""}`;
 }
 
 /* ---------- MRI and the three indicators ---------- */
 function renderViews(){
   const el=$("views"),live=hasLive();el.hidden=!live;if(!live)return;
   const c=ALL[ALL.length-2],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
-  const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"}).format(new Date(D.updatedAt));
-  el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}確定値</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">リアルタイム<small>${t}</small></button>`;
+  const tm=fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"});
+  el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}${t("confirmed")}</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">${t("realtime")}<small>${tm}</small></button>`;
 }
 function renderTop(){
   renderViews();
@@ -383,14 +526,14 @@ function renderTop(){
   const lv=level(last.mri);
   $("level").textContent=lv[1];$("level").style.background=COL[lv[2]];$("level").style.color=lv[3];
   $("mri").textContent=(last.mri*100).toFixed(2);$("mri").style.color=colorOf(last.mri);
-  if(prev){const dd=(last.mri-prev.mri)*100;$("chg").textContent=`前日比 ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
+  if(prev){const dd=(last.mri-prev.mri)*100;$("chg").textContent=`${t("chg")} ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
   $("ramp").innerHTML=`<div class="mk" style="left:${Math.min(Math.max(last.mri*100,1),99)}%"></div>`;
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const isLive=hasLive()&&last.n===liveDay();
-  {const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(D.updatedAt));
+  {const tm=fmtTime(new Date(D.updatedAt),{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
    $("vtitle").className="vtitle"+(isLive?" live":"");
-   $("vtitle").innerHTML=isLive?`<b>リアルタイム</b><span>${esc(t)} 更新${marketOpen()?"":vixNight()?"・夜間":""}</span>`:`<b>${md(last.d)} 確定値</b>`;}
-  $("asof").textContent=`${md(last.d)}${!isLive?" 終値":marketOpen()?" 最新値":vixNight()?" 夜間":" 暫定"}`;
+   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":vixNight()?t("nightTag"):""}</span>`:`<b>${md(last.d)} ${t("confirmed")}</b>`;}
+  $("asof").textContent=`${md(last.d)}${!isLive?t("close"):marketOpen()?t("latest"):vixNight()?t("nightAsof"):t("prov")}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
     vix:[[8,"Panic"],[28,"Fear"],[50,"Emotion",1],[72,"Greed"],[92,"Euphoria"]],
@@ -405,7 +548,7 @@ function renderTop(){
   </div>`;
     // during the session SKEW is estimated from the option quotes (Cboe publishes it after the close)
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
-  const skTag=ls&&ls.estimate?" 推定":ls&&ls.carried?" 前日終値":"";
+  const skTag=ls&&ls.estimate?t("est"):ls&&ls.carried?t("carried"):"";
   $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2),last.cr);
 }
 
@@ -414,11 +557,11 @@ function shown(){
   if(state.range==="CUSTOM"&&state.from&&state.to){const B=DAYS.filter(b=>{const m=b.d.slice(0,7);return m>=state.from&&m<=state.to});if(B.length)return B}
   const r=RANGES.find(x=>x[0]===state.range)||RANGES[1];return r[2]?DAYS.slice(-r[2]):DAYS}
 function renderChart(){
-  $("range").innerHTML=RANGES.map(([k,l])=>`<button type="button" data-range="${k}" aria-pressed="${k===state.range}">${l}</button>`).join("");
+  $("range").innerHTML=RANGES.map(([k,l])=>`<button type="button" data-range="${k}" aria-pressed="${k===state.range}">${t(l)}</button>`).join("");
   const hasSpx=DAYS.some(b=>b.pr!=null);
   const avail=SERIES.filter(([k])=>k!=="pr"||hasSpx);
-  $("picks").innerHTML=["上","下"].map((t,w)=>`<div class="prow"><b>${t}</b>${avail.map(([k,l,c])=>`<label class="ck" style="--c:${COL[c]}"><input type="checkbox" data-win="${w}" data-k="${k}"${state.win[w].includes(k)?" checked":""}><span>${l}</span></label>`).join("")}</div>`).join("")
-    +(hasSpx?`<div class="pnote">S&amp;P500 はトレンド補正後のパーセンタイル</div>`:"");
+  $("picks").innerHTML=[t("top"),t("bottom")].map((lb,w)=>`<div class="prow"><b>${lb}</b>${avail.map(([k,l,c])=>`<label class="ck" style="--c:${COL[c]}"><input type="checkbox" data-win="${w}" data-k="${k}"${state.win[w].includes(k)?" checked":""}><span>${l}</span></label>`).join("")}</div>`).join("")
+    +(hasSpx?`<div class="pnote">${t("spxNote")}</div>`:"");
   const el=$("chart"), B=shown(); if(!B.length){el.innerHTML="";return}
   // start and end year-month: the shown span, editable to pick any period
   const fm=$("from"),tm=$("to"),lo=DAYS[0].d.slice(0,7),hi=DAYS[DAYS.length-1].d.slice(0,7);
@@ -441,7 +584,7 @@ function renderChart(){
   const dot=v=>v>.8?COL.hot:v>=.75?COL.warm:v<=.2?COL.cold:null;
   let g="",p="";
   const span=(B[n-1].t-B[0].t)/864e5, xt=[];
-  {let last="";B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==last){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)xt.push([i,span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":+lab.slice(5)+"月")])}last=lab})}
+  {let last="";B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==last){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)xt.push([i,span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":t("month",+lab.slice(5)))])}last=lab})}
   geo.forEach(({w,top,h,y},j)=>{
     BANDS.forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${y(b)}" width="${PW}" height="${y(a)-y(b)}" fill="${COL[c]}" opacity="${j?.1:.13}"/>`});
     (j?[0,.5,1]:[0,.2,.4,.6,.8,1]).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${ML+PW+6}" y="${y(v)+4}">${v*100}</text>`});
@@ -455,15 +598,15 @@ function renderChart(){
   const ci=state.ci!=null&&state.ci<n?state.ci:null;let xh="";
   if(ci!=null){xh=`<line class="xh" x1="${x(ci)}" x2="${x(ci)}" y1="${MT}" y2="${BOT}"/>`;
     geo.forEach(({w,y})=>keys[w].forEach(k=>{const v=B[ci][k];if(v!=null)xh+=`<circle cx="${x(ci)}" cy="${y(v)}" r="3.5" fill="${colOf(k)}" stroke="var(--panel)" stroke-width="1.5"/>`}))}
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRIの日足チャート">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${BOT-MT}" fill="transparent"/></svg>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("chartAria")}">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${BOT-MT}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n};
   const b=B[ci!=null?ci:n-1], lv=level(b.mri);
   // days above 80 in the shown period; a tap picks the day on the chart
   const hot=B.map((b,i)=>[b,i]).filter(([b])=>b.mri>.8);
-  $("hot").innerHTML=`<h3>80を超えた日<span>${hot.length?hot.length+"日":""}</span></h3>`+(hot.length?
-    `<div class="scroll"><table><thead><tr><th>日付</th><th>MRI</th><th>SKEW</th><th>VIX</th><th>CAPE</th></tr></thead><tbody>${
+  $("hot").innerHTML=`<h3>${t("over80")}<span>${hot.length?t("days",hot.length):""}</span></h3>`+(hot.length?
+    `<div class="scroll"><table><thead><tr><th>${t("date")}</th><th>MRI</th><th>SKEW</th><th>VIX</th><th>CAPE</th></tr></thead><tbody>${
     hot.slice().reverse().map(([h,i])=>`<tr data-ci="${i}" class="${i===ci?"on":""}"><td>${h.d}</td><td class="m">${(h.mri*100).toFixed(2)}</td><td>${(h.sr*100).toFixed(1)}</td><td>${(h.vr*100).toFixed(1)}</td><td>${(h.cr*100).toFixed(1)}</td></tr>`).join("")
-    }</tbody></table></div>`:`<div class="none">選択している期間に、80を超えた日はありません。</div>`);
+    }</tbody></table></div>`:`<div class="none">${t("none80")}</div>`);
   // always two rows, so the chart below never shifts
   $("read").innerHTML=`<div class="rrow"><b>${b.d}</b><span>MRI <b style="color:${COL[lv[2]]}">${(b.mri*100).toFixed(2)}</b></span><span>${lv[1]}</span>${b.pr!=null?`<span style="color:${COL["c-spx"]}">S&amp;P <b style="color:inherit">${(b.pr*100).toFixed(1)}</b></span>`:""}</div>
     <div class="rrow"><span>SKEW <b>${(b.sr*100).toFixed(1)}</b></span><span>VIX <b>${(b.vr*100).toFixed(1)}</b></span><span>CAPE <b>${(b.cr*100).toFixed(1)}</b></span><span style="color:var(--muted)">${b.skew.toFixed(1)} / ${b.vix.toFixed(2)} / ${b.cape.toFixed(1)}</span></div>`;
@@ -483,7 +626,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v29";
+const APP_VER="mri-v30";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -500,7 +643,7 @@ async function load(){
     if(!d||!Array.isArray(d.daily)||!d.daily.length)throw new Error("bad data");
     if(!D||d.updatedAt!==D.updatedAt){setData(d);renderAll()}else renderStatus();
   }catch(e){
-    if(!D){$("empty").textContent="データを読み込めませんでした。しばらくしてから開き直してください。";$("status").textContent="読み込みに失敗しました"}
+    if(!D){$("empty").textContent=t("loadFail");$("status").textContent=t("loadFailShort")}
   }finally{loading=false}
 }
 
@@ -550,7 +693,8 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 // the data is published every 5 minutes during the US session; look for it every minute
 setInterval(()=>{if(document.visibilityState==="visible")load()},60*1000);
 setInterval(()=>{if(D)renderStatus()},60*1000);
-readColors();renderTabs();load();
+$("lang").addEventListener("click",()=>{LANG=LANG==="ja"?"en":"ja";try{localStorage.setItem("lang",LANG)}catch(e){}applyLang();if(D)renderAll()});
+applyLang();readColors();renderTabs();load();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
 </body>
