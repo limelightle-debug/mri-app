@@ -6,10 +6,10 @@ Method (『VIXの声を聴け』, 第一章):
   standard deviation of those deviations. Risk = NORMDIST(deviation, mean, sd); for VIX it is
   1 - NORMDIST, because a calm market is the risky one. MRI is the average of the three.
 
-Rolling across months: the statistics are recomputed from the last 120 completed months each
-time a month ends, and every day of the next month is scored against them. CAPE is monthly, so
-a daily CAPE is the S&P 500 close divided by the 10-year earnings (E10 = monthly price / CAPE),
-with E10 interpolated day by day between months.
+As in the MRI workbook, today's value is the current month's row, so the 120 months include it;
+history is scored the same way, each day as its month's row. VIX and SKEW are Cboe's month-end
+closes; CAPE is multpl.com's monthly table (revised values). Today's CAPE is multpl's live value;
+earlier days use the month's average S&P 500 close so far divided by that month's E10.
 
 Sources: Cboe (VIX and SKEW history, delayed quotes for VIX, SKEW and the S&P 500), multpl.com
 (monthly CAPE and S&P 500 price), FRED (S&P 500 daily closes). Runs in GitHub Actions.
@@ -242,7 +242,7 @@ def sig(x, n=6):
     return float(f"{x:.{n}g}")
 
 
-MONTHLY = DATA / "monthly.json"  # month-end values, seeded from the MRI workbook (through May 2026)
+MONTHLY_CSV = DATA / "monthly.csv"  # month-end VIX, SKEW and CAPE used for the statistics
 
 
 def build():
@@ -271,32 +271,17 @@ def build():
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
-    # month rows: the workbook's values, then later months; VIX and SKEW at month-end closes,
-    # CAPE as multpl.com showed it at the month's end (kept run by run), otherwise multpl's table
-    book = json.loads(MONTHLY.read_text(encoding="utf-8")) if MONTHLY.exists() else {"months": {}}
-    months = {int(k): dict(v) for k, v in book["months"].items()}
-    seeded = 202605  # the last month taken from the workbook
+    # month rows: VIX and SKEW at Cboe's month-end closes, CAPE from multpl.com's monthly table
+    # (with its revisions); the current month holds today's values
     vme, kme = month_ends(vix), month_ends(skew)
-    for m in sorted(set(vme) | set(cape_m)):
-        if m > cur_m:
-            continue
-        row = months.setdefault(m, {})
-        if m == cur_m:
-            row.update(vix=vme.get(m, row.get("vix")), skew=kme.get(m, row.get("skew")))
-            if cape_m.get(m):
-                row["cape"] = cape_m[m]  # multpl's live value; it stays as the month-end value
-            continue
-        if m > seeded and not row.get("final"):
-            row.update(vix=vme.get(m, row.get("vix")), skew=kme.get(m, row.get("skew")))
-            row.setdefault("cape", cape_m.get(m))
-            row["final"] = True
-        for k, src_m in (("vix", vme), ("skew", kme), ("cape", cape_m)):
-            if row.get(k) is None and src_m.get(m):
-                row[k] = src_m[m]  # gaps in the workbook (and months before it) from the sources
-    months = {m: r for m, r in months.items() if all(r.get(k) for k in ("vix", "skew", "cape"))}
-    book_out = {"note": book.get("note", ""), "months": {str(m): months[m] for m in sorted(months)}}
-    if book_out != book:
-        MONTHLY.write_text(json.dumps(book_out, separators=(",", ":")), encoding="utf-8")
+    months = {m: {"vix": vme[m], "skew": kme[m], "cape": cape_m[m]}
+              for m in sorted(set(vme) & set(kme) & set(cape_m)) if m <= cur_m}
+    # the same month-end values as a table, to check or correct a spreadsheet against
+    lines = ["month,VIX,SKEW,CAPE"] + [f"{m // 100}-{m % 100:02d},{r['vix']},{r['skew']},{r['cape']}"
+                                      for m, r in months.items() if m < cur_m]
+    csv_text = "\n".join(lines) + "\n"
+    if not MONTHLY_CSV.exists() or MONTHLY_CSV.read_text(encoding="utf-8") != csv_text:
+        MONTHLY_CSV.write_text(csv_text, encoding="utf-8")
 
     # one indicator over all month rows; `score` only uses the rows before the month it is asked about
     ind = {"vix": Indicator({m: r["vix"] for m, r in months.items()}, True, True),
