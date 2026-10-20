@@ -11,8 +11,8 @@ time a month ends, and every day of the next month is scored against them. CAPE 
 a daily CAPE is the S&P 500 close divided by the 10-year earnings (E10 = monthly price / CAPE),
 with E10 interpolated day by day between months.
 
-Sources: Cboe (VIX and SKEW history and delayed quotes), multpl.com (monthly CAPE and S&P 500
-price), Nasdaq.com (S&P 500 daily closes and the latest value). Runs in GitHub Actions.
+Sources: Cboe (VIX and SKEW history, delayed quotes for VIX, SKEW and the S&P 500), multpl.com
+(monthly CAPE and S&P 500 price), FRED (S&P 500 daily closes). Runs in GitHub Actions.
 """
 import csv
 import io
@@ -38,8 +38,6 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 session = requests.Session()
 session.headers.update({"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"})
-NASDAQ = {"Accept": "application/json, text/plain, */*", "Origin": "https://www.nasdaq.com",
-          "Referer": "https://www.nasdaq.com/"}
 
 
 def get(url, **kw):
@@ -104,46 +102,22 @@ def multpl_monthly(path):
     return out
 
 
-def nasdaq_spx_daily():
-    today = datetime.now(NY).date()
-    j = get(f"https://api.nasdaq.com/api/quote/SPX/historical?assetclass=index"
-            f"&fromdate={today - timedelta(days=3700)}&todate={today}&limit=10000", headers=NASDAQ).json()
+def fred_spx_daily():
+    """S&P 500 daily closes from FRED (about the last ten years)."""
+    text = get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500").text
     out = {}
-    for r in ((j.get("data") or {}).get("tradesTable") or {}).get("rows") or []:
-        try:
-            m, d, y = r["date"].split("/")
-            out[int(y) * 10000 + int(m) * 100 + int(d)] = num(r["close"])
-        except (KeyError, ValueError):
+    for row in csv.reader(io.StringIO(text)):
+        if len(row) < 2 or not re.match(r"\d{4}-\d{2}-\d{2}$", row[0]):
             continue
+        try:
+            v = float(row[1])
+        except ValueError:
+            continue  # holidays are "."
+        y, m, d = map(int, row[0].split("-"))
+        out[y * 10000 + m * 100 + d] = v
     if len(out) < 500:
-        raise RuntimeError(f"Nasdaq SPX: only {len(out)} days")
+        raise RuntimeError(f"FRED SP500: only {len(out)} days")
     return out
-
-
-def regular_session(stamp):
-    m = re.search(r"(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)", stamp or "", re.I)
-    if not m:
-        return bool(stamp)
-    t = (int(m.group(1)) % 12 + (12 if m.group(3).upper() == "PM" else 0)) * 60 + int(m.group(2))
-    return 9 * 60 + 30 <= t <= 16 * 60
-
-
-def quote_day(stamp):
-    m = re.search(r"([A-Z][a-z]{2}) (\d{1,2}), (\d{4})", stamp or "")
-    mon = "JanFebMarAprMayJunJulAugSepOctNovDec".find(m.group(1)) if m else -1
-    return None if mon < 0 else int(m.group(3)) * 10000 + (mon // 3 + 1) * 100 + int(m.group(2))
-
-
-def nasdaq_spx_live():
-    j = get("https://api.nasdaq.com/api/quote/SPX/info?assetclass=index", headers=NASDAQ).json()
-    data = j.get("data") or {}
-    for key in ("primaryData", "secondaryData"):
-        c = data.get(key) or {}
-        if c.get("lastSalePrice") and regular_session(c.get("lastTradeTimestamp")):
-            d = quote_day(c.get("lastTradeTimestamp"))
-            if d:
-                return d, num(c["lastSalePrice"]), c.get("lastTradeTimestamp")
-    return None
 
 
 def cboe_live(symbol):
@@ -173,7 +147,7 @@ def load_sources(cache):
     out["cape_m"] = multpl_monthly("shiller-pe")
     out["spx_m"] = multpl_monthly("s-p-500-historical-prices")
     spx = {int(k): v for k, v in (cache.get("spx") or {}).items()}
-    spx.update(nasdaq_spx_daily())  # keeps everything collected so far, adds the latest ten years
+    spx.update(fred_spx_daily())  # keeps everything collected so far, adds the latest ten years
     out["spx"] = spx
     return out, True
 
@@ -262,7 +236,7 @@ def build():
 
     # latest values (delayed quotes) for today
     live = {}
-    for name, fn in (("vix", lambda: cboe_live("VIX")), ("skew", lambda: cboe_live("SKEW")), ("spx", nasdaq_spx_live)):
+    for name, fn in (("vix", lambda: cboe_live("VIX")), ("skew", lambda: cboe_live("SKEW")), ("spx", lambda: cboe_live("SPX"))):
         try:
             q = fn()
         except (RuntimeError, ValueError, KeyError) as e:
@@ -299,7 +273,7 @@ def build():
 
     last_m = max(st["vix"])
     data = {
-        "source": "Cboe, multpl.com, Nasdaq.com",
+        "source": "Cboe, multpl.com, FRED",
         "stats": {k: {"month": max(v), "mean": sig(v[max(v)][0], 7), "devMean": sig(v[max(v)][1], 6),
                       "devSD": sig(v[max(v)][2], 6)} for k, v in st.items()},
         "live": live,
