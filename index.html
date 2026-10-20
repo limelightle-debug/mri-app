@@ -213,7 +213,17 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
       <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= 月初からその日までの S&amp;P500 終値の平均 ÷ E10<sub>月</sub></div>
       <p>月末の日には、その月の CAPE と一致します。当日の CAPE は multpl.com の最新値をそのまま使います。</p>
-      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。multpl.com が過去の値を改定すると、過去の MRI も変わります。</p>
+      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。</p>
+
+      <h3>CAPE の改定と過去の値への影響</h3>
+      <p>multpl.com は、公表済みの直近の月の CAPE を後から改定します。S&amp;P500 の利益の確定や物価指数の反映によるものです。このアプリは<b>毎回、改定後の最新の値で全期間を計算し直します</b>。</p>
+      <p>そのため CAPE が改定されると、すでに表示した値も次のように変わります。</p>
+      <ul>
+        <li><b>改定された月：</b>その月の CAPE、日々の CAPE（E10 が変わるため）、MRI が変わります。</li>
+        <li><b>その後の月：</b>改定された月の値は、その後120か月の10年平均に入ります。さらにそこで出た乖離率が、その後の乖離率の平均と標準偏差に入ります。このため、改定された月から最長239か月後までの CAPE のリスク値と MRI が少しずつ変わります。</li>
+        <li><b>それより前の月：</b>改定された月の値を使わないので変わりません。</li>
+      </ul>
+      <p>過去に見た MRI の値と、いまチャートに出る同じ日の値が一致しないことがあるのはこのためです。改定前の値で記録した表とも、改定された月以降でずれていきます。</p>
 
       <h3>リスクレベル</h3>
       <table>
@@ -343,7 +353,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v5";
+const APP_VER="mri-v6";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
