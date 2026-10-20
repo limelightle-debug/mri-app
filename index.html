@@ -323,7 +323,8 @@ function setData(d){
   pickView();
 }
 // 確定: official closes only; リアルタイム: the provisional row for the current session as well
-function hasLive(){return !!(D&&D.liveDay&&ALL.length&&ALL[ALL.length-1].n===D.liveDay)}
+function liveDay(){if(!D)return null;if(D.liveDay!==undefined)return D.liveDay;const k=D.live&&D.live.skew;return k&&(k.estimate||k.carried)?k.date:null}
+function hasLive(){const l=liveDay();return !!(l&&ALL.length&&ALL[ALL.length-1].n===l)}
 function pickView(){DAYS=state.view==="close"&&hasLive()?ALL.slice(0,-1):ALL}
 
 /* ---------- status ---------- */
@@ -355,7 +356,7 @@ function renderTop(){
   if(prev){const dd=(last.mri-prev.mri)*100;$("chg").textContent=`前日比 ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
   $("ramp").innerHTML=`<div class="mk" style="left:${Math.min(Math.max(last.mri*100,1),99)}%"></div>`;
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
-  const isLive=hasLive()&&last.n===D.liveDay;
+  const isLive=hasLive()&&last.n===liveDay();
   $("asof").textContent=`${md(last.d)}${!isLive?" 終値":marketOpen()?" 最新値":vixNight()?" 夜間":" 暫定"}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
@@ -449,7 +450,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v25";
+const APP_VER="mri-v26";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
