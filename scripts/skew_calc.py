@@ -152,18 +152,24 @@ def main():
         official = {"error": str(e)}
     # the estimate from the closing quotes (after 16:15 and before the overnight session) is that
     # day's anchor: during the next session, SKEW = official close + (estimate - anchor)
+    # the same for the S&P 500 forward implied by the options (put-call parity), per expiry: the
+    # index does not trade overnight, but its options do
+    forwards = {o["exp"]: o["F"] for o in out}
     try:
-        anchors = json.loads(OUT.read_text(encoding="utf-8")).get("anchors", {})
+        prev = json.loads(OUT.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        anchors = {}
+        prev = {}
+    anchors, anchors_f = prev.get("anchors", {}), prev.get("anchorsF", {})
     mins = t.hour * 60 + t.minute
     if t.weekday() < 5 and 16 * 60 + 15 <= mins < 20 * 60:
         anchors[t.strftime("%Y%m%d")] = round(skew, 3)
+        anchors_f[t.strftime("%Y%m%d")] = forwards
     anchors = dict(sorted(anchors.items())[-30:])
+    anchors_f = dict(sorted(anchors_f.items())[-30:])
     res = {"at": datetime.now(NY).isoformat(timespec="seconds"), "quoteTime": t.isoformat(timespec="seconds"),
            "skew": round(skew, 2), "official": official, "weightNear": round(w, 4),
            "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out],
-           "anchors": anchors}
+           "forwards": forwards, "anchors": anchors, "anchorsF": anchors_f}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8")
     new = not LOG.exists()

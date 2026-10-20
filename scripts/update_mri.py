@@ -203,6 +203,21 @@ def skew_change(prev):
     return None if j.get("skew") is None else j["skew"] - anchor
 
 
+def spx_ratio(prev):
+    """How much the S&P 500 forward implied by the options has moved since the close of `prev`
+    (same expiry), for the hours the index itself does not trade."""
+    try:
+        j = json.loads(SKEW_CALC.read_text(encoding="utf-8"))
+        at = datetime.fromisoformat(j["quoteTime"]).astimezone(NY)
+        base, now_f = j.get("anchorsF", {}).get(str(prev), {}), j.get("forwards", {})
+    except (OSError, ValueError, KeyError):
+        return None
+    if (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
+        return None
+    common = [e for e in now_f if e in base and base[e]]
+    return now_f[common[0]] / base[common[0]] if common else None
+
+
 def load_sources(cache):
     fresh = cache.get("fetchedAt")
     if fresh and (datetime.now(timezone.utc) - datetime.fromisoformat(fresh)).total_seconds() < 3600:
@@ -329,8 +344,11 @@ def build():
                             "carried": True}
     # the S&P 500 does not trade overnight: its last close stands for the session until it opens
     if today in vix and today not in spx and spx:
-        spx[today] = spx[max(spx)]
-        live["spx"] = {**live.get("spx", {}), "date": today, "carried": True}
+        prev = max(spx)
+        r = spx_ratio(prev)
+        spx[today] = spx[prev] * (r or 1)
+        live["spx"] = {**live.get("spx", {}), "date": today, "value": round(spx[today], 2),
+                       **({"estimate": True, "close": spx[prev]} if r else {"carried": True})}
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
