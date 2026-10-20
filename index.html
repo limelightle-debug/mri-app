@@ -6,8 +6,8 @@
 <title>Market Risk Index</title>
 <meta name="description" content="VIX・SKEW・シラーPEから算出するマーケットリスク指数（MRI）の最新値と日足チャート">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-v3.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192-v3.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MRI">
@@ -131,7 +131,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 <div class="wrap">
   <header class="bar">
     <div class="brand">
-      <img class="avatar" src="icons/app.png" alt="" width="42" height="42">
+      <img class="avatar" src="icons/app-v3.png" alt="" width="42" height="42">
       <div style="min-width:0">
         <h1>Market Risk Index</h1>
         <div class="status" id="status">読み込み中…</div>
@@ -430,7 +430,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v20";
+const APP_VER="mri-v21";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

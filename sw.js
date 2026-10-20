@@ -1,9 +1,9 @@
 // Offline shell + latest data. Bump CACHE when the app files change.
-const CACHE = "mri-v20";
+const CACHE = "mri-v21";
 // Always ask the server (revalidating the browser's own cache), so a new version shows up at once.
 const fresh = req => fetch(req.url, { cache: "no-cache", credentials: "same-origin" });
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./d3.min.js",
-  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/app.png", "./icons/lab.jpg"];
+  "./icons/icon-192-v3.png", "./icons/icon-512-v3.png", "./icons/apple-touch-icon-v3.png", "./icons/app-v3.png", "./icons/lab.jpg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
