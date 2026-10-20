@@ -1,0 +1,24 @@
+name: Quote debug
+
+# Saves Cboe's raw delayed quotes to the "debug" branch, to see which fields move overnight.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: |
+          mkdir out && cd out
+          for s in VIX SKEW SPX; do curl -s -A "Mozilla/5.0" "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_$s.json" -o "$s.json"; done
+          curl -s -A "Mozilla/5.0" "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json" | python3 -c "
+          import json,sys;j=json.load(sys.stdin);d=j.get('data',{});o=d.get('options',[])
+          print(json.dumps({'top':{k:v for k,v in j.items() if k!='data'},'data':{k:v for k,v in d.items() if k!='options'},'n':len(o),'sample':o[:3]},indent=1))" > chain_head.json
+          date -u > fetched_at.txt
+          git init -q && git checkout -q -b debug && git add -A
+          git -c user.name=bot -c user.email=bot@example.com commit -qm "quote dump"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" debug
