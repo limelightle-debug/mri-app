@@ -48,9 +48,9 @@ jobs:
           while true; do
             s=$(session)
             if [ "$s" = pre ] && [ $(( $(date +%s) - start )) -lt 4500 ]; then sleep 60; continue; fi
-            python scripts/update_mri.py || echo "update failed; trying again next time"
-            # SKEW recomputed from the option quotes, logged to compare with the official close
+            # SKEW recomputed from the option quotes (used for today's SKEW during the session)
             python scripts/skew_calc.py > /dev/null || echo "SKEW estimate failed"
+            python scripts/update_mri.py || echo "update failed; trying again next time"
             git add data/
             if ! git diff --cached --quiet; then
               git commit -q -m "data: update MRI"

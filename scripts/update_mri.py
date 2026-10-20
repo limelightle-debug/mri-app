@@ -162,6 +162,23 @@ def cboe_live(symbol):
     return ymd(dt), float(price), dt.strftime("%Y-%m-%d %H:%M")
 
 
+SKEW_CALC = DATA / "skew_calc.json"
+
+
+def skew_change(prev):
+    """How much the SKEW recomputed from the option quotes has moved since the close of `prev`."""
+    try:
+        j = json.loads(SKEW_CALC.read_text(encoding="utf-8"))
+        at = datetime.fromisoformat(j["quoteTime"]).astimezone(NY)
+        anchor = j.get("anchors", {}).get(str(prev))
+    except (OSError, ValueError, KeyError):
+        return None
+    # the estimate must be fresh and from today's session, with a close-time estimate for `prev`
+    if anchor is None or (datetime.now(NY) - at).total_seconds() > 1800 or ymd(at.date()) <= prev:
+        return None
+    return None if j.get("skew") is None else j["skew"] - anchor
+
+
 def load_sources(cache):
     fresh = cache.get("fetchedAt")
     if fresh and (datetime.now(timezone.utc) - datetime.fromisoformat(fresh)).total_seconds() < 3600:
@@ -268,6 +285,23 @@ def build():
 
     today = ymd(datetime.now(NY).date())
     cur_m = today // 100
+    # SKEW is published once a day, after the close. During the session (once VIX has a value for
+    # the day), today's SKEW is the last official close moved by how much the SKEW recomputed from
+    # the option quotes has changed since that close; without that estimate, the close is carried.
+    now = datetime.now(NY)
+    after_open = now.hour * 60 + now.minute >= 9 * 60 + 30
+    if today in vix and today not in skew and after_open and skew:
+        prev = max(d for d in skew if d < today)
+        chg = skew_change(prev)
+        if chg is not None:
+            est = skew[prev] + chg
+            skew[today] = est
+            live["skew"] = {"date": today, "value": round(est, 2), "time": now.strftime("%Y-%m-%d %H:%M"),
+                            "estimate": True, "close": skew[prev]}
+        else:
+            skew[today] = skew[prev]
+            live["skew"] = {"date": today, "value": skew[prev], "time": live.get("skew", {}).get("time", ""),
+                            "carried": True}
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 

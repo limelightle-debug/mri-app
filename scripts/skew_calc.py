@@ -150,9 +150,20 @@ def main():
         official = {"value": q.get("current_price") or q.get("close"), "time": q.get("last_trade_time")}
     except Exception as e:  # noqa: BLE001
         official = {"error": str(e)}
+    # the estimate from the closing quotes (after 16:15 and before the overnight session) is that
+    # day's anchor: during the next session, SKEW = official close + (estimate - anchor)
+    try:
+        anchors = json.loads(OUT.read_text(encoding="utf-8")).get("anchors", {})
+    except (OSError, ValueError):
+        anchors = {}
+    mins = t.hour * 60 + t.minute
+    if t.weekday() < 5 and 16 * 60 + 15 <= mins < 20 * 60:
+        anchors[t.strftime("%Y%m%d")] = round(skew, 3)
+    anchors = dict(sorted(anchors.items())[-30:])
     res = {"at": datetime.now(NY).isoformat(timespec="seconds"), "quoteTime": t.isoformat(timespec="seconds"),
            "skew": round(skew, 2), "official": official, "weightNear": round(w, 4),
-           "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out]}
+           "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out],
+           "anchors": anchors}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8")
     new = not LOG.exists()
