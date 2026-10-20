@@ -1,1 +1,1 @@
-{"ok": false, "error": "RuntimeError: Nasdaq SPX: only 0 days", "at": "2026-10-20T02:34:02Z"}
+{"ok": false, "error": "RuntimeError: https://fred.stlouisfed.org/graph/fredgraph.csv: ReadTimeout: HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)", "at": "2026-10-20T02:36:39Z"}
