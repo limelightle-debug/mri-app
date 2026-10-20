@@ -32,10 +32,10 @@ def get(url):
     return r.json()
 
 
-def parse_time(s):
+def parse_time(s, tz=NY):
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M"):
         try:
-            return datetime.strptime(s[:19], fmt).replace(tzinfo=NY)
+            return datetime.strptime(s[:19], fmt).replace(tzinfo=tz).astimezone(NY)
         except ValueError:
             pass
     return None
@@ -44,7 +44,7 @@ def parse_time(s):
 def chain():
     j = get(CHAIN)
     d = j.get("data", j)
-    t = parse_time(str(j.get("timestamp") or d.get("last_trade_time") or "")) or datetime.now(NY)
+    t = parse_time(str(j.get("timestamp") or ""), ZoneInfo("UTC")) or datetime.now(NY)
     terms = {}
     for o in d["options"]:
         m = SYM.match(o.get("option", ""))
@@ -113,7 +113,10 @@ def term_moments(strikes, T):
     if var <= 0:
         return None
     S = (P3 - 3 * P1 * P2 + 2 * P1 ** 3) / var ** 1.5
-    return {"F": round(F, 2), "K0": k0, "n": len(sk), "S": S}
+    puts_bid = sum(1 for k in ks if k < k0 and strikes[k].get("P", (0, 0))[0] > 0)
+    calls_bid = sum(1 for k in ks if k > k0 and strikes[k].get("C", (0, 0))[0] > 0)
+    return {"F": round(F, 2), "K0": k0, "n": len(sk), "strikes": len(ks), "putsWithBid": puts_bid,
+            "callsWithBid": calls_bid, "lowK": sk[0], "highK": sk[-1], "S": S}
 
 
 def main():
