@@ -90,6 +90,24 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 .foot a{color:var(--accent);margin-left:12px}
 .labname{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:.06em}
 .labname img{width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
+/* tabs and the method page */
+.tabs{margin-top:10px;display:flex}
+.tabs button{flex:1}
+.doc{font-size:13.5px;line-height:1.8;color:var(--ink2)}
+.doc h3{margin:24px 0 8px;font-size:14px;color:var(--ink);letter-spacing:.03em}
+.doc h3:first-child{margin-top:0}
+.doc p{margin:0 0 10px}
+.doc b{color:var(--ink)}
+.doc ol,.doc ul{margin:0 0 10px;padding-left:1.4em}
+.doc li{margin-bottom:6px}
+.doc .eq{background:#0c0c22;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0 12px;font-family:var(--f-tick);font-stretch:90%;font-size:14px;color:var(--ink);line-height:1.9}
+.doc .eq small{font-family:var(--f-body);font-size:11.5px;color:var(--muted);margin-left:6px}
+.doc .note{font-size:12.5px;color:var(--muted)}
+.doc table{width:100%;border-collapse:collapse;margin:4px 0 12px;font-size:12.5px}
+.doc th,.doc td{text-align:left;padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+.doc th{color:var(--muted);font-weight:700;font-size:11.5px}
+.doc td:first-child,.doc td:last-child{white-space:nowrap}.doc td:first-child{color:var(--ink)}
+.doc .lv{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 @media (max-width:400px){.big{font-size:46px}.seg button{padding:8px 9px;font-size:12.5px}}
 </style>
 </head>
@@ -103,9 +121,14 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
         <div class="status" id="status">読み込み中…</div>
       </div>
     </div>
+    <div class="seg tabs" id="tabs" role="group" aria-label="表示">
+      <button type="button" data-tab="mri">MRI</button>
+      <button type="button" data-tab="method">算出方法</button>
+    </div>
   </header>
 
   <div id="app" hidden>
+   <div id="t-mri">
     <section class="panel">
       <div class="hero">
         <div>
@@ -140,6 +163,76 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       <div class="readout" id="read"></div>
       <div class="chart" id="chart"></div>
     </section>
+   </div>
+
+   <div id="t-method" hidden>
+    <section class="panel doc">
+      <h3>MRI とは</h3>
+      <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値が<b>過去10年と比べてどれだけ高いか</b>を 0〜100% の確率で表し、その3つを平均したものです。</p>
+      <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
+
+      <h3>使うデータ</h3>
+      <table>
+        <tr><th>項目</th><th>取得元</th><th>期間</th></tr>
+        <tr><td>VIX</td><td>Cboe 公式の日次終値</td><td>1990年1月〜</td></tr>
+        <tr><td>SKEW</td><td>Cboe 公式の日次終値</td><td>1990年1月〜</td></tr>
+        <tr><td>S&amp;P500</td><td>Cboe 公式の日次終値（日々の CAPE の計算用）</td><td>1975年1月〜</td></tr>
+        <tr><td>CAPE</td><td>multpl.com の月次の値（改定後）</td><td>1871年〜</td></tr>
+        <tr><td>当日の値</td><td>Cboe の遅延クォート（約15分遅れ）と multpl.com の最新の CAPE</td><td>―</td></tr>
+      </table>
+
+      <h3>月ごとの値</h3>
+      <p>計算は月単位です。各月の値は、その月の<b>最後の取引日の終値</b>です。CAPE は multpl.com の各月の値を使います。</p>
+      <p>VIX と SKEW は<b>常用対数（log<sub>10</sub>）</b>に直してから計算します。CAPE はそのまま使います。以下では、この値を x と書きます。</p>
+
+      <h3>計算の手順</h3>
+      <p>どの月 t についても、<b>その月を含む直近120か月（10年）</b>を窓にします。</p>
+      <ol>
+        <li><b>10年平均</b>
+          <div class="eq">μ<sub>t</sub> = ( x<sub>t−119</sub> + … + x<sub>t</sub> ) ÷ 120</div></li>
+        <li><b>乖離率</b>（10年平均から何%離れているか）
+          <div class="eq">d<sub>t</sub> = ( x<sub>t</sub> − μ<sub>t</sub> ) ÷ μ<sub>t</sub></div>
+          <p>過去の各月の乖離率も、それぞれの月を含む120か月の平均で計算した値です。</p></li>
+        <li><b>乖離率の平均と標準偏差</b>（同じ120か月の d）
+          <div class="eq">m<sub>t</sub> = ( d<sub>t−119</sub> + … + d<sub>t</sub> ) ÷ 120<br>s<sub>t</sub> = d<sub>t−119</sub> … d<sub>t</sub> の標準偏差<br><small style="margin:0">標本標準偏差（n−1 で割る）</small></div></li>
+        <li><b>標準化</b>
+          <div class="eq">z<sub>t</sub> = ( d<sub>t</sub> − m<sub>t</sub> ) ÷ s<sub>t</sub></div></li>
+        <li><b>確率に変換</b>（標準正規分布の累積分布 Φ）
+          <div class="eq">SKEW = Φ( z )<br>CAPE = Φ( z )<br>VIX = 1 − Φ( z )</div>
+          <p>VIX だけは逆向きです。VIX が10年の傾向より<b>低い</b>（楽観が強い）ほど、リスクを高く出します。</p></li>
+        <li><b>MRI</b> = 3つの平均 × 100</li>
+      </ol>
+      <p class="note">Excel の関数でいえば、AVERAGE・STDEV（STDEV.S）・NORMDIST（累積 TRUE）による計算と同じです。</p>
+
+      <h3>当月の扱い（ローリング計算）</h3>
+      <p>当月の行には、月末を待たずに<b>その日の値（暫定値）</b>を入れて計算します。前月までの119か月は確定した月末値です。</p>
+      <p>日足チャートの各日は、その日の値を当月の行として計算した MRI です。たとえば2026年10月15日の点は、2016年11月〜2026年9月の119か月の月末値に、10月15日の値を加えた120か月から出しています。月の最後の取引日の値は、その月の月次の MRI と一致します。</p>
+
+      <h3>日々の CAPE</h3>
+      <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
+      <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= 月初からその日までの S&amp;P500 終値の平均 ÷ E10<sub>月</sub></div>
+      <p>月末の日には、その月の CAPE と一致します。当日の CAPE は multpl.com の最新値をそのまま使います。</p>
+      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。multpl.com が過去の値を改定すると、過去の MRI も変わります。</p>
+
+      <h3>リスクレベル</h3>
+      <table>
+        <tr><th>MRI</th><th>レベル</th></tr>
+        <tr><td>0〜20</td><td><i class="lv" style="background:var(--l1)"></i>Very Low</td></tr>
+        <tr><td>20〜40</td><td><i class="lv" style="background:var(--l2)"></i>Low</td></tr>
+        <tr><td>40〜60</td><td><i class="lv" style="background:var(--l3)"></i>Medium</td></tr>
+        <tr><td>60〜80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
+        <tr><td>80〜100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
+      </table>
+      <p>インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
+
+      <h3>いつから計算できるか</h3>
+      <p>VIX と SKEW が1990年1月からしかないため、MRI は<b>2009年11月</b>から計算できます。</p>
+      <ul>
+        <li>乖離率を1本出すのに120か月が必要です。最初の乖離率は1999年12月です。</li>
+        <li>その平均と標準偏差を出すのに、乖離率がさらに120本必要です。最初の乖離率から数えて120本目が2009年11月です。</li>
+      </ul>
+    </section>
+   </div>
 
     <div class="foot">
       <span class="labname"><img src="icons/lab.jpg" alt="" width="36" height="36">恐怖指数研究所</span>
@@ -155,7 +248,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store={get(k,d){try{const v=localStorage.getItem("mri."+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("mri."+k,v)}catch(e){}}};
 let D=null, DAYS=[], loading=false;
-const state={range:store.get("range","1Y"),show:store.get("show","mri"),ci:null};
+const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),show:store.get("show","mri"),ci:null};
+if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
 const COL={};
 function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
@@ -234,8 +328,12 @@ function renderChart(){
     <div class="rrow"><span>SKEW <b>${(b.sr*100).toFixed(1)}</b></span><span>VIX <b>${(b.vr*100).toFixed(1)}</b></span><span>CAPE <b>${(b.cr*100).toFixed(1)}</b></span><span style="color:var(--muted)">${b.skew.toFixed(1)} / ${b.vix.toFixed(2)} / ${b.cape.toFixed(1)}</span></div>`;
 }
 
+function renderTabs(){
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab));
+  $("t-mri").hidden=state.tab!=="mri";$("t-method").hidden=state.tab!=="method";
+}
 function renderAll(){
-  readColors();
+  readColors();renderTabs();
   if(!D)return;
   $("app").hidden=false;$("empty").hidden=true;
   renderStatus();renderTop();renderChart();
@@ -244,7 +342,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v2";
+const APP_VER="mri-v3";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -267,6 +365,7 @@ async function load(){
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
+  const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri")renderChart();window.scrollTo(0,0);return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
   const s=e.target.closest("[data-show]");if(s){state.show=s.dataset.show;store.set("show",state.show);renderChart();return}
 });
@@ -292,12 +391,12 @@ document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
   if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||state.ci==null)return;
   state.ci=null;if(D)renderChart()},true);
-let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D)renderChart()},80)}).observe($("app"));
+let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D&&state.tab==="mri")renderChart()},80)}).observe($("app"));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
 // the data is published every 5 minutes during the US session; look for it every minute
 setInterval(()=>{if(document.visibilityState==="visible")load()},60*1000);
 setInterval(()=>{if(D)renderStatus()},60*1000);
-readColors();load();
+readColors();renderTabs();load();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
 </body>
