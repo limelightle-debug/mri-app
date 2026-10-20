@@ -117,6 +117,8 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 /* tabs and the method page */
 .tabs{margin-top:10px;display:flex}
 .tabs button{flex:1}
+.views{margin-top:14px;display:flex}.views button{flex:1;padding:9px 6px}
+.views small{font-family:var(--f-tick);font-stretch:85%;font-weight:600;margin-left:6px;opacity:.8}
 .doc{font-size:13.5px;line-height:1.8;color:var(--ink2)}
 .doc h3{margin:24px 0 8px;font-size:14px;color:var(--ink);letter-spacing:.03em}
 .doc h3:first-child{margin-top:0}
@@ -153,6 +155,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 
   <div id="app" hidden>
    <div id="t-mri">
+    <div class="seg views" id="views" role="group" aria-label="確定値とリアルタイム" hidden></div>
     <section class="panel">
       <div class="hero">
         <div>
@@ -298,12 +301,12 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store={get(k,d){try{const v=localStorage.getItem("mri."+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("mri."+k,v)}catch(e){}}};
-let D=null, DAYS=[], loading=false;
+let D=null, ALL=[], DAYS=[], loading=false;
 // the chart's two windows (top, bottom) and what each shows
 const SERIES=[["mri","MRI","ink"],["sr","SKEW","c-skew"],["vr","VIX","c-vix"],["cr","CAPE","c-cape"],["pr","S&P500","c-spx"]];
 function loadWin(){try{const w=JSON.parse(localStorage.getItem("mri.win"));if(Array.isArray(w)&&w.length===2&&w.every(a=>Array.isArray(a)))return w.map(a=>a.filter(k=>SERIES.some(s=>s[0]===k)))}catch(e){}return[["mri"],["pr"]]}
 const SHOW_FROM=20190101;
-const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null};
+const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
 const COL={};
@@ -316,8 +319,12 @@ const pc=v=>(v*100).toFixed(2)+"%";
 function setData(d){
   D=d;
   // shown from 2019: before that the windows still held the 2008-09 crash (see 算出方法)
-  DAYS=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri,spx,pr])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri,spx,pr:pr==null?null:pr}});
+  ALL=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri,spx,pr])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri,spx,pr:pr==null?null:pr}});
+  pickView();
 }
+// 確定: official closes only; リアルタイム: the provisional row for the current session as well
+function hasLive(){return !!(D&&D.liveDay&&ALL.length&&ALL[ALL.length-1].n===D.liveDay)}
+function pickView(){DAYS=state.view==="close"&&hasLive()?ALL.slice(0,-1):ALL}
 
 /* ---------- status ---------- */
 function nyParts(date){const f=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(date);const o={};f.forEach(p=>o[p.type]=p.value);return{wd:o.weekday,min:(+o.hour%24)*60+(+o.minute)}}
@@ -333,7 +340,14 @@ function renderStatus(){
 }
 
 /* ---------- MRI and the three indicators ---------- */
+function renderViews(){
+  const el=$("views"),live=hasLive();el.hidden=!live;if(!live)return;
+  const c=ALL[ALL.length-2],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
+  const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"}).format(new Date(D.updatedAt));
+  el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">確定<small>${c?md(c.d)+" 終値":""}</small></button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">リアルタイム<small>${t}</small></button>`;
+}
 function renderTop(){
+  renderViews();
   const last=DAYS[DAYS.length-1], prev=DAYS[DAYS.length-2];
   const lv=level(last.mri);
   $("level").textContent=lv[1];$("level").style.background=COL[lv[2]];$("level").style.color=lv[3];
@@ -341,7 +355,8 @@ function renderTop(){
   if(prev){const dd=(last.mri-prev.mri)*100;$("chg").textContent=`前日比 ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
   $("ramp").innerHTML=`<div class="mk" style="left:${Math.min(Math.max(last.mri*100,1),99)}%"></div>`;
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
-  $("asof").textContent=`${md(last.d)}${marketOpen()?" 最新値":vixNight()&&D.live&&D.live.vix&&D.live.vix.date===last.n?" 夜間":" 終値"}`;
+  const isLive=hasLive()&&last.n===D.liveDay;
+  $("asof").textContent=`${md(last.d)}${!isLive?" 終値":marketOpen()?" 最新値":vixNight()?" 夜間":" 暫定"}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
     vix:[[8,"Panic"],[28,"Fear"],[50,"Emotion",1],[72,"Greed"],[92,"Euphoria"]],
@@ -434,7 +449,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v24";
+const APP_VER="mri-v25";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -458,6 +473,7 @@ async function load(){
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri")renderChart();window.scrollTo(0,0);return}
+  const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderChart();return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
   const hr=e.target.closest("[data-ci]");if(hr){const i=+hr.dataset.ci;state.ci=state.ci===i?null:i;renderChart();return}
 });

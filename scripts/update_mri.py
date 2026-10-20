@@ -400,7 +400,10 @@ def build():
     if not rows:
         raise RuntimeError("no days with all three indicators")
 
-    data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "daily": rows}
+    # the last row is provisional while the day's SKEW is not official yet (estimated or carried)
+    sk = live.get("skew", {})
+    live_day = today if rows[-1][0] == today and sk.get("date") == today and (sk.get("estimate") or sk.get("carried")) else None
+    data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "liveDay": live_day, "daily": rows}
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     if refreshed:
         cache_out = {k: ({str(d): v for d, v in src[k].items()} if isinstance(src[k], dict) else src[k]) for k in src}
