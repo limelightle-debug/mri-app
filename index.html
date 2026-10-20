@@ -117,6 +117,10 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 /* tabs and the method page */
 .tabs{margin-top:10px;display:flex}
 .tabs button{flex:1}
+.vtitle{display:flex;align-items:baseline;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
+.vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
+.vtitle.live b{color:var(--accent)}
 .views{margin-top:14px;display:flex}.views button{flex:1;padding:9px 6px}
 .views small{font-family:var(--f-tick);font-stretch:85%;font-weight:600;margin-left:6px;opacity:.8}
 .doc{font-size:13.5px;line-height:1.8;color:var(--ink2)}
@@ -157,6 +161,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
    <div id="t-mri">
     <div class="seg views" id="views" role="group" aria-label="確定値とリアルタイム" hidden></div>
     <section class="panel">
+      <div class="vtitle" id="vtitle"></div>
       <div class="hero">
         <div>
           <div class="lab">Market Risk Level</div>
@@ -345,7 +350,7 @@ function renderViews(){
   const el=$("views"),live=hasLive();el.hidden=!live;if(!live)return;
   const c=ALL[ALL.length-2],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"}).format(new Date(D.updatedAt));
-  el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">確定<small>${c?md(c.d)+" 終値":""}</small></button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">リアルタイム<small>${t}</small></button>`;
+  el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}確定値</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">リアルタイム<small>${t}</small></button>`;
 }
 function renderTop(){
   renderViews();
@@ -357,6 +362,9 @@ function renderTop(){
   $("ramp").innerHTML=`<div class="mk" style="left:${Math.min(Math.max(last.mri*100,1),99)}%"></div>`;
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const isLive=hasLive()&&last.n===liveDay();
+  {const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(D.updatedAt));
+   $("vtitle").className="vtitle"+(isLive?" live":"");
+   $("vtitle").innerHTML=isLive?`<b>リアルタイム</b><span>${esc(t)} 更新${marketOpen()?"":vixNight()?"・夜間":""}</span>`:`<b>${md(last.d)} 確定値</b>`;}
   $("asof").textContent=`${md(last.d)}${!isLive?" 終値":marketOpen()?" 最新値":vixNight()?" 夜間":" 暫定"}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
@@ -450,7 +458,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v27";
+const APP_VER="mri-v28";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
