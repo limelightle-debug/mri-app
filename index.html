@@ -244,6 +244,16 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       </table>
       <p>インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
 
+      <h3>読むときの注意（構造的な問題）</h3>
+      <p>この計算は、各指標が<b>長い目で見て一定の水準に戻る</b>ことを前提に、10年平均からの外れ具合を測っています。この前提は、指標によって成り立ち方が違います。</p>
+      <ul>
+        <li><b>VIX：</b>1990年代・2010年代・2020年代のどれでも、平均はおおむね17〜20です。危機で跳ねても元の水準に戻るため、前提が最もよく成り立っています。</li>
+        <li><b>SKEW：</b>1990〜2009年は年平均111〜121でほぼ横ばいでした。2013年ごろから上がり始め、2020年代は145〜150前後が普通になっています。10年平均が後から追いかけるため、水準が上がる局面では「平均より高い」と出続け、リスク値が高めに出ます。</li>
+        <li><b>CAPE：</b>1990年代前半の17〜20から、2020年代は30台後半まで水準が上がっています。上がり方がゆるやかなので10年の窓がある程度ついていけますが、SKEW と同じ種類の問題を持っています。</li>
+      </ul>
+      <p><b>リーマンショックの影響：</b>2013〜2018年は、CAPE のリスク値が年平均で90を超え続けました。10年平均の中に、2008〜09年に13前後まで下がった CAPE が入っていて、平均が低く引っ張られていたためです。リーマンショック（2008年9月）が10年平均の窓から外れたのは2018年9月、底値（2009年3月）が外れたのは2019年3月です。2011〜2018年に MRI が80を超えた日が多いのは主にこのためで、相場の過熱だけを表しているわけではありません。</p>
+      <p class="note">乖離率の平均と標準偏差の窓には、危機を含む10年平均で計算した乖離率が2018年まで入っています。影響はずっと小さくなりますが、それが窓から抜けきるのは2028年ごろです。</p>
+
       <h3>いつから計算できるか</h3>
       <p>VIX と SKEW が1990年1月からしかないため、MRI は<b>2009年11月</b>から計算できます。</p>
       <ul>
@@ -371,7 +381,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v8";
+const APP_VER="mri-v9";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
