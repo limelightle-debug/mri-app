@@ -136,7 +136,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .sched tr.now td{color:var(--ink)}
 .sched tr.now td:first-child{color:var(--accent);font-weight:700}
 .sched .note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6}
-.vtitle.paused{flex-wrap:wrap;row-gap:4px}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{flex-basis:100%}
+.vtitle.paused{align-items:center}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{display:flex;flex-direction:column;line-height:1.35}.vtitle.paused span i{font-style:normal}
 .vtitle{display:flex;align-items:baseline;gap:10px;margin:-2px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
 .vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
@@ -476,7 +476,7 @@ const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
-  top:"上",bottom:"下",paused:"停止中",pausedNext:(n,d)=>`停止中・次の開始 ${n}（${d} 確定値を表示）`,
+  top:"上",bottom:"下",paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
    rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:15 → 翌 9:15","月〜金 9:15 → 22:15","月〜金 10:15 → 23:15"],
          ["取引時間","5分ごと","月〜金 9:15 → 16:15","月〜金 22:15 → 翌 5:15","月〜金 23:15 → 翌 6:15"],
@@ -486,7 +486,7 @@ const T={
  en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
-  top:"Top",bottom:"Btm",paused:"Paused",pausedNext:(n,d)=>`Paused · next start ${n} (showing ${d} confirmed)`,
+  top:"Top",bottom:"Btm",paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
    rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:15 → 9:15","Mon–Fri 9:15 → 22:15","Mon–Fri 10:15 → 23:15"],
          ["Session","Every 5 min","Mon–Fri 9:15 → 16:15","Mon–Fri 22:15 → 5:15","Mon–Fri 23:15 → 6:15"],
@@ -567,7 +567,7 @@ function renderTop(){
    const paused=state.view!=="close"&&!isLive;
    $("vtitle").className="vtitle"+(isLive?" live":paused?" paused":"");
    $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":vixNight()?t("nightTag"):""}</span>`
-     :paused?`<b>${t("realtime")}</b><span>${esc(t("pausedNext",fmtTime(nextStart(),{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"}),md(last.d)))}</span>`
+     :paused?`<b>${t("realtime")}</b><span><i>${t("paused")}</i><i>${esc(t("nextStart",fmtTime(nextStart(),{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"})))}</i></span>`
      :`<b>${md(last.d)} ${t("confirmed")}</b>`;}
   $("asof").textContent=`${md(last.d)}${!isLive?t("close"):marketOpen()?t("latest"):vixNight()?t("nightAsof"):t("prov")}`;
   const ANN={
@@ -684,7 +684,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v39";
+const APP_VER="mri-v40";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
