@@ -1,6 +1,6 @@
 name: Update MRI data
 
-# One run stays up through the US session and updates every 5 minutes, so the data
+# One run stays up through the US session (and VIX's overnight session) and keeps updating, so the data
 # does not depend on GitHub's scheduler firing every few minutes (it often skips).
 # The schedules below only start that run (several times, in case one is skipped);
 # a start while it is running waits in the queue and does a single update afterwards.
@@ -13,6 +13,10 @@ on:
     - cron: "17 16 * * 1-5"
     - cron: "17 18 * * 1-5"
     - cron: "43 22 * * 1-5"   # after the close, for the final daily figures
+    - cron: "20 0 * * 1-5"    # 20:20 ET (summer), Sun-Thu: VIX's overnight session
+    - cron: "20 1 * * 1-5"    # 20:20 ET (winter)
+    - cron: "7 5 * * 1-5"     # backups through the night
+    - cron: "7 9 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -33,21 +37,24 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests
-      - name: Update every 5 minutes while the market is open
+      - name: Update every 5 minutes in the session, every 15 overnight
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # open: the regular session (every 5 minutes); night: VIX's overnight session from 20:15 ET
+          # (every 15 minutes); closed: one update, then stop
           session() {
             python -c 'from datetime import datetime; from zoneinfo import ZoneInfo
-          n = datetime.now(ZoneInfo("America/New_York")); m = n.hour * 60 + n.minute
-          print("closed" if n.weekday() >= 5 or m < 8 * 60 else "pre" if m < 9 * 60 + 25 else "open" if m < 16 * 60 + 15 else "closed")'
+          n = datetime.now(ZoneInfo("America/New_York")); m = n.hour * 60 + n.minute; wd = n.weekday()
+          if wd < 5 and 9 * 60 + 15 <= m < 16 * 60 + 15: print("open")
+          elif (wd < 5 and m < 9 * 60 + 15) or (wd in (0, 1, 2, 3, 6) and m >= 20 * 60 + 15): print("night")
+          else: print("closed")'
           }
           start=$(date +%s)
           while true; do
             s=$(session)
-            if [ "$s" = pre ] && [ $(( $(date +%s) - start )) -lt 4500 ]; then sleep 60; continue; fi
             # SKEW recomputed from the option quotes (used for today's SKEW during the session)
             python scripts/skew_calc.py > /dev/null || echo "SKEW estimate failed"
             python scripts/update_mri.py || echo "update failed; trying again next time"
@@ -56,11 +63,11 @@ jobs:
               git commit -q -m "data: update MRI"
               git pull -q --rebase origin main && git push -q || echo "push failed; trying again next time"
             fi
-            [ "$s" = open ] || break
+            [ "$s" = closed ] && break
             if [ $(( $(date +%s) - start )) -gt 20400 ]; then
               # close to the 6-hour limit: hand over to a fresh run
               gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
               break
             fi
-            sleep 300
+            if [ "$s" = open ]; then sleep 300; else sleep 900; fi
           done

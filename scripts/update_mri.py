@@ -145,21 +145,44 @@ def fred_spx_daily():
     return out
 
 
+def session_day(t):
+    """The trading day a moment belongs to: the overnight session from 20:15 ET counts toward the
+    next weekday."""
+    d = t.date()
+    if t.hour * 60 + t.minute >= 20 * 60 + 15:
+        d += timedelta(days=1)
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return ymd(d)
+
+
 def cboe_live(symbol):
-    """(yyyymmdd, value, time) from Cboe's delayed quote, or None."""
+    """(yyyymmdd, value, time) from Cboe's delayed quote, or None.
+
+    Overnight (VIX trades from 20:15 ET), Cboe's quote keeps the regular close's time but its
+    current price moves: that price is returned under the coming session's day, so it never
+    overwrites the close."""
     j = get(f"https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{symbol}.json").json()
     q = j.get("data") or {}
     price = q.get("current_price") or q.get("close")
-    stamp = q.get("last_trade_time") or j.get("timestamp")
+    stamp = q.get("last_trade_time")
     if not price or not stamp:
         return None
     try:
         dt = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        fetched = datetime.strptime(str(j.get("timestamp"))[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).astimezone(NY)
     except ValueError:
         return None
-    if dt.tzinfo:
-        dt = dt.astimezone(NY)
-    return ymd(dt), float(price), dt.strftime("%Y-%m-%d %H:%M")
+    dt = dt.astimezone(NY) if dt.tzinfo else dt.replace(tzinfo=NY)
+    day = ymd(dt)
+    regular_close = dt.hour * 60 + dt.minute >= 16 * 60
+    if regular_close and session_day(fetched) > day:
+        # after the close: a moving price belongs to the next session; an unchanged one is the close
+        close = q.get("close")
+        if close and abs(float(price) - float(close)) > 1e-9:
+            return session_day(fetched), float(price), fetched.strftime("%Y-%m-%d %H:%M"), day, float(close)
+        return day, float(close or price), dt.strftime("%Y-%m-%d %H:%M"), day, float(close or price)
+    return day, float(price), dt.strftime("%Y-%m-%d %H:%M"), day, float(price)
 
 
 SKEW_CALC = DATA / "skew_calc.json"
@@ -173,8 +196,9 @@ def skew_change(prev):
         anchor = j.get("anchors", {}).get(str(prev))
     except (OSError, ValueError, KeyError):
         return None
-    # the estimate must be fresh and from today's session, with a close-time estimate for `prev`
-    if anchor is None or (datetime.now(NY) - at).total_seconds() > 1800 or ymd(at.date()) <= prev:
+    # the estimate must be fresh and from a later session (overnight counts), with a close-time
+    # estimate for `prev`
+    if anchor is None or (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
         return None
     return None if j.get("skew") is None else j["skew"] - anchor
 
@@ -281,16 +305,17 @@ def build():
             q = None
         if q:
             live[name] = {"date": q[0], "value": q[1], "time": q[2]}
-            {"vix": vix, "skew": skew, "spx": spx}[name][q[0]] = q[1]
+            series = {"vix": vix, "skew": skew, "spx": spx}[name]
+            series[q[3]] = q[4]  # the close keeps its own day
+            series[q[0]] = q[1]
 
-    today = ymd(datetime.now(NY).date())
+    now = datetime.now(NY)
+    today = session_day(now)
     cur_m = today // 100
     # SKEW is published once a day, after the close. During the session (once VIX has a value for
     # the day), today's SKEW is the last official close moved by how much the SKEW recomputed from
     # the option quotes has changed since that close; without that estimate, the close is carried.
-    now = datetime.now(NY)
-    after_open = now.hour * 60 + now.minute >= 9 * 60 + 30
-    if today in vix and today not in skew and after_open and skew:
+    if today in vix and today not in skew and skew:
         prev = max(d for d in skew if d < today)
         chg = skew_change(prev)
         if chg is not None:
@@ -302,6 +327,10 @@ def build():
             skew[today] = skew[prev]
             live["skew"] = {"date": today, "value": skew[prev], "time": live.get("skew", {}).get("time", ""),
                             "carried": True}
+    # the S&P 500 does not trade overnight: its last close stands for the session until it opens
+    if today in vix and today not in spx and spx:
+        spx[today] = spx[max(spx)]
+        live["spx"] = {**live.get("spx", {}), "date": today, "carried": True}
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 

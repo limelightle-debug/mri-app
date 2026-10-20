@@ -41,6 +41,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink2)}
 .pill i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .pill.open i{background:var(--l2)}
+.pill.night i{background:var(--accent)}
 .pill.warn{color:var(--l4)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px;min-width:0}
 .panel h2{margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--ink2);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -321,12 +322,14 @@ function setData(d){
 /* ---------- status ---------- */
 function nyParts(date){const f=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(date);const o={};f.forEach(p=>o[p.type]=p.value);return{wd:o.weekday,min:(+o.hour%24)*60+(+o.minute)}}
 function marketOpen(date=new Date()){const p=nyParts(date);return !["Sat","Sun"].includes(p.wd)&&p.min>=570&&p.min<960}
+// VIX's overnight session: 20:15 ET (Sun-Thu) to 9:15 ET (Mon-Fri)
+function vixNight(date=new Date()){const p=nyParts(date),wd=p.wd;return (!["Sat","Sun"].includes(wd)&&p.min<555)||(["Sun","Mon","Tue","Wed","Thu"].includes(wd)&&p.min>=1215)}
 function renderStatus(){
   if(!D)return;
   const d=new Date(D.updatedAt);
   const t=new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"}).format(d);
-  const open=marketOpen(), age=(Date.now()-d.getTime())/6e4, stale=open?age>45:age>4*1440;
-  $("status").innerHTML=`<span>更新 ${esc(t)}</span><span class="pill ${open?"open":""}"><i></i>${open?"米国市場 取引中":"米国市場 時間外"}</span>${stale?`<span class="pill warn">更新が遅れています</span>`:""}`;
+  const open=marketOpen(), night=!open&&vixNight(), age=(Date.now()-d.getTime())/6e4, stale=open?age>45:night?age>90:age>4*1440;
+  $("status").innerHTML=`<span>更新 ${esc(t)}</span><span class="pill ${open?"open":night?"night":""}"><i></i>${open?"米国市場 取引中":night?"VIX 夜間取引中":"米国市場 時間外"}</span>${stale?`<span class="pill warn">更新が遅れています</span>`:""}`;
 }
 
 /* ---------- MRI and the three indicators ---------- */
@@ -338,7 +341,7 @@ function renderTop(){
   if(prev){const dd=(last.mri-prev.mri)*100;$("chg").textContent=`前日比 ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
   $("ramp").innerHTML=`<div class="mk" style="left:${Math.min(Math.max(last.mri*100,1),99)}%"></div>`;
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
-  $("asof").textContent=`${md(last.d)}${marketOpen()?" 最新値":" 終値"}`;
+  $("asof").textContent=`${md(last.d)}${marketOpen()?" 最新値":vixNight()&&D.live&&D.live.vix&&D.live.vix.date===last.n?" 夜間":" 終値"}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
     vix:[[8,"Panic"],[28,"Fear"],[50,"Emotion",1],[72,"Greed"],[92,"Euphoria"]],
@@ -431,7 +434,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v23";
+const APP_VER="mri-v24";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
