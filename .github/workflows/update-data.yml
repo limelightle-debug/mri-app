@@ -1,0 +1,64 @@
+name: Update MRI data
+
+# One run stays up through the US session and updates every 5 minutes, so the data
+# does not depend on GitHub's scheduler firing every few minutes (it often skips).
+# The schedules below only start that run (several times, in case one is skipped);
+# a start while it is running waits in the queue and does a single update afterwards.
+on:
+  schedule:
+    - cron: "25 13 * * 1-5"   # 9:25 ET in summer time
+    - cron: "25 14 * * 1-5"   # 9:25 ET in winter time
+    - cron: "47 13 * * 1-5"
+    - cron: "47 14 * * 1-5"
+    - cron: "17 16 * * 1-5"
+    - cron: "17 18 * * 1-5"
+    - cron: "43 22 * * 1-5"   # after the close, for the final daily figures
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Update every 5 minutes while the market is open
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          session() {
+            python -c 'from datetime import datetime; from zoneinfo import ZoneInfo
+          n = datetime.now(ZoneInfo("America/New_York")); m = n.hour * 60 + n.minute
+          print("closed" if n.weekday() >= 5 else "pre" if m < 9 * 60 + 25 else "open" if m < 16 * 60 + 15 else "closed")'
+          }
+          start=$(date +%s)
+          while true; do
+            s=$(session)
+            if [ "$s" = pre ] && [ $(( $(date +%s) - start )) -lt 4500 ]; then sleep 60; continue; fi
+            python scripts/update_mri.py || echo "update failed; trying again next time"
+            git add data/
+            if ! git diff --cached --quiet; then
+              git commit -q -m "data: update MRI"
+              git pull -q --rebase origin main && git push -q || echo "push failed; trying again next time"
+            fi
+            [ "$s" = open ] || break
+            if [ $(( $(date +%s) - start )) -gt 20400 ]; then
+              # close to the 6-hour limit: hand over to a fresh run
+              gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
+              break
+            fi
+            sleep 300
+          done
