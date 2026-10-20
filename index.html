@@ -89,6 +89,17 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
 .ax{font-family:var(--f-tick);font-stretch:82%;font-size:11px;fill:var(--muted)}
 .grid{stroke:var(--line);stroke-width:1}
 .xh{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3}
+.hotlist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.hotlist h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--ink2);display:flex;justify-content:space-between}
+.hotlist h3 span{font-weight:400;color:var(--muted)}
+.hotlist .none{font-size:12.5px;color:var(--muted);padding:4px 0}
+.hotlist .scroll{max-height:320px;overflow-y:auto}
+.hotlist table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.hotlist th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px;position:sticky;top:0;background:var(--panel)}
+.hotlist th:first-child,.hotlist td:first-child{text-align:left}
+.hotlist td{text-align:right;padding:6px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--ink2);cursor:pointer}
+.hotlist td.m{color:var(--hot);font-weight:700}
+.hotlist tr.on td{background:var(--chip)}
 .empty{padding:50px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
 .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:22px;padding-top:14px;border-top:1px solid var(--line);font-size:12px}
 .foot a{color:var(--accent);margin-left:12px}
@@ -171,6 +182,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       <div class="legend" id="leg"></div>
       <div class="readout" id="read"></div>
       <div class="chart" id="chart"></div>
+      <div class="hotlist" id="hot"></div>
     </section>
    </div>
 
@@ -364,6 +376,12 @@ function renderChart(){
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRIの日足チャート">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n};
   const b=B[ci!=null?ci:n-1], lv=level(b.mri);
+  // days above 80 in the shown period; a tap picks the day on the chart
+  const hot=B.map((b,i)=>[b,i]).filter(([b])=>b.mri>.8);
+  $("hot").innerHTML=`<h3>80を超えた日<span>${hot.length?hot.length+"日":""}</span></h3>`+(hot.length?
+    `<div class="scroll"><table><thead><tr><th>日付</th><th>MRI</th><th>SKEW</th><th>VIX</th><th>CAPE</th></tr></thead><tbody>${
+    hot.slice().reverse().map(([h,i])=>`<tr data-ci="${i}" class="${i===ci?"on":""}"><td>${h.d}</td><td class="m">${(h.mri*100).toFixed(2)}</td><td>${(h.sr*100).toFixed(1)}</td><td>${(h.vr*100).toFixed(1)}</td><td>${(h.cr*100).toFixed(1)}</td></tr>`).join("")
+    }</tbody></table></div>`:`<div class="none">選択している期間に、80を超えた日はありません。</div>`);
   // always two rows, so the chart below never shifts
   $("read").innerHTML=`<div class="rrow"><b>${b.d}</b><span>MRI <b style="color:${COL[lv[2]]}">${(b.mri*100).toFixed(2)}</b></span><span>${lv[1]}</span></div>
     <div class="rrow"><span>SKEW <b>${(b.sr*100).toFixed(1)}</b></span><span>VIX <b>${(b.vr*100).toFixed(1)}</b></span><span>CAPE <b>${(b.cr*100).toFixed(1)}</b></span><span style="color:var(--muted)">${b.skew.toFixed(1)} / ${b.vix.toFixed(2)} / ${b.cape.toFixed(1)}</span></div>`;
@@ -383,7 +401,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v11";
+const APP_VER="mri-v12";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -408,6 +426,7 @@ async function load(){
 document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri")renderChart();window.scrollTo(0,0);return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
+  const hr=e.target.closest("[data-ci]");if(hr){const i=+hr.dataset.ci;state.ci=state.ci===i?null:i;renderChart();return}
   const s=e.target.closest("[data-show]");if(s){state.show=s.dataset.show;store.set("show",state.show);renderChart();return}
 });
 // start/end year-month: picking either switches to that period
@@ -435,7 +454,7 @@ $("from").addEventListener("change",pickPeriod);$("to").addEventListener("change
  el.addEventListener("pointercancel",()=>{t=null});}
 // a tap outside the chart clears the selection (a swipe to scroll does not)
 let tapOut=null;
-document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,button,a")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
+document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.hotlist,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
 document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
   if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||state.ci==null)return;
