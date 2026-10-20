@@ -21,7 +21,7 @@
   /* the MRI's own navy palette and level colours (from the original app) */
   --bg:#0a0a1a; --panel:#111127; --ink:#f2f2f7; --ink2:#c4c4d4; --muted:#8a8aa6; --line:#2a2a4a; --chip:#1a1a36; --accent:#7fa8ff;
   --l1:#1a6b2a; --l2:#4CAF50; --l3:#FFC107; --l4:#FF5722; --l5:#B71C1C; --s1:#4CAF50; --s2:#FF9800;
-  --hot:#ff3030; --c-vix:#64b5f6; --c-skew:#ce93d8; --c-cape:#ffb74d;
+  --hot:#ff3030; --c-spx:#a46bff; --c-vix:#64b5f6; --c-skew:#ce93d8; --c-cape:#ffb74d;
   --f-tick:"Archivo","Helvetica Neue",Arial,sans-serif;
   --f-body:"LINE Seed JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
   color-scheme:dark;
@@ -294,7 +294,7 @@ const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),show:store
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
 const COL={};
-function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink","hot"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
+function readColors(){const cs=getComputedStyle(document.documentElement);["l1","l2","l3","l4","l5","s1","s2","c-vix","c-skew","c-cape","muted","ink","hot","c-spx"].forEach(k=>COL[k]=cs.getPropertyValue("--"+k).trim())}
 const LEVELS=[[.2,"Very Low","l1","#fff"],[.4,"Low","l2","#fff"],[.6,"Medium","l3","#000"],[.8,"High","l4","#fff"],[2,"Very High","l5","#fff"]];
 const level=v=>LEVELS.find(l=>v<l[0]);
 const colorOf=v=>COL[level(v)[2]];
@@ -303,7 +303,7 @@ const pc=v=>(v*100).toFixed(2)+"%";
 function setData(d){
   D=d;
   // shown from 2019: before that the windows still held the 2008-09 crash (see 算出方法)
-  DAYS=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri}});
+  DAYS=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri,spx])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri,spx}});
 }
 
 /* ---------- status ---------- */
@@ -351,7 +351,8 @@ function renderChart(){
   document.querySelectorAll("#show button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.show===state.show));
   const all=state.show==="all";
   const S=[["MRI","mri","ink",2.2]].concat(all?[["SKEW","sr","c-skew",1.3],["VIX","vr","c-vix",1.3],["CAPE","cr","c-cape",1.3]]:[]);
-  $("leg").innerHTML=all?S.map(([n,,c])=>`<span><i style="background:${COL[c]}"></i>${n}</span>`).join(""):"";
+  const hasSpx=DAYS.some(b=>b.spx);
+  $("leg").innerHTML=S.map(([n,,c])=>`<span><i style="background:${COL[c]}"></i>${n}</span>`).join("")+(hasSpx?`<span><i style="background:${COL["c-spx"]}"></i>S&amp;P500</span>`:"");
   const el=$("chart"), B=shown(); if(!B.length){el.innerHTML="";return}
   // start and end year-month: the shown span, editable to pick any period
   const fm=$("from"),tm=$("to"),lo=DAYS[0].d.slice(0,7),hi=DAYS[DAYS.length-1].d.slice(0,7);
@@ -359,7 +360,7 @@ function renderChart(){
   if(document.activeElement!==fm)fm.value=B[0].d.slice(0,7);
   if(document.activeElement!==tm)tm.value=B[B.length-1].d.slice(0,7);
   const W=Math.max(300,el.clientWidth), H=W<560?Math.round(W*.72):360;
-  const ML=4,MR=40,MT=6,MB=22, PW=W-ML-MR, PH=H-MT-MB, n=B.length, x=i=>ML+(n<2?PW/2:PW*i/(n-1));
+  const ML=hasSpx?46:4,MR=40,MT=6,MB=22, PW=W-ML-MR, PH=H-MT-MB, n=B.length, x=i=>ML+(n<2?PW/2:PW*i/(n-1));
   const y=d3.scaleLinear().domain([0,1]).range([MT+PH,MT]);
   let g="";
   // level bands
@@ -367,12 +368,21 @@ function renderChart(){
   [0,.2,.4,.6,.8,1].forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${ML+PW+6}" y="${y(v)+4}">${v*100}</text>`});
   let lastLab="";const span=(B[n-1].t-B[0].t)/864e5;
   B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==lastLab){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" opacity=".4"/><text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":+lab.slice(5)+"月")}</text>`}lastLab=lab});
-  let p="";[...S].reverse().forEach(([,k,c,w])=>{p+=`<path d="${B.map((b,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(b[k]).toFixed(1)).join("")}" fill="none" stroke="${COL[c]}" stroke-width="${n>800?w*.6:w}" stroke-linejoin="round" opacity="${k==="mri"?1:n>800?.6:.85}"/>`});
+  let p="";
+  // S&P 500 on its own scale (left axis), under the MRI lines
+  if(hasSpx){const vs=B.map(b=>b.spx).filter(v=>v);if(vs.length){
+    const y2=d3.scaleLinear().domain(d3.extent(vs)).nice(5).range([MT+PH,MT]);
+    y2.ticks(5).forEach(v=>{g+=`<text class="ax" x="${ML-6}" y="${y2(v)+4}" text-anchor="end" style="fill:${COL["c-spx"]}">${v>=1e4?(v/1e3).toFixed(v%1e3?1:0)+"k":v.toLocaleString("en-US")}</text>`});
+    let d="";B.forEach((b,i)=>{if(b.spx)d+=(d?"L":"M")+x(i).toFixed(1)+" "+y2(b.spx).toFixed(1)});
+    p+=`<path d="${d}" fill="none" stroke="${COL["c-spx"]}" stroke-width="${n>800?1.1:1.6}" stroke-linejoin="round" opacity=".95"/>`;
+    el._y2=y2}}
+  [...S].reverse().forEach(([,k,c,w])=>{p+=`<path d="${B.map((b,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(b[k]).toFixed(1)).join("")}" fill="none" stroke="${COL[c]}" stroke-width="${n>800?w*.6:w}" stroke-linejoin="round" opacity="${k==="mri"?1:n>800?.6:.85}"/>`});
   // red dots where MRI is above 80 (Very High)
   const dr=n>1500?1.4:n>500?1.9:2.6;
   B.forEach((b,i)=>{if(b.mri>.8)p+=`<circle cx="${x(i).toFixed(1)}" cy="${y(b.mri).toFixed(1)}" r="${dr}" fill="${COL.hot}"/>`});
   const ci=state.ci!=null&&state.ci<n?state.ci:null;let xh="";
-  if(ci!=null){xh=`<line class="xh" x1="${x(ci)}" x2="${x(ci)}" y1="${MT}" y2="${MT+PH}"/>`;S.forEach(([,k,c])=>{xh+=`<circle cx="${x(ci)}" cy="${y(B[ci][k])}" r="3.5" fill="${COL[c]}" stroke="var(--panel)" stroke-width="1.5"/>`})}
+  if(ci!=null){xh=`<line class="xh" x1="${x(ci)}" x2="${x(ci)}" y1="${MT}" y2="${MT+PH}"/>`;S.forEach(([,k,c])=>{xh+=`<circle cx="${x(ci)}" cy="${y(B[ci][k])}" r="3.5" fill="${COL[c]}" stroke="var(--panel)" stroke-width="1.5"/>`});
+    if(hasSpx&&B[ci].spx&&el._y2)xh+=`<circle cx="${x(ci)}" cy="${el._y2(B[ci].spx)}" r="3.5" fill="${COL["c-spx"]}" stroke="var(--panel)" stroke-width="1.5"/>`}
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRIの日足チャート">${g}${p}${xh}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n};
   const b=B[ci!=null?ci:n-1], lv=level(b.mri);
@@ -383,7 +393,7 @@ function renderChart(){
     hot.slice().reverse().map(([h,i])=>`<tr data-ci="${i}" class="${i===ci?"on":""}"><td>${h.d}</td><td class="m">${(h.mri*100).toFixed(2)}</td><td>${(h.sr*100).toFixed(1)}</td><td>${(h.vr*100).toFixed(1)}</td><td>${(h.cr*100).toFixed(1)}</td></tr>`).join("")
     }</tbody></table></div>`:`<div class="none">選択している期間に、80を超えた日はありません。</div>`);
   // always two rows, so the chart below never shifts
-  $("read").innerHTML=`<div class="rrow"><b>${b.d}</b><span>MRI <b style="color:${COL[lv[2]]}">${(b.mri*100).toFixed(2)}</b></span><span>${lv[1]}</span></div>
+  $("read").innerHTML=`<div class="rrow"><b>${b.d}</b><span>MRI <b style="color:${COL[lv[2]]}">${(b.mri*100).toFixed(2)}</b></span><span>${lv[1]}</span>${b.spx?`<span style="color:${COL["c-spx"]}">S&amp;P <b style="color:inherit">${b.spx.toLocaleString("en-US",{maximumFractionDigits:0})}</b></span>`:""}</div>
     <div class="rrow"><span>SKEW <b>${(b.sr*100).toFixed(1)}</b></span><span>VIX <b>${(b.vr*100).toFixed(1)}</b></span><span>CAPE <b>${(b.cr*100).toFixed(1)}</b></span><span style="color:var(--muted)">${b.skew.toFixed(1)} / ${b.vix.toFixed(2)} / ${b.cape.toFixed(1)}</span></div>`;
 }
 
@@ -401,7 +411,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v12";
+const APP_VER="mri-v13";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

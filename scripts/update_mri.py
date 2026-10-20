@@ -310,7 +310,7 @@ def build():
         if None in (vr, sr, cr):
             continue
         rows.append([d, sig(vix[d], 5), sig(skew[d], 5), sig(cape, 5), round(vr, 5), round(sr, 5), round(cr, 5),
-                     round((vr + sr + cr) / 3, 5)])
+                     round((vr + sr + cr) / 3, 5), sig(spx[d], 6)])
     if not rows:
         raise RuntimeError("no days with all three indicators")
 
