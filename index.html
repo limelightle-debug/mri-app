@@ -207,7 +207,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
         <tr><td>SKEW</td><td>Cboe 公式の日次終値</td><td>1990年1月〜</td></tr>
         <tr><td>S&amp;P500</td><td>Cboe 公式の日次終値（日々の CAPE の計算用）</td><td>1975年1月〜</td></tr>
         <tr><td>CAPE</td><td>multpl.com の月次の値（改定後）</td><td>1871年〜</td></tr>
-        <tr><td>当日の値</td><td>Cboe の遅延クォート（約15分遅れ）と multpl.com の最新の CAPE</td><td>―</td></tr>
+        <tr><td>当日の値</td><td>Cboe の遅延クォート（約15分遅れ）。SKEW と夜間の S&amp;P500 は S&amp;P500 オプションから推定</td><td>―</td></tr>
       </table>
 
       <h3>月ごとの値</h3>
@@ -240,7 +240,7 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
       <h3>日々の CAPE</h3>
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
       <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= 月初からその日までの S&amp;P500 終値の平均 ÷ E10<sub>月</sub></div>
-      <p>月末の日には、その月の CAPE と一致します。当日の CAPE は multpl.com の最新値をそのまま使います。</p>
+      <p>月末の日には、その月の CAPE と一致します。当日も同じ計算で、当月の E10 には multpl.com の当月の株価 ÷ CAPE を使います。どの日も同じ計算なので、翌日の値が加わっても、その日の CAPE は変わりません。</p>
       <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。</p>
 
       <h3>CAPE の改定と過去の値への影響</h3>
@@ -450,7 +450,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v26";
+const APP_VER="mri-v27";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

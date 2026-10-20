@@ -373,8 +373,8 @@ def build():
     ind_spx = Indicator(spx_me, False, False)
 
     # daily CAPE: the month's average S&P 500 close so far divided by the month's E10
-    # (E10 = month average / month-end CAPE); at the month's end it equals that month's CAPE.
-    # Today it is multpl.com's live value itself.
+    # (E10 = month average / month-end CAPE; for the current month, multpl.com's price / CAPE);
+    # at the month's end it equals that month's CAPE.
     avg = month_means(spx)
     run = {}
     rows = []
@@ -389,7 +389,9 @@ def build():
             e10 = spx_m[m] / cape_m[m] if cape_m.get(m) and spx_m.get(m) else avg[m] / months[m]["cape"]
         else:
             e10 = avg[m] / months[m]["cape"]
-        cape = months[m]["cape"] if d == last_day and m == cur_m and cape_m.get(m) else (acc[0] / acc[1]) / e10
+        # every day the same way, today included, so a day's value does not change when the next
+        # day arrives
+        cape = (acc[0] / acc[1]) / e10
         vr, sr, cr = ind["vix"].score(m, vix[d]), ind["skew"].score(m, skew[d]), ind["cape"].score(m, cape)
         pr = ind_spx.score(m, spx[d])
         if None in (vr, sr, cr):
