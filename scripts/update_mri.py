@@ -22,7 +22,7 @@ import re
 import statistics
 import sys
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -188,83 +188,77 @@ def month_ends(daily):
     return out
 
 
-def months_back(ym, n):
-    y, m = divmod(ym, 100)
-    t = y * 12 + (m - 1) - n
-    return (t // 12) * 100 + t % 12 + 1
-
-
-def stats_by_month(monthly, log):
-    """For each month M with enough history: (mean, devMean, devSD) from the 120 months ending at M."""
-    x = {k: (math.log10(v) if log else v) for k, v in monthly.items() if v > 0}
-    keys = sorted(x)
-    dev = {}
-    for k in keys:
-        win = [x[j] for j in keys if months_back(k, WINDOW - 1) <= j <= k]
-        if len(win) >= WINDOW:
-            mu = sum(win) / len(win)
-            dev[k] = (x[k] - mu) / mu
-    out = {}
-    for k in keys:
-        win_x = [x[j] for j in keys if months_back(k, WINDOW - 1) <= j <= k]
-        win_d = [dev[j] for j in dev if months_back(k, WINDOW - 1) <= j <= k]
-        if len(win_x) >= WINDOW and len(win_d) >= WINDOW:
-            out[k] = (sum(win_x) / len(win_x), sum(win_d) / len(win_d), statistics.stdev(win_d))
-    return out
+def month_means(daily):
+    """{yyyymm: average of the month's closes}."""
+    acc = {}
+    for d, v in daily.items():
+        a = acc.setdefault(d // 100, [0.0, 0])
+        a[0] += v
+        a[1] += 1
+    return {k: s / n for k, (s, n) in acc.items()}
 
 
 def norm_cdf(z):
     return 0.5 * (1 + math.erf(z / math.sqrt(2)))
 
 
-def risk(v, st, log, invert):
-    mu, dmu, dsd = st
-    x = math.log10(v) if log else v
-    p = norm_cdf(((x - mu) / mu - dmu) / dsd)
-    return 1 - p if invert else p
+class Indicator:
+    """One indicator as the MRI workbook computes it.
 
+    Month rows hold month-end values. For a row, the 10-year mean covers that row and the 119
+    rows before it; deviation = (x - mean) / mean; the deviation's mean and STDEV cover the same
+    120 rows. The current month is a row whose value is today's value, so its statistics include
+    today (that is how the workbook's latest row works)."""
 
-def daily_e10(spx_m, cape_m):
-    """E10 placed on the 15th of each month, interpolated day by day."""
-    pts = sorted((date(k // 100, k % 100, 15), spx_m[k] / cape_m[k]) for k in cape_m if k in spx_m and cape_m[k] > 0)
+    def __init__(self, monthly, log, invert):
+        self.log, self.invert = log, invert
+        self.keys = sorted(monthly)
+        self.x = [self.tr(monthly[k]) for k in self.keys]
+        self.idx = {k: i for i, k in enumerate(self.keys)}
+        self.dev = [None] * len(self.x)
+        for i in range(WINDOW - 1, len(self.x)):
+            mu = sum(self.x[i - WINDOW + 1:i + 1]) / WINDOW
+            self.dev[i] = (self.x[i] - mu) / mu
 
-    def at(d):
-        if d <= pts[0][0]:
-            return pts[0][1]
-        if d >= pts[-1][0]:
-            return pts[-1][1]
-        lo, hi = 0, len(pts) - 1
-        while hi - lo > 1:
-            mid = (lo + hi) // 2
-            if pts[mid][0] <= d:
-                lo = mid
-            else:
-                hi = mid
-        (d0, e0), (d1, e1) = pts[lo], pts[hi]
-        return e0 + (e1 - e0) * (d - d0).days / (d1 - d0).days
-    return at
+    def tr(self, v):
+        return math.log10(v) if self.log else v
+
+    def score(self, month, value):
+        """Risk of `value` taken as the row for `month` (rows before it are the month-end values)."""
+        n = sum(1 for k in self.keys if k < month)  # rows before this month
+        if n < 2 * WINDOW - 2:
+            return None
+        xs = self.x[n - WINDOW + 1:n] + [self.tr(value)]
+        mu = sum(xs) / WINDOW
+        d = (xs[-1] - mu) / mu
+        devs = self.dev[n - WINDOW + 1:n] + [d]
+        if any(v is None for v in devs):
+            return None
+        p = norm_cdf((d - sum(devs) / WINDOW) / statistics.stdev(devs))
+        return 1 - p if self.invert else p
 
 
 def sig(x, n=6):
     return float(f"{x:.{n}g}")
 
 
+MONTHLY = DATA / "monthly.json"  # month-end values, seeded from the MRI workbook (through May 2026)
+
+
 def build():
     cache = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
-    for k in ("vix", "skew", "spx"):
-        if k in cache:
-            cache[k] = {int(d): v for d, v in cache[k].items()}
-    for k in ("cape_m", "spx_m"):
+    for k in ("vix", "skew", "spx", "cape_m", "spx_m"):
         if k in cache:
             cache[k] = {int(d): v for d, v in cache[k].items()}
     src, refreshed = load_sources(cache)
     vix, skew, spx = dict(src["vix"]), dict(src["skew"]), dict(src["spx"])
+    cape_m, spx_m = src["cape_m"], src["spx_m"]
 
-    # latest values (delayed quotes) for today
+    # latest values (Cboe delayed quotes) for today
     live = {}
-    for name, fn in (("vix", lambda: cboe_live("VIX")), ("skew", lambda: cboe_live("SKEW")), ("spx", lambda: cboe_live("SPX"))):
+    for name, sym in (("vix", "VIX"), ("skew", "SKEW"), ("spx", "SPX")):
         try:
-            q = fn()
+            q = cboe_live(sym)
         except (RuntimeError, ValueError, KeyError) as e:
             print(f"warning: live {name}: {e}", file=sys.stderr)
             q = None
@@ -272,39 +266,70 @@ def build():
             live[name] = {"date": q[0], "value": q[1], "time": q[2]}
             {"vix": vix, "skew": skew, "spx": spx}[name][q[0]] = q[1]
 
-    # statistics per completed month, and the CAPE month series including multpl's live month
-    cape_m, spx_m = src["cape_m"], src["spx_m"]
-    today_m = ymd(datetime.now(NY).date()) // 100
-    st = {"vix": stats_by_month({k: v for k, v in month_ends(vix).items() if k < today_m}, True),
-          "skew": stats_by_month({k: v for k, v in month_ends(skew).items() if k < today_m}, True),
-          "cape": stats_by_month({k: v for k, v in cape_m.items() if k < today_m}, False)}
-    e10 = daily_e10(spx_m, cape_m)
+    today = ymd(datetime.now(NY).date())
+    cur_m = today // 100
+    last_day = max(set(vix) & set(skew))
+    cur_m = max(cur_m, last_day // 100)
 
-    def stats_for(day, which):
-        m = day // 100
-        prev = months_back(m, 1)
-        return st[which].get(prev)
+    # month rows: the workbook's values, then later months; VIX and SKEW at month-end closes,
+    # CAPE as multpl.com showed it at the month's end (kept run by run), otherwise multpl's table
+    book = json.loads(MONTHLY.read_text(encoding="utf-8")) if MONTHLY.exists() else {"months": {}}
+    months = {int(k): dict(v) for k, v in book["months"].items()}
+    seeded = 202605  # the last month taken from the workbook
+    vme, kme = month_ends(vix), month_ends(skew)
+    for m in sorted(set(vme) | set(cape_m)):
+        if m > cur_m:
+            continue
+        row = months.setdefault(m, {})
+        if m == cur_m:
+            row.update(vix=vme.get(m, row.get("vix")), skew=kme.get(m, row.get("skew")))
+            if cape_m.get(m):
+                row["cape"] = cape_m[m]  # multpl's live value; it stays as the month-end value
+            continue
+        if m > seeded and not row.get("final"):
+            row.update(vix=vme.get(m, row.get("vix")), skew=kme.get(m, row.get("skew")))
+            row.setdefault("cape", cape_m.get(m))
+            row["final"] = True
+        for k, src_m in (("vix", vme), ("skew", kme), ("cape", cape_m)):
+            if row.get(k) is None and src_m.get(m):
+                row[k] = src_m[m]  # gaps in the workbook (and months before it) from the sources
+    months = {m: r for m, r in months.items() if all(r.get(k) for k in ("vix", "skew", "cape"))}
+    book_out = {"note": book.get("note", ""), "months": {str(m): months[m] for m in sorted(months)}}
+    if book_out != book:
+        MONTHLY.write_text(json.dumps(book_out, separators=(",", ":")), encoding="utf-8")
 
+    # one indicator over all month rows; `score` only uses the rows before the month it is asked about
+    ind = {"vix": Indicator({m: r["vix"] for m, r in months.items()}, True, True),
+           "skew": Indicator({m: r["skew"] for m, r in months.items()}, True, False),
+           "cape": Indicator({m: r["cape"] for m, r in months.items()}, False, False)}
+
+    # daily CAPE: the month's average S&P 500 close so far divided by the month's E10
+    # (E10 = month average / month-end CAPE); at the month's end it equals that month's CAPE.
+    # Today it is multpl.com's live value itself.
+    avg = month_means(spx)
+    run = {}
     rows = []
     for d in sorted(set(vix) & set(skew) & set(spx)):
-        sv, ss, sc = stats_for(d, "vix"), stats_for(d, "skew"), stats_for(d, "cape")
-        if not (sv and ss and sc):
+        m = d // 100
+        if m not in months:
             continue
-        cape = spx[d] / e10(date(d // 10000, d // 100 % 100, d % 100))
-        vr, sr, cr = risk(vix[d], sv, True, True), risk(skew[d], ss, True, False), risk(cape, sc, False, False)
+        acc = run.setdefault(m, [0.0, 0])
+        acc[0] += spx[d]
+        acc[1] += 1
+        if m == cur_m:
+            e10 = spx_m[m] / cape_m[m] if cape_m.get(m) and spx_m.get(m) else avg[m] / months[m]["cape"]
+        else:
+            e10 = avg[m] / months[m]["cape"]
+        cape = months[m]["cape"] if d == last_day and m == cur_m and cape_m.get(m) else (acc[0] / acc[1]) / e10
+        vr, sr, cr = ind["vix"].score(m, vix[d]), ind["skew"].score(m, skew[d]), ind["cape"].score(m, cape)
+        if None in (vr, sr, cr):
+            continue
         rows.append([d, sig(vix[d], 5), sig(skew[d], 5), sig(cape, 5), round(vr, 5), round(sr, 5), round(cr, 5),
                      round((vr + sr + cr) / 3, 5)])
     if not rows:
         raise RuntimeError("no days with all three indicators")
 
-    last_m = max(st["vix"])
-    data = {
-        "source": f"Cboe, multpl.com, {src.get('spxSource', '')}",
-        "stats": {k: {"month": max(v), "mean": sig(v[max(v)][0], 7), "devMean": sig(v[max(v)][1], 6),
-                      "devSD": sig(v[max(v)][2], 6)} for k, v in st.items()},
-        "live": live,
-        "daily": rows,
-    }
+    data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "daily": rows}
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     if refreshed:
         cache_out = {k: ({str(d): v for d, v in src[k].items()} if isinstance(src[k], dict) else src[k]) for k in src}
@@ -317,8 +342,7 @@ def build():
     data = {"updatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     r = rows[-1]
-    print(f"updated: {len(rows)} days {rows[0][0]}..{r[0]}, MRI {r[7]:.4f} (VIX {r[1]} SKEW {r[2]} CAPE {r[3]}); "
-          f"stats month {last_m}")
+    print(f"updated: {len(rows)} days {rows[0][0]}..{r[0]}, MRI {r[7]:.4f} (VIX {r[1]} SKEW {r[2]} CAPE {r[3]})")
 
 
 if __name__ == "__main__":
