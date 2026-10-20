@@ -42,7 +42,7 @@ jobs:
           session() {
             python -c 'from datetime import datetime; from zoneinfo import ZoneInfo
           n = datetime.now(ZoneInfo("America/New_York")); m = n.hour * 60 + n.minute
-          print("closed" if n.weekday() >= 5 else "pre" if m < 9 * 60 + 25 else "open" if m < 16 * 60 + 15 else "closed")'
+          print("closed" if n.weekday() >= 5 or m < 8 * 60 else "pre" if m < 9 * 60 + 25 else "open" if m < 16 * 60 + 15 else "closed")'
           }
           start=$(date +%s)
           while true; do
