@@ -607,7 +607,7 @@ function renderChart(){
   const keys=state.win.map(a=>avail.filter(([k])=>a.includes(k)).map(s=>s[0]));
   const wins=[0,1].filter(w=>w===0||keys[w].length);
   const W=Math.max(300,el.clientWidth), PH=W<560?Math.round(W*.72)-28:332, PH2=Math.round(PH*.55), GAP=24;
-  const ML=4,MR=40,MT=6,MB=22, PW=W-ML-MR, n=B.length, x=i=>ML+(n<2?PW/2:PW*i/(n-1));
+  const ML=2,MR=24,MT=6,MB=22, PW=W-ML-MR, n=B.length, x=i=>ML+(n<2?PW/2:PW*i/(n-1));
   const geo=[];let top=MT;wins.forEach((w,j)=>{const h=j===0?PH:PH2;geo.push({w,top,h,y:d3.scaleLinear().domain([0,1]).range([top+h,top])});top+=h+GAP});
   const BOT=top-GAP, H=BOT+MB;
   const BANDS=[[0,.2,"l1"],[.2,.4,"l2"],[.4,.6,"l3"],[.6,.8,"l4"],[.8,1,"l5"]];
@@ -622,7 +622,7 @@ function renderChart(){
   {let last="";B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==last){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)xt.push([i,span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":t("month",+lab.slice(5)))])}last=lab})}
   geo.forEach(({w,top,h,y},j)=>{
     BANDS.forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${y(b)}" width="${PW}" height="${y(a)-y(b)}" fill="${COL[c]}" opacity="${j?.1:.13}"/>`});
-    (j?[0,.5,1]:[0,.2,.4,.6,.8,1]).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${ML+PW+6}" y="${y(v)+4}">${v*100}</text>`});
+    (j?[0,.5,1]:[0,.2,.4,.6,.8,1]).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v*100}</text>`});
     xt.forEach(([i])=>{g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${top}" y2="${top+h}" opacity=".4"/>`});
     const ks=keys[w];
     // MRI on top of the rest
@@ -680,7 +680,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v36";
+const APP_VER="mri-v37";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
