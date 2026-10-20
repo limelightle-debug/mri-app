@@ -251,11 +251,11 @@ h1{margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size
         <li><b>SKEW：</b>1990〜2009年は年平均111〜121でほぼ横ばいでした。2013年ごろから上がり始め、2020年代は145〜150前後が普通になっています。水準が上がる局面では乖離率が上向きに偏り続けます。トレンド補正で偏りの一部は差し引かれますが、追いつききれず、リスク値が高めに出ます。</li>
         <li><b>CAPE：</b>1990年代前半の17〜20から、2020年代は30台後半まで水準が上がっています。上がり方がゆるやかなので、トレンド補正がある程度効いています。それでも SKEW と同じ種類の問題を持っています。</li>
       </ul>
-      <p><b>リーマンショックの影響：</b>2013〜2018年は、CAPE のリスク値が年平均で90を超え続けました。10年平均の中に、2008〜09年に13前後まで下がった CAPE が入っていて、平均が低く引っ張られていたためです。リーマンショック（2008年9月）が10年平均の窓から外れたのは2018年9月、底値（2009年3月）が外れたのは2019年3月です。2011〜2018年に MRI が80を超えた日が多いのは主にこのためで、相場の過熱だけを表しているわけではありません。</p>
+      <p><b>リーマンショックの影響：</b>2013〜2018年は、CAPE のリスク値が年平均で90を超え続けました。10年平均の中に、2008〜09年に13前後まで下がった CAPE が入っていて、平均が低く引っ張られていたためです。リーマンショック（2008年9月）が10年平均の窓から外れたのは2018年9月、底値（2009年3月）が外れたのは2019年3月です。2011〜2018年に MRI が80を超えた日が多いのは主にこのためで、相場の過熱だけを表しているわけではありません。<b>このため、チャートは2019年1月から表示しています。</b></p>
       <p class="note">乖離率の平均と標準偏差の窓には、危機を含む10年平均で計算した乖離率が2018年まで入っています。影響はずっと小さくなりますが、それが窓から抜けきるのは2028年ごろです。</p>
 
       <h3>いつから計算できるか</h3>
-      <p>VIX と SKEW が1990年1月からしかないため、MRI は<b>2009年11月</b>から計算できます。</p>
+      <p>VIX と SKEW が1990年1月からしかないため、MRI は<b>2009年11月</b>から計算できます。ただし上の理由で、2018年までは機能していないため、表示は<b>2019年1月から</b>にしています。</p>
       <ul>
         <li>乖離率を1本出すのに120か月が必要です。最初の乖離率は1999年12月です。</li>
         <li>その平均と標準偏差を出すのに、乖離率がさらに120本必要です。最初の乖離率から数えて120本目が2009年11月です。</li>
@@ -277,6 +277,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store={get(k,d){try{const v=localStorage.getItem("mri."+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("mri."+k,v)}catch(e){}}};
 let D=null, DAYS=[], loading=false;
+const SHOW_FROM=20190101;
 const state={tab:store.get("tab","mri"),range:store.get("range","1Y"),show:store.get("show","mri"),from:store.get("from",""),to:store.get("to",""),ci:null};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","3ヶ月",63],["1Y","1年",252],["3Y","3年",756],["5Y","5年",1260],["ALL","全期間",0]];
@@ -289,7 +290,8 @@ const pc=v=>(v*100).toFixed(2)+"%";
 
 function setData(d){
   D=d;
-  DAYS=d.daily.map(([n,vix,skew,cape,vr,sr,cr,mri])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri}});
+  // shown from 2019: before that the windows still held the 2008-09 crash (see 算出方法)
+  DAYS=d.daily.filter(r=>r[0]>=SHOW_FROM).map(([n,vix,skew,cape,vr,sr,cr,mri])=>{const s=String(n);return{n,d:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,t:Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)),vix,skew,cape,vr,sr,cr,mri}});
 }
 
 /* ---------- status ---------- */
@@ -381,7 +383,7 @@ function renderAll(){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v10";
+const APP_VER="mri-v11";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
