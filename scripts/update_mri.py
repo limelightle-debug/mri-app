@@ -177,9 +177,12 @@ def cboe_live(symbol):
     day = ymd(dt)
     regular_close = dt.hour * 60 + dt.minute >= 16 * 60
     if regular_close and session_day(fetched) > day:
-        # after the close: a moving price belongs to the next session; an unchanged one is the close
+        # after the close: a moving price belongs to the next session, and so does any price during
+        # VIX's overnight session (20:15 ET Sun-Thu to 9:30 ET), even before it first moves
         close = q.get("close")
-        if close and abs(float(price) - float(close)) > 1e-9:
+        fm, fwd = fetched.hour * 60 + fetched.minute, fetched.weekday()
+        night = (fwd in (6, 0, 1, 2, 3) and fm >= 20 * 60 + 15) or (fwd < 5 and fm < 9 * 60 + 30)
+        if close and (abs(float(price) - float(close)) > 1e-9 or (night and symbol == "VIX")):
             return session_day(fetched), float(price), fetched.strftime("%Y-%m-%d %H:%M"), day, float(close)
         return day, float(close or price), dt.strftime("%Y-%m-%d %H:%M"), day, float(close or price)
     return day, float(price), dt.strftime("%Y-%m-%d %H:%M"), day, float(price)
