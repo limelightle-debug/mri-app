@@ -608,7 +608,7 @@ function renderTop(){
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
   const skTag=ls&&ls.estimate?t("est"):ls&&ls.carried?t("carried"):"";
   $("inds").className=isLive?"live-ut":"";
-  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2)+(L.vix&&L.vix.estimate&&L.vix.date===last.n?t("est"):""),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2)+(L.spx&&L.spx.carried&&L.spx.date===last.n?t("carried"):""),last.cr);
+  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2)+(L.vix&&L.vix.estimate&&L.vix.date===last.n?t("est"):""),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2)+(L.spx&&L.spx.date===last.n?(L.spx.carried?t("carried"):L.spx.estimate?t("est"):""):""),last.cr);
 }
 
 /* ---------- daily chart ---------- */
@@ -729,7 +729,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v46";
+const APP_VER="mri-v47";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
