@@ -416,6 +416,20 @@ def build():
             pass
     data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "liveDay": live_day, "daily": rows}
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
+    # the realtime MRI through the session, one point per update: [time, MRI, VIX, SKEW, CAPE risk]
+    intra = old.get("intraday") or {}
+    if live_day:
+        if intra.get("day") != live_day:
+            intra = {"day": live_day, "prevClose": rows[-2][7] if len(rows) > 1 else None, "points": []}
+        r = rows[-1]
+        pt = [now.isoformat(timespec="minutes"), r[7], r[4], r[5], r[6]]
+        pts = intra["points"]
+        if pts and pts[-1][0] == pt[0]:
+            pts[-1] = pt
+        else:
+            pts.append(pt)
+    if intra:
+        data["intraday"] = intra
     if refreshed:
         cache_out = {k: ({str(d): v for d, v in src[k].items()} if isinstance(src[k], dict) else src[k]) for k in src}
         CACHE.write_text(json.dumps(cache_out, separators=(",", ":")), encoding="utf-8")
