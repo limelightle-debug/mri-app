@@ -191,6 +191,14 @@ def cboe_live(symbol):
 SKEW_CALC = DATA / "skew_calc.json"
 
 
+def calc_time():
+    """When the option quotes behind the estimates were published ("YYYY-MM-DD HH:MM", New York)."""
+    try:
+        return datetime.fromisoformat(json.loads(SKEW_CALC.read_text(encoding="utf-8"))["quoteTime"]).astimezone(NY).strftime("%Y-%m-%d %H:%M")
+    except (OSError, ValueError, KeyError):
+        return datetime.now(NY).strftime("%Y-%m-%d %H:%M")
+
+
 def skew_change(prev):
     """How much the SKEW recomputed from the option quotes has moved since the close of `prev`."""
     try:
@@ -201,7 +209,7 @@ def skew_change(prev):
         return None
     # the estimate must be fresh and from a later session (overnight counts), with a close-time
     # estimate for `prev`
-    if anchor is None or (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
+    if anchor is None or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev:
         return None
     return None if j.get("skew") is None else j["skew"] - anchor
 
@@ -215,7 +223,7 @@ def vix_estimate(prev, close):
         base, cur = j.get("anchorsV", {}).get(str(prev)), j.get("vix")
     except (OSError, ValueError, KeyError):
         return None
-    if not cur or (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
+    if not cur or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev:
         return None
     return close * cur / base if base else cur
 
@@ -229,7 +237,7 @@ def spx_ratio(prev):
         base, now_f = j.get("anchorsF", {}).get(str(prev), {}), j.get("forwards", {})
     except (OSError, ValueError, KeyError):
         return None
-    if (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
+    if (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev:
         return None
     common = [e for e in now_f if e in base and base[e]]
     return now_f[common[0]] / base[common[0]] if common else None
@@ -357,14 +365,14 @@ def build():
             if est:
                 vix[today] = est
                 live["vix"] = {**lv, "value": round(vix[today], 2), "estimate": True, "close": vix[prevv],
-                               "time": now.strftime("%Y-%m-%d %H:%M")}
+                               "time": calc_time()}
     if today in vix and today not in skew and skew:
         prev = max(d for d in skew if d < today)
         chg = skew_change(prev)
         if chg is not None:
             est = skew[prev] + chg
             skew[today] = est
-            live["skew"] = {"date": today, "value": round(est, 2), "time": now.strftime("%Y-%m-%d %H:%M"),
+            live["skew"] = {"date": today, "value": round(est, 2), "time": calc_time(),
                             "estimate": True, "close": skew[prev]}
         else:
             skew[today] = skew[prev]
@@ -376,7 +384,7 @@ def build():
         r = spx_ratio(prev)
         spx[today] = spx[prev] * (r or 1)
         live["spx"] = {**live.get("spx", {}), "date": today, "value": round(spx[today], 2),
-                       **({"estimate": True, "close": spx[prev], "time": now.strftime("%Y-%m-%d %H:%M")} if r else {"carried": True})}
+                       **({"estimate": True, "close": spx[prev], "time": calc_time()} if r else {"carried": True})}
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
