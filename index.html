@@ -714,7 +714,11 @@ function renderIntra(){
   if(pc!=null)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(pc)}" y2="${y(pc)}" stroke="${COL.muted}" stroke-dasharray="4 4" stroke-width="1.2"/>`;
   const path=P.map((p,i)=>(i?"L":"M")+x(p.t).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
   const lp=P[P.length-1];
-  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("intraTitle")}">${g}<path d="${path}" fill="none" stroke="${COL.ink}" stroke-width="2" stroke-linejoin="round"/>${P.length<60?P.map(p=>`<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2" fill="${COL.ink}"/>`).join(""):""}<circle cx="${x(lp.t)}" cy="${y(lp.v)}" r="4" fill="${colorOf(lp.v)}" stroke="var(--panel)" stroke-width="1.5"/></svg>`;
+  // the latest value and its time next to the last point (to its left once it nears the right edge)
+  const lx=x(lp.t),right=lx<ML+PW-90,ly=Math.min(Math.max(y(lp.v),MT+14),MT+PH-6);
+  const lastLab=`<text x="${right?lx+9:lx-9}" y="${ly-2}" text-anchor="${right?"start":"end"}" style="font-family:var(--f-tick);font-stretch:85%;font-weight:700;font-size:17px;fill:${colorOf(lp.v)}">${(lp.v*100).toFixed(2)}</text>`
+    +`<text x="${right?lx+9:lx-9}" y="${ly+13}" text-anchor="${right?"start":"end"}" class="ax">${esc(fmtTime(lp.t,{hour:"2-digit",minute:"2-digit"}))}</text>`;
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("intraTitle")}">${g}<path d="${path}" fill="none" stroke="${COL.ink}" stroke-width="2" stroke-linejoin="round"/>${P.length<60?P.map(p=>`<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2" fill="${COL.ink}"/>`).join(""):""}<circle cx="${x(lp.t)}" cy="${y(lp.v)}" r="4" fill="${colorOf(lp.v)}" stroke="var(--panel)" stroke-width="1.5"/>${lastLab}</svg>`;
   box.innerHTML=`<h2><i class="h2t">${t("intraTitle")}</i> <span>${pc!=null?t("intraPrev",(pc*100).toFixed(2)):""}</span></h2><div class="chart">${svg}</div><p class="pnote">${t("intraNote")}</p>`;
 }
 function nyOffset(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(d).forEach(x=>p[x.type]=x.value);
@@ -729,7 +733,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v50";
+const APP_VER="mri-v51";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
