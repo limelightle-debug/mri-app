@@ -206,17 +206,18 @@ def skew_change(prev):
     return None if j.get("skew") is None else j["skew"] - anchor
 
 
-def vix_ratio(prev):
-    """How much the VIX recomputed from the option quotes has moved since the close of `prev` (ratio)."""
+def vix_estimate(prev, close):
+    """VIX recomputed from the option quotes: the close of `prev` moved by its ratio to the value at
+    that close; without that value, the recomputed VIX itself (it tracks Cboe's closely)."""
     try:
         j = json.loads(SKEW_CALC.read_text(encoding="utf-8"))
         at = datetime.fromisoformat(j["quoteTime"]).astimezone(NY)
         base, cur = j.get("anchorsV", {}).get(str(prev)), j.get("vix")
     except (OSError, ValueError, KeyError):
         return None
-    if not base or not cur or (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
+    if not cur or (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
         return None
-    return cur / base
+    return close * cur / base if base else cur
 
 
 def spx_ratio(prev):
@@ -352,9 +353,9 @@ def build():
     if today in vix and lv.get("date") == today:
         prevv = max(d for d in vix if d < today)
         if abs(vix[today] - vix[prevv]) < 1e-9:
-            r = vix_ratio(prevv)
-            if r:
-                vix[today] = vix[prevv] * r
+            est = vix_estimate(prevv, vix[prevv])
+            if est:
+                vix[today] = est
                 live["vix"] = {**lv, "value": round(vix[today], 2), "estimate": True, "close": vix[prevv],
                                "time": now.strftime("%Y-%m-%d %H:%M")}
     if today in vix and today not in skew and skew:
