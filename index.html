@@ -489,7 +489,7 @@ const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
-  top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:v=>`点線＝前日確定 ${v}`,intraNote:"夜間取引の開始（米東部 20:15）から確定（17:00）まで。更新ごとの値です。",paused:"停止中",nextStart:n=>`次の開始 ${n}`,
+  top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:v=>`点線＝前日確定 ${v}`,intraNote:"米東部 20:15（夜間開始）〜 17:00（確定）",paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
    rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:30 → 翌 9:30","月〜金 9:30 → 22:30","月〜金 10:30 → 23:30"],
          ["取引時間","5分ごと","月〜金 9:30 → 17:00","月〜金 22:30 → 翌 6:00","月〜金 23:30 → 翌 7:00"],
@@ -499,7 +499,7 @@ const T={
  en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
-  top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:v=>`dashed = prev. confirmed ${v}`,intraNote:"From the overnight open (20:15 ET) to the confirmed value (17:00 ET), one point per update.",paused:"Paused",nextStart:n=>`Next start ${n}`,
+  top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:v=>`dashed = prev. confirmed ${v}`,intraNote:"20:15 ET (overnight open) to 17:00 ET (confirmed)",paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
    rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:30 → 9:30","Mon–Fri 9:30 → 22:30","Mon–Fri 10:30 → 23:30"],
          ["Session","Every 5 min","Mon–Fri 9:30 → 17:00","Mon–Fri 22:30 → 6:00","Mon–Fri 23:30 → 7:00"],
@@ -724,7 +724,7 @@ function renderIntra(){
   const lastLab=`<text x="${right?lx+9:lx-9}" y="${ly-2}" text-anchor="${right?"start":"end"}" style="font-family:var(--f-tick);font-stretch:85%;font-weight:700;font-size:17px;fill:${colorOf(lp.v)}">${(lp.v*100).toFixed(2)}</text>`
     +`<text x="${right?lx+9:lx-9}" y="${ly+13}" text-anchor="${right?"start":"end"}" class="ax">${esc(fmtTime(lp.t,{hour:"2-digit",minute:"2-digit"}))}</text>`;
   const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("intraTitle")}">${g}<path d="${path}" fill="none" stroke="${COL.ink}" stroke-width="2" stroke-linejoin="round"/>${P.length<60?P.map(p=>`<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2" fill="${COL.ink}"/>`).join(""):""}<circle cx="${x(lp.t)}" cy="${y(lp.v)}" r="4" fill="${colorOf(lp.v)}" stroke="var(--panel)" stroke-width="1.5"/>${lastLab}</svg>`;
-  box.innerHTML=`<h2><i class="h2t">${t("intraTitle")}</i> <span>${pc!=null?t("intraPrev",(pc*100).toFixed(2)):""}</span></h2><div class="chart">${svg}</div><p class="pnote">${t("intraNote")}</p>`;
+  box.innerHTML=`<h2><i class="h2t">${t("intraTitle")}</i> <span>${pc!=null?t("intraPrev",(pc*100).toFixed(2)):""}</span></h2><div class="chart">${svg}</div><p class="pnote" style="margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t("intraNote")}</p>`;
 }
 function nyOffset(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(d).forEach(x=>p[x.type]=x.value);
   return Math.round((Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)-d.getTime())/36e5)}
@@ -738,7 +738,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v53";
+const APP_VER="mri-v54";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
