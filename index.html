@@ -33,7 +33,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
 .num{font-family:var(--f-tick);font-stretch:82%;font-variant-numeric:tabular-nums}
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:12px 10px;border-bottom:1px solid var(--line)}
+.bar{position:relative;background:var(--bg);padding-block:12px 0}
+.stick{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:8px 10px;border-bottom:1px solid var(--line)}
+.stick .views{margin-top:8px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .avatar{width:42px;height:42px;border-radius:10px;flex:none;box-shadow:0 0 0 1px var(--line)}
 h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1.1}
@@ -175,15 +177,17 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       </div>
     </div>
     <div class="langseg" id="lang" role="group" aria-label="Language"><button type="button" data-lang="ja">JP</button><button type="button" data-lang="en">EN</button></div>
+  </header>
+  <div class="stick">
     <div class="seg tabs" id="tabs" role="group" aria-label="表示">
       <button type="button" data-tab="mri">MRI</button>
       <button type="button" data-tab="method" data-i18n="tabMethod">算出方法</button>
     </div>
-  </header>
+    <div class="seg views" id="views" role="group" aria-label="確定値とリアルタイム" hidden></div>
+  </div>
 
   <div id="app" hidden>
    <div id="t-mri">
-    <div class="seg views" id="views" role="group" aria-label="確定値とリアルタイム" hidden></div>
     <section class="panel">
       <div class="vtitle" id="vtitle"></div>
       <div class="hero">
@@ -557,7 +561,7 @@ function renderStatus(){
 
 /* ---------- MRI and the three indicators ---------- */
 function renderViews(){
-  const el=$("views"),live=hasLive();el.hidden=false;
+  const el=$("views"),live=hasLive();el.hidden=state.tab!=="mri";
   const c=live?ALL[ALL.length-2]:ALL[ALL.length-1],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const tm=live?fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"}):t("paused");
   el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}${t("confirmed")}</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">${t("realtime")}<small>${tm}</small></button>`;
@@ -674,6 +678,7 @@ function renderChart(){
 function renderTabs(){
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab));
   $("t-mri").hidden=state.tab!=="mri";$("t-method").hidden=state.tab!=="method";
+  if(D)$("views").hidden=state.tab!=="mri";
 }
 function renderAll(){
   readColors();renderTabs();
@@ -733,7 +738,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v51";
+const APP_VER="mri-v52";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
