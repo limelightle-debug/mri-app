@@ -139,6 +139,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .sched td:last-child{font-family:var(--f-tick);font-stretch:88%;font-size:14px;line-height:1.5}
 .sched tr.now td{color:var(--ink)}
 .sched tr.now td:first-child{color:var(--accent);font-weight:700}
+.sched .dst{font-size:12.5px;color:var(--ink2);margin:0 0 4px;line-height:1.6}
 .sched .note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6}
 .vtitle.paused{align-items:center}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{display:flex;flex-direction:column;line-height:1.35}.vtitle.paused span i{font-style:normal}
 .vtitle{display:flex;align-items:center;gap:10px;margin:-2px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line);min-height:58px;box-sizing:content-box}
@@ -490,7 +491,8 @@ const T={
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:v=>`点線＝前日確定 ${v}`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
-  sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
+  sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",
+   period:(sm,a,b)=>`${sm?"夏時間":"冬時間"}：${a} 〜 ${b}`,next:(sm,d)=>`${d}（日）から${sm?"冬時間":"夏時間"}。日本時間では翌月曜の夜間取引から、表の時刻が1時間${sm?"遅く":"早く"}なります。`,ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
    rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:30 → 翌 9:30","月〜金 9:30 → 22:30","月〜金 10:30 → 23:30"],
          ["取引時間","5分ごと","月〜金 9:30 → 17:00","月〜金 22:30 → 翌 6:00","月〜金 23:30 → 翌 7:00"],
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
@@ -500,7 +502,8 @@ const T={
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:v=>`dashed = prev. confirmed ${v}`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
-  sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
+  sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",
+   period:(sm,a,b)=>`${sm?"Daylight time":"Standard time"}: ${a} to ${b}`,next:(sm,d)=>`${sm?"Standard":"Daylight"} time from Sun, ${d}: from the next overnight session, Japan times move one hour ${sm?"later":"earlier"}.`,ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
    rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:30 → 9:30","Mon–Fri 9:30 → 22:30","Mon–Fri 10:30 → 23:30"],
          ["Session","Every 5 min","Mon–Fri 9:30 → 17:00","Mon–Fri 22:30 → 6:00","Mon–Fri 23:30 → 7:00"],
          ["Paused","Confirmed only","Mon–Thu 17:00 → 20:30<br>Fri 17:00 → Sun 20:30","Tue–Fri 6:00 → 9:30<br>Sat 6:00 → Mon 9:30","Tue–Fri 7:00 → 10:30<br>Sat 7:00 → Mon 10:30"]],
@@ -691,7 +694,15 @@ function renderAll(){
 function renderSched(){
   const live=state.view!=="close";$("sched").hidden=!live;$("chartbox").hidden=live;renderIntra();if(!live)return;
   const summer=nyOffset()===-4,S=t("sched");
+  // the current US daylight/standard period and the next switch (DST: 2nd Sunday of March to 1st Sunday of November)
+  const sun=(y,m,n)=>{const d=new Date(Date.UTC(y,m,1));return new Date(Date.UTC(y,m,1+(7-d.getUTCDay())%7+7*(n-1)))};
+  const now=new Date(),yy=+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric"}).format(now);
+  const dst=y=>[sun(y,2,2),sun(y,10,1)];
+  let from,to;if(summer){[from,to]=dst(yy)}else{const [a,b]=dst(yy);if(now<a){from=dst(yy-1)[1];to=a}else{from=b;to=dst(yy+1)[0]}}
+  const dfmt=d=>LANG==="ja"?`${d.getUTCFullYear()}年${d.getUTCMonth()+1}月${d.getUTCDate()}日`:d.toLocaleDateString("en-US",{timeZone:"UTC",year:"numeric",month:"short",day:"numeric"});
+  const nextS=summer?dst(yy)[1]:(now<dst(yy)[0]?dst(yy)[0]:dst(yy+1)[0]);
   $("sched").innerHTML=`<h2><i class="h2t">${S.title}</i> <span>${summer?S.nowSummer:S.nowWinter}</span></h2>
+   <p class="dst">${S.period(summer,dfmt(from),dfmt(to))}<br>${S.next(summer,dfmt(nextS))}</p>
    <table>${S.rows.map(r=>`<tbody><tr><th colspan="2">${r[0]}<small>${r[1]}</small></th></tr>
      <tr class="now"><td>${S.ny}</td><td>${r[2]}</td></tr>
      <tr class="${summer?"now":""}"><td>${S.jpS}</td><td>${r[3]}</td></tr>
@@ -738,7 +749,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v55";
+const APP_VER="mri-v56";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
