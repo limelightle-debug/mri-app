@@ -246,7 +246,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>使うデータ</h3>
       <table>
         <tr><th>項目</th><th>確定値</th><th>リアルタイム</th></tr>
-        <tr><td>VIX</td><td>Cboe 公式の日次終値（1990年〜）</td><td>Cboe の約15分遅れの値。夜間取引の値も使う</td></tr>
+        <tr><td>VIX</td><td>Cboe 公式の日次終値（1990年〜）</td><td>Cboe の約15分遅れの値。夜間に Cboe の値が出ていない間は S&amp;P500 オプションから推定</td></tr>
         <tr><td>SKEW</td><td>Cboe 公式の日次終値（1990年〜）</td><td>S&amp;P500 オプションから推定</td></tr>
         <tr><td>S&amp;P500</td><td>Cboe 公式の日次終値（1975年〜）</td><td>取引時間中は約15分遅れの値。夜間は S&amp;P500 オプションから推定</td></tr>
         <tr><td>CAPE</td><td>multpl.com の月次の値（改定後、1871年〜）</td><td>S&amp;P500 から計算（下の「日々の CAPE」）</td></tr>
@@ -298,6 +298,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p><b>SKEW：</b>Cboe は SKEW を1日1回、取引終了後にしか計算しません。そこで、S&amp;P500 オプションの気配値から、Cboe が公開している計算方法で SKEW を計算し直します。自分で計算した値は公式値と完全には一致しないため、前日終値からの<b>変化分</b>だけを使います。</p>
       <div class="eq">SKEW<sub>推定</sub> = 前日の公式終値<br>　＋（いまの計算値 − 前日終値時点の計算値）</div>
       <p>計算方法の違いによるズレは、前日終値時点でもいまでもほぼ同じだけ出るので、差し引きで消えます。前日終値時点の計算値は、毎日の取引終了後（米東部16:15〜20:00）に保存します。これがない日は、前日の公式終値をそのまま使います。</p>
+      <p><b>夜間の VIX：</b>Cboe の無料データは、夜間取引の VIX をすぐには反映しないことがあります。その間は、VIX と同じ方法（S&amp;P500 オプションの30日分散）で計算し直した値の、前日終値時点からの<b>比率</b>で動かします。</p>
+      <div class="eq">VIX<sub>夜間</sub> = 前日の公式終値<br>　×（いまの計算値 ÷ 前日終値時点の計算値）</div>
       <p><b>夜間の S&amp;P500：</b>S&amp;P500 指数は米国市場の取引時間にしか計算されません。夜間は、夜間取引している S&amp;P500 オプションの価格から市場が見込む水準（先物にあたる値）を求め、前日終値からの比率で動かします。</p>
       <div class="eq">S&amp;P500<sub>夜間</sub> = 前日終値<br>　×（いまの見込み水準 ÷ 前日終値時点の見込み水準）</div>
       <p>インジケーターの値の横に「推定」と出ているものはこの推定値、「前日終値」と出ているものは前日の公式終値で代用している値です。推定値は、その日の公式の終値が出た時点で公式値に置き換わります。</p>
@@ -363,7 +365,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>Data</h3>
       <table>
         <tr><th>Item</th><th>Confirmed</th><th>Realtime</th></tr>
-        <tr><td>VIX</td><td>Cboe official daily close (from 1990)</td><td>Cboe quote, about 15 min delayed, including the overnight session</td></tr>
+        <tr><td>VIX</td><td>Cboe official daily close (from 1990)</td><td>Cboe quote, about 15 min delayed; overnight, while Cboe shows no value, estimated from S&amp;P 500 options</td></tr>
         <tr><td>SKEW</td><td>Cboe official daily close (from 1990)</td><td>Estimated from S&amp;P 500 options</td></tr>
         <tr><td>S&amp;P 500</td><td>Cboe official daily close (from 1975)</td><td>About 15 min delayed in the session; estimated from S&amp;P 500 options overnight</td></tr>
         <tr><td>CAPE</td><td>multpl.com monthly values (revised, from 1871)</td><td>Calculated from the S&amp;P 500 (see "Daily CAPE")</td></tr>
@@ -414,6 +416,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p><b>SKEW:</b> Cboe calculates SKEW only once a day, after the close. So it is recalculated from S&amp;P 500 option quotes with Cboe's published method. The recalculated value does not match the official one exactly, so only its <b>change</b> since the previous close is used:</p>
       <div class="eq">SKEW<sub>estimate</sub> = previous official close<br>　+ (recalculated now − recalculated at the previous close)</div>
       <p>Differences in method show up about equally at the previous close and now, so they cancel out. The value at the close is saved after each session (16:15 to 20:00 ET). Without it, the previous official close is used as is.</p>
+      <p><b>Overnight VIX:</b> Cboe's free data may not show VIX's overnight session right away. Until it does, VIX is moved by the <b>ratio</b> of a VIX recomputed with the same method (30-day variance of S&amp;P 500 options) to its value at the previous close.</p>
+      <div class="eq">VIX<sub>overnight</sub> = previous official close<br>　× (recalculated now ÷ recalculated at the previous close)</div>
       <p><b>Overnight S&amp;P 500:</b> the S&amp;P 500 index is only calculated during the US session. Overnight, the level the market expects (the forward, like a futures price) is worked out from S&amp;P 500 options, which do trade, and the previous close is moved by its ratio:</p>
       <div class="eq">S&amp;P 500<sub>overnight</sub> = previous close<br>　× (expected level now ÷ expected level at the previous close)</div>
       <p>"Estimate" next to an indicator marks these estimates; "Prev. close" marks a value carried from the previous official close. Estimates are replaced by official values once the day's closes are out.</p>
@@ -604,7 +608,7 @@ function renderTop(){
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
   const skTag=ls&&ls.estimate?t("est"):ls&&ls.carried?t("carried"):"";
   $("inds").className=isLive?"live-ut":"";
-  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2)+(L.spx&&L.spx.carried&&L.spx.date===last.n?t("carried"):""),last.cr);
+  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2)+(L.vix&&L.vix.estimate&&L.vix.date===last.n?t("est"):""),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2)+(L.spx&&L.spx.carried&&L.spx.date===last.n?t("carried"):""),last.cr);
 }
 
 /* ---------- daily chart ---------- */
@@ -725,7 +729,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v45";
+const APP_VER="mri-v46";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

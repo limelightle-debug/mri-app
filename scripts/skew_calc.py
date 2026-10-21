@@ -98,10 +98,11 @@ def term_moments(strikes, T):
     sel[k0] = sum(q0) / len(q0)
     sk = sorted(sel)
     e = math.exp(RATE * T)
-    p1 = p2 = p3 = 0.0
+    p0 = p1 = p2 = p3 = 0.0
     for i, k in enumerate(sk):
         dk = (sk[min(i + 1, len(sk) - 1)] - sk[max(i - 1, 0)]) / (1 if i in (0, len(sk) - 1) else 2)
         q, lk = sel[k], math.log(k / F)
+        p0 += q * dk / k ** 2
         p1 += -1 / k ** 2 * q * dk
         p2 += 2 / k ** 2 * (1 - lk) * q * dk
         p3 += 3 / k ** 2 * (2 * lk - lk ** 2) * q * dk
@@ -116,8 +117,10 @@ def term_moments(strikes, T):
     S = (P3 - 3 * P1 * P2 + 2 * P1 ** 3) / var ** 1.5
     puts_bid = sum(1 for k in ks if k < k0 and strikes[k].get("P", (0, 0))[0] > 0)
     calls_bid = sum(1 for k in ks if k > k0 and strikes[k].get("C", (0, 0))[0] > 0)
+    # the term's variance as in Cboe's VIX method (same options)
+    var_vix = 2 / T * e * p0 - (F / k0 - 1) ** 2 / T
     return {"F": round(F, 2), "K0": k0, "n": len(sk), "strikes": len(ks), "putsWithBid": puts_bid,
-            "callsWithBid": calls_bid, "lowK": sk[0], "highK": sk[-1], "S": S}
+            "callsWithBid": calls_bid, "lowK": sk[0], "highK": sk[-1], "S": S, "varVix": var_vix}
 
 
 def main():
@@ -145,6 +148,10 @@ def main():
     w = (T2 - T30) / (T2 - T1)
     S = w * out[0]["S"] + (1 - w) * out[1]["S"]
     skew = 100 - 10 * S
+    # VIX recomputed the same way (30-day interpolation of the two terms' variance); used overnight,
+    # when Cboe's own quote does not show the overnight session, as a ratio to the value at the close
+    v30 = (T1 * out[0]["varVix"] * (T2 - T30) / (T2 - T1) + T2 * out[1]["varVix"] * (T30 - T1) / (T2 - T1)) / T30
+    vixc = 100 * math.sqrt(v30) if v30 > 0 else None
     try:
         q = get(SKEW_Q)["data"]
         official = {"value": q.get("current_price") or q.get("close"), "time": q.get("last_trade_time")}
@@ -159,17 +166,21 @@ def main():
         prev = json.loads(OUT.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         prev = {}
-    anchors, anchors_f = prev.get("anchors", {}), prev.get("anchorsF", {})
+    anchors, anchors_f, anchors_v = prev.get("anchors", {}), prev.get("anchorsF", {}), prev.get("anchorsV", {})
     mins = t.hour * 60 + t.minute
     if t.weekday() < 5 and 16 * 60 + 15 <= mins < 20 * 60:
         anchors[t.strftime("%Y%m%d")] = round(skew, 3)
         anchors_f[t.strftime("%Y%m%d")] = forwards
+        if vixc:
+            anchors_v[t.strftime("%Y%m%d")] = round(vixc, 4)
     anchors = dict(sorted(anchors.items())[-30:])
     anchors_f = dict(sorted(anchors_f.items())[-30:])
+    anchors_v = dict(sorted(anchors_v.items())[-30:])
     res = {"at": datetime.now(NY).isoformat(timespec="seconds"), "quoteTime": t.isoformat(timespec="seconds"),
            "skew": round(skew, 2), "official": official, "weightNear": round(w, 4),
            "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out],
-           "forwards": forwards, "anchors": anchors, "anchorsF": anchors_f}
+           "vix": None if vixc is None else round(vixc, 4),
+           "forwards": forwards, "anchors": anchors, "anchorsF": anchors_f, "anchorsV": anchors_v}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8")
     new = not LOG.exists()

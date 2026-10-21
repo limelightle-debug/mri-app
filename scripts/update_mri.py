@@ -206,6 +206,19 @@ def skew_change(prev):
     return None if j.get("skew") is None else j["skew"] - anchor
 
 
+def vix_ratio(prev):
+    """How much the VIX recomputed from the option quotes has moved since the close of `prev` (ratio)."""
+    try:
+        j = json.loads(SKEW_CALC.read_text(encoding="utf-8"))
+        at = datetime.fromisoformat(j["quoteTime"]).astimezone(NY)
+        base, cur = j.get("anchorsV", {}).get(str(prev)), j.get("vix")
+    except (OSError, ValueError, KeyError):
+        return None
+    if not base or not cur or (datetime.now(NY) - at).total_seconds() > 1800 or session_day(at) <= prev:
+        return None
+    return cur / base
+
+
 def spx_ratio(prev):
     """How much the S&P 500 forward implied by the options has moved since the close of `prev`
     (same expiry), for the hours the index itself does not trade."""
@@ -333,6 +346,17 @@ def build():
     # SKEW is published once a day, after the close. During the session (once VIX has a value for
     # the day), today's SKEW is the last official close moved by how much the SKEW recomputed from
     # the option quotes has changed since that close; without that estimate, the close is carried.
+    # overnight, Cboe's VIX quote may still show the close: then VIX is the close moved by the change in
+    # the VIX recomputed from the option quotes (the same options Cboe uses overnight)
+    lv = live.get("vix", {})
+    if today in vix and lv.get("date") == today:
+        prevv = max(d for d in vix if d < today)
+        if abs(vix[today] - vix[prevv]) < 1e-9:
+            r = vix_ratio(prevv)
+            if r:
+                vix[today] = vix[prevv] * r
+                live["vix"] = {**lv, "value": round(vix[today], 2), "estimate": True, "close": vix[prevv],
+                               "time": now.strftime("%Y-%m-%d %H:%M")}
     if today in vix and today not in skew and skew:
         prev = max(d for d in skew if d < today)
         chg = skew_change(prev)
