@@ -49,16 +49,17 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .panel h2{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--ink2);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .panel h2 span{font-weight:400;color:var(--muted);letter-spacing:0}
 /* MRI */
-.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px}
+.mrirow{display:flex;align-items:baseline;justify-content:flex-end;gap:8px}
 .hero .lab{font-size:11.5px;color:var(--muted);margin-bottom:6px}
-.hero .lab.rl{font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:8px;letter-spacing:.02em}
-.level{display:inline-block;padding:6px 16px;border-radius:20px;font-size:16px;font-weight:700}
-.mrilab{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:26px;line-height:1;letter-spacing:.04em;color:var(--ink2);text-align:right;margin-bottom:6px}
+.hero .lab.rl{font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:6px;letter-spacing:.02em;white-space:nowrap}
+.level{display:inline-block;padding:5px 14px;border-radius:20px;font-size:15px;font-weight:700}
+.mrilab{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:26px;line-height:1;letter-spacing:.04em;color:var(--ink2);text-align:right;margin-bottom:0;font-size:22px}
 .big{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:52px;line-height:.95;font-variant-numeric:tabular-nums;text-align:right}
-.chg{font-family:var(--f-tick);font-stretch:82%;font-size:13px;color:var(--ink2);text-align:right;margin-top:4px}
+.chg{font-family:var(--f-tick);font-stretch:82%;font-size:13px;color:var(--ink2);text-align:right;margin-top:2px}
 .ramp{position:relative;height:18px;border-radius:9px;background:linear-gradient(to right,var(--l1) 10%,var(--l2) 30%,var(--l3) 50%,var(--l4) 70%,var(--l5) 90%)}
 .ramp .mk{position:absolute;top:50%;width:6px;height:26px;background:#fff;border-radius:3px;box-shadow:0 0 10px rgba(255,255,255,.9);transform:translate(-50%,-50%)}
-.ramp-l{position:relative;height:14px;margin-top:6px;font-size:10px;color:var(--muted)}
+.ramp-l{position:relative;height:13px;margin-top:4px;font-size:10px;color:var(--muted)}
 .ramp-l span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .ramp-l span:first-child{transform:none;left:0!important}.ramp-l span:last-child{transform:none;left:auto!important;right:0}
 /* indicators */
@@ -142,10 +143,10 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .sched tr.now td:first-child{color:var(--accent);font-weight:700}
 .sched .dst{font-size:12.5px;color:var(--ink2);margin:0 0 4px;line-height:1.6}
 .sched .note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6}
-.vtitle.paused{align-items:center}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{display:flex;flex-direction:column;line-height:1.35}.vtitle.paused span i{font-style:normal}
-.vtitle{display:flex;align-items:center;gap:10px;margin:-2px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line);min-height:58px;box-sizing:content-box}
-.vtitle b{font-size:24px;font-weight:800;letter-spacing:.04em;line-height:1.1}
-.vtitle span{font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--muted)}
+.vtitle.paused{align-items:center}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{display:flex;flex-direction:column;line-height:1.3}.vtitle.paused span i{font-style:normal}
+.vtitle{display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--line);min-height:38px;box-sizing:content-box}
+.vtitle b{font-size:22px;font-weight:800;letter-spacing:.04em;line-height:1.1}
+.vtitle span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--muted)}
 .vtitle.live b{color:var(--accent)}
 .views{margin-top:14px;display:flex}.views button{flex:1;padding:9px 6px}
 .views small{font-family:var(--f-tick);font-stretch:85%;font-weight:600;margin-left:6px;opacity:.8}
@@ -198,8 +199,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
           <div class="level" id="level">---</div>
         </div>
         <div>
-          <div class="mrilab">MRI</div>
-          <div class="big" id="mri">---</div>
+          <div class="mrirow"><span class="mrilab">MRI</span><span class="big" id="mri">---</span></div>
           <div class="chg" id="chg"></div>
         </div>
       </div>
@@ -750,7 +750,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v57";
+const APP_VER="mri-v58";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
