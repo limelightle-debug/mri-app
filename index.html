@@ -125,6 +125,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .brand{padding-right:96px}
 
 .h2t{font-style:normal}
+.ind .utl{font-family:var(--f-tick);font-stretch:85%;font-size:11.5px;font-weight:600;color:var(--muted);margin:-1px 0 3px}
+.live-ut .utl{color:var(--accent)}
 .ind .ut{font-style:normal;font-family:var(--f-tick);font-stretch:85%;font-size:11.5px;font-weight:600;color:var(--accent);margin-left:8px}
 .sched table{width:100%;border-collapse:collapse;margin-top:2px}
 .sched th{text-align:left;padding:14px 0 6px;font-size:13px;color:var(--ink);font-weight:700}
@@ -579,10 +581,20 @@ function renderTop(){
   // ±1σ and ±2σ of the standard normal distribution: Φ(−2)=2.275%, Φ(−1)=15.866%
   const SIG=[[2.275,"−2σ","2.28%","s2"],[15.866,"−1σ","15.87%","s1"],[84.134,"+1σ","84.13%","s1"],[97.725,"+2σ","97.72%","s2"]];
   // realtime: each indicator's last update (SKEW estimate, VIX quote, CAPE from the S&P 500)
-  const L=isLive&&D.live?D.live:{}, at=o=>{const d=o&&o.date===last.n&&!o.carried?(o.at?new Date(o.at):nyDate(o.time)):null;return d?`<em class="ut">${esc(t("asOfTime",fmtTime(d,{hour:"2-digit",minute:"2-digit"})))}</em>`:""};
-  const UT={skew:at(L.skew),vix:at(L.vix),cape:at(L.spx)};
+  // each indicator's last update, with the date. A confirmed day: VIX's close (16:15 ET), the official SKEW
+  // (about 17:00 ET) and the S&P 500 close (16:00 ET) behind CAPE, or the actual quote times when known.
+  // Realtime: the quote / estimate times; a value carried from the previous close shows that close's time.
+  const L=isLive&&D.live?D.live:{}, LV=D.live||{}, ymdOf=n=>{const x=String(n);return`${x.slice(0,4)}-${x.slice(4,6)}-${x.slice(6,8)}`};
+  const qt=o=>o.at?new Date(o.at):nyDate(o.time);
+  const closeAt=(k,n)=>{const o=LV[k];if(o&&o.date===n&&!o.carried&&!o.estimate&&o.time){const d=qt(o);if(d)return d}
+    return nyDate(`${ymdOf(n)} ${({vix:"16:15",skew:"17:00",spx:"16:00"})[k]}`)};
+  const prevN=isLive&&DAYS.length>1?DAYS[DAYS.length-2].n:null;
+  const stamp=k=>{if(!isLive)return closeAt(k,last.n);const o=L[k];if(o&&o.date===last.n&&!o.carried)return qt(o);return prevN?closeAt(k,prevN):null};
+  const ut=k=>{const d=stamp(k);return d?`<div class="utl">${esc(t("asOfTime",fmtTime(d,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})))}</div>`:""};
+  const UT={skew:ut("skew"),vix:ut("vix"),cape:ut("spx")};
   const row=(k,name,raw,v)=>`<div class="ind">
-    <div class="top"><span class="nm">${name}<small>${raw}</small>${UT[k]||""}</span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
+    <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
+    ${UT[k]||""}
     <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}</div>
     <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}</div>
     <div class="sig">${SIG.map(([x,a,b,c])=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small></div>`).join("")}</div>
@@ -590,6 +602,7 @@ function renderTop(){
     // during the session SKEW is estimated from the option quotes (Cboe publishes it after the close)
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
   const skTag=ls&&ls.estimate?t("est"):ls&&ls.carried?t("carried"):"";
+  $("inds").className=isLive?"live-ut":"";
   $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag,last.sr)+row("vix","VIX",last.vix.toFixed(2),last.vr)+row("cape","Shiller PE (CAPE)",last.cape.toFixed(2)+(L.spx&&L.spx.carried&&L.spx.date===last.n?t("carried"):""),last.cr);
 }
 
@@ -687,7 +700,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v43";
+const APP_VER="mri-v44";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
