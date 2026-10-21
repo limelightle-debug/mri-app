@@ -351,7 +351,7 @@ def build():
         r = spx_ratio(prev)
         spx[today] = spx[prev] * (r or 1)
         live["spx"] = {**live.get("spx", {}), "date": today, "value": round(spx[today], 2),
-                       **({"estimate": True, "close": spx[prev]} if r else {"carried": True})}
+                       **({"estimate": True, "close": spx[prev], "time": now.strftime("%Y-%m-%d %H:%M")} if r else {"carried": True})}
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
