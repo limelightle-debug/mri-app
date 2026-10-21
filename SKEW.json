@@ -1,0 +1,28 @@
+{
+ "timestamp": "2026-10-21 01:27:16",
+ "data": {
+  "symbol": "^SKEW",
+  "security_type": "index",
+  "exchange_id": 5,
+  "current_price": 160.4,
+  "price_change": -1.46,
+  "price_change_percent": -0.9102,
+  "bid": 0.0,
+  "ask": 0.0,
+  "bid_size": 0,
+  "ask_size": 0,
+  "open": 160.4,
+  "high": 160.4,
+  "low": 160.4,
+  "close": 160.4,
+  "prev_day_close": 160.4,
+  "volume": 0,
+  "iv30": 0.0,
+  "iv30_change": 0.0,
+  "iv30_change_percent": null,
+  "seqno": 18017224007,
+  "last_trade_time": "2026-10-20T17:00:21",
+  "tick": "down"
+ },
+ "symbol": "_SKEW"
+}
