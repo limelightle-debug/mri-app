@@ -65,9 +65,9 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ind .nm{font-size:13px;font-weight:700;color:var(--ink2)}
 .ind .nm small{font-family:var(--f-tick);font-stretch:82%;font-weight:600;color:var(--muted);font-size:13px;margin-left:8px}
 .ind .pc{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:16px}
-.ann{position:relative;height:14px;margin-bottom:2px}
+.ann{position:relative;height:14px;margin:13px 0 2px}
 .ann span{position:absolute;transform:translateX(-50%);font-size:9px;color:var(--muted);font-style:italic;white-space:nowrap}
-.ann span.b{font-weight:700;color:var(--ink2)}
+.ann span.b{font-weight:700;color:var(--ink2);top:-13px;font-size:10px}
 .track{position:relative;height:24px;background:#0c0c22;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
 .track .fill{position:absolute;inset:0 auto 0 0;opacity:.85}
 .track .sl{position:absolute;top:0;bottom:0;width:1px;z-index:2;opacity:.9}
@@ -600,7 +600,7 @@ function renderTop(){
   const row=(k,name,raw,v)=>`<div class="ind">
     <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
     ${UT[k]||""}
-    <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}</div>
+    <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}<span style="left:50%">Neutral</span></div>
     <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}</div>
     <div class="sig">${SIG.map(([x,a,b,c])=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small></div>`).join("")}</div>
   </div>`;
@@ -729,7 +729,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v48";
+const APP_VER="mri-v49";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
