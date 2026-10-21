@@ -238,7 +238,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <li><b>確定値：</b>3指標の公式の終値がそろった日までで計算した値です。SKEW の公式値は米国市場の終了後（米東部17時ごろ）に1日1回だけ出るので、それが出た日までが確定です。</li>
         <li><b>リアルタイム：</b>確定値に、いま進んでいる取引日の値を加えて計算した値です。米国市場の取引時間中と、VIX の夜間取引の時間に出ます。一部は推定です（下の「リアルタイムの推定」）。</li>
       </ul>
-      <p>SKEW の公式値が出てから夜間取引が始まるまで（米東部17時ごろ〜20:15）と週末は、確定値しかないので切り替えは出ません。チャート・80を超えた日の一覧も、選んでいる方に合わせて表示します。</p>
+      <p>SKEW の公式値が出てから夜間の値が届くまで（米東部17時ごろ〜20:30ごろ）と週末は、確定値しかないので切り替えは出ません。チャート・80を超えた日の一覧も、選んでいる方に合わせて表示します。</p>
 
       <h3>使うデータ</h3>
       <table>
@@ -252,10 +252,10 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
       <h3>更新のタイミング</h3>
       <ul>
-        <li><b>米国市場の取引時間（米東部 9:15〜16:15）：</b>5分ごと</li>
+        <li><b>米国市場の取引時間（米東部 9:15〜17:20）：</b>5分ごと。取引終了（16:15）のあとも、終値と SKEW の公式値（17:00ごろ）が入るまで続けます。</li>
         <li><b>VIX の夜間取引（米東部 20:15〜翌9:15、日〜木曜の夜）：</b>15分ごと</li>
-        <li><b>取引終了後：</b>1回更新して、終値と SKEW の公式値を取り込みます。</li>
       </ul>
+      <p>Cboe の値は約15分遅れです。そのため画面に出るのは、取引の開始から15分ほどあとからです（夜間は米東部20:30ごろから）。</p>
       <p class="note">日本時間は、米国の夏時間中は米東部＋13時間、冬時間中は＋14時間です。</p>
 
       <h3>月ごとの値</h3>
@@ -355,7 +355,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <li><b>Confirmed:</b> calculated up to the last day for which all three official closes are in. Cboe publishes SKEW only once a day, after the US close (around 17:00 ET), so a day is confirmed once that value is out.</li>
         <li><b>Realtime:</b> the confirmed history plus the trading day in progress. Shown during the US session and VIX's overnight session. Some values are estimates (see "Realtime estimates").</li>
       </ul>
-      <p>Between the official SKEW and the start of the overnight session (about 17:00 to 20:15 ET) and at weekends there is only the confirmed value, so the switch is hidden. The chart and the list of days above 80 follow the selected view.</p>
+      <p>Between the official SKEW and the first overnight values (about 17:00 to 20:30 ET) and at weekends there is only the confirmed value, so the switch is hidden. The chart and the list of days above 80 follow the selected view.</p>
 
       <h3>Data</h3>
       <table>
@@ -369,10 +369,10 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
       <h3>When it updates</h3>
       <ul>
-        <li><b>US session (9:15 to 16:15 ET):</b> every 5 minutes</li>
+        <li><b>US session (9:15 to 17:20 ET):</b> every 5 minutes, continuing after the 16:15 close until the closes and the official SKEW (about 17:00) are in</li>
         <li><b>VIX overnight session (20:15 to 9:15 ET, Sunday to Thursday nights):</b> every 15 minutes</li>
-        <li><b>After the close:</b> one update that brings in the closes and the official SKEW</li>
       </ul>
+      <p>Cboe's values are about 15 minutes delayed, so they show up about 15 minutes after trading starts (around 20:30 ET overnight).</p>
 
       <h3>Monthly values</h3>
       <p>The calculation works by month. Each month's value is the <b>close on its last trading day</b>. CAPE uses multpl.com's value for each month.</p>
@@ -480,20 +480,20 @@ const T={
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
-   rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:15 → 翌 9:15","月〜金 9:15 → 22:15","月〜金 10:15 → 23:15"],
-         ["取引時間","5分ごと","月〜金 9:15 → 16:15","月〜金 22:15 → 翌 5:15","月〜金 23:15 → 翌 6:15"],
-         ["停止","確定値のみ","月〜木 16:15 → 20:15<br>金 16:15 → 日 20:15","火〜金 5:15 → 9:15<br>土 5:15 → 月 9:15","火〜金 6:15 → 10:15<br>土 6:15 → 月 10:15"]],
-   note:"その日の確定値は、SKEW の公式値が出る ET 17:00ごろ（日本時間 夏 6:00・冬 7:00ごろ）に入ります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
+   rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:30 → 翌 9:30","月〜金 9:30 → 22:30","月〜金 10:30 → 23:30"],
+         ["取引時間","5分ごと","月〜金 9:30 → 17:00","月〜金 22:30 → 翌 6:00","月〜金 23:30 → 翌 7:00"],
+         ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
+   note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
  en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
-   rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:15 → 9:15","Mon–Fri 9:15 → 22:15","Mon–Fri 10:15 → 23:15"],
-         ["Session","Every 5 min","Mon–Fri 9:15 → 16:15","Mon–Fri 22:15 → 5:15","Mon–Fri 23:15 → 6:15"],
-         ["Paused","Confirmed only","Mon–Thu 16:15 → 20:15<br>Fri 16:15 → Sun 20:15","Tue–Fri 5:15 → 9:15<br>Sat 5:15 → Mon 9:15","Tue–Fri 6:15 → 10:15<br>Sat 6:15 → Mon 10:15"]],
-   note:"The day's confirmed value arrives with the official SKEW around 17:00 ET (about 6:00 Japan time in US summer, 7:00 in winter). US daylight time runs from the second Sunday of March to the first Sunday of November. No trading on US holidays."},asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
+   rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:30 → 9:30","Mon–Fri 9:30 → 22:30","Mon–Fri 10:30 → 23:30"],
+         ["Session","Every 5 min","Mon–Fri 9:30 → 17:00","Mon–Fri 22:30 → 6:00","Mon–Fri 23:30 → 7:00"],
+         ["Paused","Confirmed only","Mon–Thu 17:00 → 20:30<br>Fri 17:00 → Sun 20:30","Tue–Fri 6:00 → 9:30<br>Sat 6:00 → Mon 9:30","Tue–Fri 7:00 → 10:30<br>Sat 7:00 → Mon 10:30"]],
+   note:"Times are when values show on screen. Cboe's values are about 15 minutes delayed, so they follow the start and end of trading by about 15 minutes. After the close, realtime continues until the official SKEW (about 17:00 ET), then switches to the day's confirmed value. US daylight time runs from the second Sunday of March to the first Sunday of November. No trading on US holidays."},asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
   loadFail:"Could not load the data. Please reopen in a while.",loadFailShort:"Loading failed",switchTo:"日本語"}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
 // times: Japanese in Japan time; English in New York time (the market's), marked ET
@@ -679,14 +679,15 @@ function nyOffset(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{time
   return Math.round((Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)-d.getTime())/36e5)}
 // the next start of realtime: VIX's overnight session at 20:15 ET (Sun-Thu), or 9:15 ET if it is before that on a weekday
 function nextStart(now=new Date()){
-  for(let k=0;k<7*96;k++){const d=new Date(Math.ceil(now.getTime()/9e5)*9e5+k*9e5),p=nyParts(d);
-    if(!["Sat","Sun"].includes(p.wd)&&p.min>=555&&p.min<975||vixNight(d))return d}
+  for(let k=0;k<7*96;k++){const d=new Date(Math.ceil(now.getTime()/9e5)*9e5+k*9e5),p=nyParts(d),wk=!["Sat","Sun"].includes(p.wd);
+    // on screen (values 15 min delayed): 20:30 ET Sun-Thu to 9:30 ET, then the session to about 17:00 ET
+    if((wk&&p.min<1020)||(["Sun","Mon","Tue","Wed","Thu"].includes(p.wd)&&p.min>=1230))return d}
   return now}
 
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v42";
+const APP_VER="mri-v43";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
