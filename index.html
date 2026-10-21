@@ -62,7 +62,8 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ramp-l span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .ramp-l span:first-child{transform:none;left:0!important}.ramp-l span:last-child{transform:none;left:auto!important;right:0}
 /* indicators */
-.ind{margin-bottom:12px}.ind:last-child{margin-bottom:0}
+.ind{margin-bottom:14px}.ind:last-child{margin-bottom:0}
+.ind+.ind{border-top:1px solid var(--line);padding-top:12px}
 .ind .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
 .ind .nm{font-size:13px;font-weight:700;color:var(--ink2)}
 .ind .nm small{font-family:var(--f-tick);font-stretch:82%;font-weight:600;color:var(--muted);font-size:13px;margin-left:8px}
@@ -749,7 +750,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v56";
+const APP_VER="mri-v57";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
