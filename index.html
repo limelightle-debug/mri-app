@@ -719,7 +719,7 @@ function renderIntra(){
   const ds=String(I.day),day=`${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
   const pd=new Date(Date.UTC(+ds.slice(0,4),+ds.slice(4,6)-1,+ds.slice(6,8))-864e5).toISOString().slice(0,10);
   const t0=nyDate(`${pd} 20:15`),t1=nyDate(`${day} 17:00`);
-  const W=Math.max(300,box.clientWidth-28),H=Math.round(W*.44)+12,ML=2,MR=30,MT=8,MB=34,PW=W-ML-MR,PH=H-MT-MB;
+  const W=Math.max(300,box.clientWidth-28),H=Math.round(W*.66)+12,ML=2,MR=30,MT=8,MB=34,PW=W-ML-MR,PH=H-MT-MB;
   const vs=P.map(p=>p.v).concat(pc!=null?[pc]:[]);let lo=Math.min(...vs),hi=Math.max(...vs);
   const pad=Math.max(.01,(hi-lo)*.25);lo=Math.max(0,lo-pad);hi=Math.min(1,hi+pad);
   const x=d=>ML+PW*Math.min(1,Math.max(0,(d-t0)/(t1-t0))),y=d3.scaleLinear().domain([lo,hi]).range([MT+PH,MT]);
@@ -755,7 +755,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v61";
+const APP_VER="mri-v62";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
