@@ -145,6 +145,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .sched .note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6}
 .vtitle.paused{align-items:center}.vtitle.paused b{color:var(--muted)}.vtitle.paused span{display:flex;flex-direction:column;line-height:1.3}.vtitle.paused span i{font-style:normal}
 .ih{align-items:baseline}.ilast{display:flex;align-items:baseline;gap:6px;font-family:var(--f-tick);font-stretch:85%;font-size:12px}.ilast b{font-size:20px;font-weight:700;letter-spacing:0}
+#t-mri.gray > section:not(#sched){filter:grayscale(1)}
 .vtitle{display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--line);min-height:38px;box-sizing:content-box}
 .vtitle b{font-size:22px;font-weight:800;letter-spacing:.04em;line-height:1.1}
 .vtitle span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--muted)}
@@ -583,6 +584,8 @@ function renderTop(){
   const isLive=hasLive()&&last.n===liveDay();
   {const tm=fmtTime(new Date(D.updatedAt),{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
    const paused=state.view!=="close"&&!isLive;
+   // realtime paused: the values shown are the last confirmed ones, so no colour
+   $("t-mri").classList.toggle("gray",paused);
    $("vtitle").className="vtitle"+(isLive?" live":paused?" paused":"");
    $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":vixNight()?t("nightTag"):""}</span>`
      :paused?`<b>${t("realtime")}</b><span><i>${t("paused")}</i><i>${esc(t("nextStart",fmtTime(nextStart(),{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"})))}</i></span>`
@@ -755,7 +758,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v62";
+const APP_VER="mri-v63";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
