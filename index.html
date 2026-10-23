@@ -298,8 +298,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
       <h3>日々の CAPE</h3>
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
-      <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= 月初からその日までの S&amp;P500 終値の平均 ÷ E10<sub>月</sub></div>
-      <p>月末の日には、その月の CAPE と一致します。当月はまだ CAPE が確定していないので、E10 には<b>最後に確定した月（前月）の E10</b> を使います。multpl.com の当月の値は更新時刻が決まっていない（米国の引けから数時間後）ため、計算には使いません。当日（リアルタイム）も同じ計算で、その日の S&amp;P500 を平均に加えます。どの日も同じ計算なので、翌日の値が加わっても、確定した日の CAPE は変わりません。</p>
+      <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= その日の S&amp;P500 終値 ÷ E10<sub>月</sub></div>
+      <p>その日の株価で計算するので、S&amp;P500 が動けば CAPE も同じ割合で動きます（月次の CAPE は月平均の株価で計算するため、月末の日の値とは一致しません）。当月はまだ CAPE が確定していないので、E10 には<b>最後に確定した月（前月）の E10</b> を使います。multpl.com の当月の値は更新時刻が決まっていない（米国の引けから数時間後）ため、計算には使いません。当日（リアルタイム）は、その時点の S&amp;P500 で計算します。</p>
       <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。また、multpl.com が表示している当月の CAPE とも、E10 の扱いの違いでわずかに異なることがあります。月が替わり multpl.com で前月の値が確定すると（その月の株価が Cboe の月平均終値と一致した時点）、前月の各日の CAPE はその値で計算し直されます。確定は月末の取引日から数時間後以降（金曜が月末なら日本時間の土曜朝以降）で、それまでは前月も前々月の E10 のまま計算します。</p>
 
       <h3>リアルタイムの推定</h3>
@@ -416,8 +416,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
       <h3>Daily CAPE</h3>
       <p>CAPE is only published monthly, so the daily value is calculated from the S&amp;P 500's daily closes:</p>
-      <div class="eq">E10<sub>month</sub> (10-year average earnings)<br>　= the month's average S&amp;P 500 close ÷ the month's CAPE</div><div class="eq">CAPE<sub>day</sub><br>　= average S&amp;P 500 close from the start of the month to that day ÷ E10<sub>month</sub></div>
-      <p>On the month's last day it equals the month's CAPE. The current month's CAPE is not final yet, so its E10 is <b>that of the last completed month</b>. multpl.com's current-month figures update at no fixed time (hours after the US close), so they are not used. Today (realtime) is calculated the same way, with today's S&amp;P 500 added to the average. Because every day uses the same method, a confirmed day's CAPE does not change when the next day arrives.</p>
+      <div class="eq">E10<sub>month</sub> (10-year average earnings)<br>　= the month's average S&amp;P 500 close ÷ the month's CAPE</div><div class="eq">CAPE<sub>day</sub><br>　= that day's S&amp;P 500 close ÷ E10<sub>month</sub></div>
+      <p>Since it uses the day's price, CAPE moves in proportion to the S&amp;P 500 (the monthly CAPE uses the month's average price, so it does not equal the value on the month's last day). The current month's CAPE is not final yet, so its E10 is <b>that of the last completed month</b>. multpl.com's current-month figures update at no fixed time (hours after the US close), so they are not used. Today (realtime) uses the S&amp;P 500 at that moment.</p>
       <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. They can also differ slightly from the current-month CAPE shown on multpl.com, because E10 is handled differently. Once multpl.com finalises a month (when its price for the month equals Cboe's average close), that month's daily CAPE values are recalculated with it. That comes hours after the month's last close (on Saturday morning Japan time when the month ends on a Friday); until then, that month also keeps the E10 of the month before.</p>
 
       <h3>Realtime estimates</h3>
@@ -758,7 +758,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v66";
+const APP_VER="mri-v67";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

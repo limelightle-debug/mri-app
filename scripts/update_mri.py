@@ -9,7 +9,7 @@ Method (『VIXの声を聴け』, 第一章):
 As in the MRI workbook, today's value is the current month's row, so the 120 months include it;
 history is scored the same way, each day as its month's row. VIX and SKEW are Cboe's month-end
 closes; CAPE is multpl.com's monthly table (revised values) for completed months. A day's CAPE is
-the month's average S&P 500 close so far divided by that month's E10; the current month uses the
+that day's S&P 500 close divided by that month's E10; the current month uses the
 last completed month's E10, so multpl.com's current-month figures are not used.
 
 Sources: Cboe (VIX and SKEW history, delayed quotes for VIX, SKEW and the S&P 500), multpl.com
@@ -428,22 +428,16 @@ def build():
     spx_me = {m: v for m, v in month_ends(spx).items() if m <= cur_m}
     ind_spx = Indicator(spx_me, False, False)
 
-    # daily CAPE: the month's average S&P 500 close so far divided by the month's E10
-    # (E10 = month average / month-end CAPE; for the current month, the last completed month's);
-    # at a completed month's end it equals that month's CAPE.
-    run = {}
+    # daily CAPE: the day's S&P 500 close divided by the month's E10
+    # (E10 = month average / month CAPE; for the current month, the last completed month's)
     rows = []
     for d in sorted(set(vix) & set(skew) & set(spx)):
         m = d // 100
         if m not in months:
             continue
-        acc = run.setdefault(m, [0.0, 0])
-        acc[0] += spx[d]
-        acc[1] += 1
-        e10 = e10_m.get(m, e10_cur)
-        # every day the same way, today included, so a day's value does not change when the next
-        # day arrives
-        cape = (acc[0] / acc[1]) / e10
+        # the day's CAPE: that day's close over the month's E10 (like multpl.com's current value), so it
+        # moves with the index; every day the same way, today included
+        cape = spx[d] / e10_m.get(m, e10_cur)
         vr, sr, cr = ind["vix"].score(m, vix[d]), ind["skew"].score(m, skew[d]), ind["cape"].score(m, cape)
         pr = ind_spx.score(m, spx[d])
         if None in (vr, sr, cr):
