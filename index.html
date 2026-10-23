@@ -719,7 +719,7 @@ function renderIntra(){
   const ds=String(I.day),day=`${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
   const pd=new Date(Date.UTC(+ds.slice(0,4),+ds.slice(4,6)-1,+ds.slice(6,8))-864e5).toISOString().slice(0,10);
   const t0=nyDate(`${pd} 20:15`),t1=nyDate(`${day} 17:00`);
-  const W=Math.max(300,box.clientWidth-28),H=Math.round(W*.44),ML=2,MR=30,MT=8,MB=22,PW=W-ML-MR,PH=H-MT-MB;
+  const W=Math.max(300,box.clientWidth-28),H=Math.round(W*.44)+12,ML=2,MR=30,MT=8,MB=34,PW=W-ML-MR,PH=H-MT-MB;
   const vs=P.map(p=>p.v).concat(pc!=null?[pc]:[]);let lo=Math.min(...vs),hi=Math.max(...vs);
   const pad=Math.max(.01,(hi-lo)*.25);lo=Math.max(0,lo-pad);hi=Math.min(1,hi+pad);
   const x=d=>ML+PW*Math.min(1,Math.max(0,(d-t0)/(t1-t0))),y=d3.scaleLinear().domain([lo,hi]).range([MT+PH,MT]);
@@ -727,10 +727,13 @@ function renderIntra(){
   [[0,.2,"l1"],[.2,.4,"l2"],[.4,.6,"l3"],[.6,.8,"l4"],[.8,1,"l5"]].forEach(([a,b,c])=>{const A=Math.max(a,lo),B=Math.min(b,hi);if(B>A)g+=`<rect x="${ML}" y="${y(B)}" width="${PW}" height="${y(A)-y(B)}" fill="${COL[c]}" opacity=".13"/>`});
   y.ticks(4).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${+(v*100).toFixed(1)}</text>`});
   // time marks every 3 hours (Japan time in Japanese, New York time in English)
-  // on the hour, every 3 hours (0, 3, 6 ... in the shown time zone)
+  // hours every 2 hours (in the shown time zone), and the date under the start and under midnight
+  const md=d=>fmtTime(d,{month:"numeric",day:"numeric"}).replace(" ET","");
+  g+=`<text class="ax" x="${ML}" y="${H-4}" text-anchor="start" style="fill:var(--ink2)">${md(t0)}</text>`;
   for(let d=new Date(Math.ceil(t0.getTime()/36e5)*36e5);d<t1;d=new Date(d.getTime()+36e5)){
-    const hh=+fmtTime(d,{hour:"numeric",hourCycle:"h23"}).replace(/\D/g,"");if(hh%3||d-t0<36e5)continue;
-    g+=`<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${MT}" y2="${MT+PH}" opacity=".35"/><text class="ax" x="${x(d)}" y="${H-6}" text-anchor="middle">${hh}:00</text>`}
+    const hh=+fmtTime(d,{hour:"numeric",hourCycle:"h23"}).replace(/\D/g,"");if(hh%2||d-t0<30*6e4)continue;
+    g+=`<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${MT}" y2="${MT+PH}" opacity="${hh?.3:.7}"/><text class="ax" x="${x(d)}" y="${MT+PH+13}" text-anchor="middle">${hh}</text>`;
+    if(!hh)g+=`<text class="ax" x="${x(d)}" y="${H-4}" text-anchor="middle" style="fill:var(--ink2)">${md(d)}</text>`}
   if(pc!=null)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(pc)}" y2="${y(pc)}" stroke="${COL.muted}" stroke-dasharray="4 4" stroke-width="1.2"/><text class="ax" x="${ML+PW-4}" y="${y(pc)-5}" text-anchor="end">${esc(t("intraPrev",(pc*100).toFixed(2)))}</text>`;
   const path=P.map((p,i)=>(i?"L":"M")+x(p.t).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
   const lp=P[P.length-1];
@@ -752,7 +755,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v60";
+const APP_VER="mri-v61";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
