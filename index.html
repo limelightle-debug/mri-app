@@ -738,7 +738,7 @@ function renderIntra(){
     const hh=+fmtTime(d,{hour:"numeric",hourCycle:"h23"}).replace(/\D/g,"");if(hh%2||d-t0<30*6e4)continue;
     g+=`<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${MT}" y2="${MT+PH}" opacity="${hh?.3:.7}"/><text class="ax" x="${x(d)}" y="${MT+PH+13}" text-anchor="middle">${hh}</text>`;
     if(!hh)g+=`<text class="ax" x="${x(d)}" y="${H-4}" text-anchor="middle" style="fill:var(--ink2)">${md(d)}</text>`}
-  if(pc!=null)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(pc)}" y2="${y(pc)}" stroke="${COL.muted}" stroke-dasharray="4 4" stroke-width="1.2"/><text class="ax" x="${W}" y="${y(pc)+4}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${(pc*100).toFixed(2)}</text><line x1="${W-t("intraPrev").length*(LANG==="ja"?11.5:6.2)-22}" x2="${W-t("intraPrev").length*(LANG==="ja"?11.5:6.2)-8}" y1="${H-8}" y2="${H-8}" stroke="${COL.muted}" stroke-dasharray="4 3" stroke-width="1.2"/><text class="ax" x="${W}" y="${H-4}" text-anchor="end" style="fill:var(--ink2)">${esc(t("intraPrev"))}</text>`;
+  if(pc!=null)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(pc)}" y2="${y(pc)}" stroke="${COL.muted}" stroke-dasharray="4 4" stroke-width="1.2"/><text class="ax" x="${W}" y="${y(pc)+4}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${(pc*100).toFixed(2)}</text><line x1="${W-textW(t("intraPrev"))-22}" x2="${W-textW(t("intraPrev"))-5}" y1="${H-8}" y2="${H-8}" stroke="${COL.muted}" stroke-dasharray="4 3" stroke-width="1.2"/><text class="ax" x="${W}" y="${H-4}" text-anchor="end" style="fill:var(--ink2)">${esc(t("intraPrev"))}</text>`;
   const path=P.map((p,i)=>(i?"L":"M")+x(p.t).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
   const lp=P[P.length-1];
   // the latest value and its time next to the last point (to its left once it nears the right edge)
@@ -747,6 +747,8 @@ function renderIntra(){
   const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("intraTitle")}">${g}<path d="${path}" fill="none" stroke="${COL.ink}" stroke-width="2" stroke-linejoin="round"/>${P.length<60?P.map(p=>`<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2" fill="${COL.ink}"/>`).join(""):""}<circle cx="${x(lp.t)}" cy="${y(lp.v)}" r="4" fill="${colorOf(lp.v)}" stroke="var(--panel)" stroke-width="1.5"/>${lastLab}</svg>`;
   box.innerHTML=`<h2 class="ih"><i class="h2t">${t("intraTitle")}</i> <span class="ilast"><b style="color:${colorOf(lp.v)}">${(lp.v*100).toFixed(2)}</b>${esc(fmtTime(lp.t,{hour:"2-digit",minute:"2-digit"}))}</span></h2><div class="chart">${svg}</div><p class="pnote" style="margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t("intraNote",fmtTime(t0,{hour:"numeric",minute:"2-digit"}),fmtTime(t1,{hour:"numeric",minute:"2-digit"})))}</p>`;
 }
+// width of a tick label (11px tick font), to place things next to it
+let _tc;function textW(str){_tc=_tc||document.createElement("canvas").getContext("2d");_tc.font=`11px ${getComputedStyle(document.documentElement).getPropertyValue("--f-tick")||"sans-serif"}`;try{_tc.fontStretch="semi-condensed"}catch(e){}return _tc.measureText(str).width}
 function nyOffset(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(d).forEach(x=>p[x.type]=x.value);
   return Math.round((Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)-d.getTime())/36e5)}
 // the next start of realtime: VIX's overnight session at 20:15 ET (Sun-Thu), or 9:15 ET if it is before that on a weekday
@@ -759,7 +761,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v68";
+const APP_VER="mri-v69";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
