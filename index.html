@@ -727,8 +727,10 @@ function renderIntra(){
   [[0,.2,"l1"],[.2,.4,"l2"],[.4,.6,"l3"],[.6,.8,"l4"],[.8,1,"l5"]].forEach(([a,b,c])=>{const A=Math.max(a,lo),B=Math.min(b,hi);if(B>A)g+=`<rect x="${ML}" y="${y(B)}" width="${PW}" height="${y(A)-y(B)}" fill="${COL[c]}" opacity=".13"/>`});
   y.ticks(4).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${+(v*100).toFixed(1)}</text>`});
   // time marks every 3 hours (Japan time in Japanese, New York time in English)
-  for(let k=1;k<7;k++){const d=new Date(t0.getTime()+k*3*36e5);if(d>=t1)break;const lab=fmtTime(d,{hour:"2-digit",minute:"2-digit"}).replace(" ET","");
-    g+=`<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${MT}" y2="${MT+PH}" opacity=".35"/><text class="ax" x="${x(d)}" y="${H-6}" text-anchor="middle">${lab}</text>`}
+  // on the hour, every 3 hours (0, 3, 6 ... in the shown time zone)
+  for(let d=new Date(Math.ceil(t0.getTime()/36e5)*36e5);d<t1;d=new Date(d.getTime()+36e5)){
+    const hh=+fmtTime(d,{hour:"numeric",hourCycle:"h23"}).replace(/\D/g,"");if(hh%3||d-t0<36e5)continue;
+    g+=`<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${MT}" y2="${MT+PH}" opacity=".35"/><text class="ax" x="${x(d)}" y="${H-6}" text-anchor="middle">${hh}:00</text>`}
   if(pc!=null)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(pc)}" y2="${y(pc)}" stroke="${COL.muted}" stroke-dasharray="4 4" stroke-width="1.2"/><text class="ax" x="${ML+PW-4}" y="${y(pc)-5}" text-anchor="end">${esc(t("intraPrev",(pc*100).toFixed(2)))}</text>`;
   const path=P.map((p,i)=>(i?"L":"M")+x(p.t).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
   const lp=P[P.length-1];
@@ -750,7 +752,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v59";
+const APP_VER="mri-v60";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
