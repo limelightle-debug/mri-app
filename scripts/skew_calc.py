@@ -167,6 +167,18 @@ def main():
     except (OSError, ValueError):
         prev = {}
     anchors, anchors_f, anchors_v = prev.get("anchors", {}), prev.get("anchorsF", {}), prev.get("anchorsV", {})
+    # a snapshot with broken quotes can throw the result far off (once, SKEW 122 between two 149s): a jump
+    # of more than 6 SKEW points or 15% in VIX from the last result within 3 hours keeps the last result
+    rejected = None
+    try:
+        pt = datetime.fromisoformat(prev["quoteTime"]).astimezone(NY)
+        recent = abs((t - pt).total_seconds()) < 3 * 3600 and prev.get("skew") is not None
+    except (KeyError, ValueError):
+        recent = False
+    if recent and (abs(skew - prev["skew"]) > 6 or (vixc and prev.get("vix") and abs(vixc / prev["vix"] - 1) > .15)):
+        rejected = {"quoteTime": t.isoformat(timespec="seconds"), "skew": round(skew, 2), "vix": vixc and round(vixc, 4)}
+        skew, vixc, forwards = prev["skew"], prev.get("vix"), prev.get("forwards", forwards)
+        t = pt
     mins = t.hour * 60 + t.minute
     if t.weekday() < 5 and 16 * 60 + 15 <= mins < 20 * 60:
         anchors[t.strftime("%Y%m%d")] = round(skew, 3)
@@ -180,7 +192,8 @@ def main():
            "skew": round(skew, 2), "official": official, "weightNear": round(w, 4),
            "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out],
            "vix": None if vixc is None else round(vixc, 4),
-           "forwards": forwards, "anchors": anchors, "anchorsF": anchors_f, "anchorsV": anchors_v}
+           "forwards": forwards, "anchors": anchors, "anchorsF": anchors_f, "anchorsV": anchors_v,
+           **({"rejected": rejected} if rejected else {})}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8")
     new = not LOG.exists()

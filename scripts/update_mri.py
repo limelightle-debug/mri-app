@@ -461,6 +461,10 @@ def build():
             pts[-1] = pt
         else:
             pts.append(pt)
+        # drop a lone spike (a point 8+ MRI points away from both neighbours, which agree with each other)
+        intra["points"] = [q for i, q in enumerate(pts) if not (0 < i < len(pts) - 1
+                           and abs(pts[i - 1][1] - pts[i + 1][1]) < .03
+                           and min(abs(q[1] - pts[i - 1][1]), abs(q[1] - pts[i + 1][1])) > .08)]
     if intra:
         data["intraday"] = intra
     if refreshed:
