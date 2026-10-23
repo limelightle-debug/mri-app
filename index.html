@@ -299,8 +299,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>日々の CAPE</h3>
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
       <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= 月初からその日までの S&amp;P500 終値の平均 ÷ E10<sub>月</sub></div>
-      <p>月末の日には、その月の CAPE と一致します。当月の E10 には multpl.com の当月の株価 ÷ CAPE を使います。当日（リアルタイム）も同じ計算で、その日の S&amp;P500 を平均に加えます。どの日も同じ計算なので、翌日の値が加わっても、確定した日の CAPE は変わりません。</p>
-      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。また、multpl.com が表示している当月の CAPE とも、株価の平均の取り方の違いでわずかに異なることがあります。</p>
+      <p>月末の日には、その月の CAPE と一致します。当月はまだ CAPE が確定していないので、E10 には<b>最後に確定した月（前月）の E10</b> を使います。multpl.com の当月の値は更新時刻が決まっていない（米国の引けから数時間後）ため、計算には使いません。当日（リアルタイム）も同じ計算で、その日の S&amp;P500 を平均に加えます。どの日も同じ計算なので、翌日の値が加わっても、確定した日の CAPE は変わりません。</p>
+      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。また、multpl.com が表示している当月の CAPE とも、E10 の扱いの違いでわずかに異なることがあります。月が替わって前月の CAPE が確定すると、その月の各日の CAPE はその値で計算し直されます。</p>
 
       <h3>リアルタイムの推定</h3>
       <p><b>SKEW：</b>Cboe は SKEW を1日1回、取引終了後にしか計算しません。そこで、S&amp;P500 オプションの気配値から、Cboe が公開している計算方法で SKEW を計算し直します。自分で計算した値は公式値と完全には一致しないため、前日終値からの<b>変化分</b>だけを使います。</p>
@@ -320,7 +320,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <li><b>その後の月：</b>改定された月の値は、その後120か月の10年平均に入ります。さらにそこで出た乖離率が、その後の乖離率の平均と標準偏差に入ります。このため、改定された月から最長239か月後までの CAPE のリスク値と MRI が少しずつ変わります。</li>
         <li><b>それより前の月：</b>改定された月の値を使わないので変わりません。</li>
       </ul>
-      <p>過去に見た MRI の値と、いまチャートに出る同じ日の値が一致しないことがあるのはこのためです。改定前の値で記録した表とも、改定された月以降でずれていきます。当月の値も、multpl.com が当月の株価や CAPE を更新すると少し動きます。</p>
+      <p>過去に見た MRI の値と、いまチャートに出る同じ日の値が一致しないことがあるのはこのためです。改定前の値で記録した表とも、改定された月以降でずれていきます。当月の各日の値も、月が替わってその月の CAPE が確定したときに少し動きます。</p>
 
       <h3>リスクレベルと目印</h3>
       <table>
@@ -417,8 +417,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>Daily CAPE</h3>
       <p>CAPE is only published monthly, so the daily value is calculated from the S&amp;P 500's daily closes:</p>
       <div class="eq">E10<sub>month</sub> (10-year average earnings)<br>　= the month's average S&amp;P 500 close ÷ the month's CAPE</div><div class="eq">CAPE<sub>day</sub><br>　= average S&amp;P 500 close from the start of the month to that day ÷ E10<sub>month</sub></div>
-      <p>On the month's last day it equals the month's CAPE. For the current month, E10 is multpl.com's price for the month ÷ its CAPE. Today (realtime) is calculated the same way, with today's S&amp;P 500 added to the average. Because every day uses the same method, a confirmed day's CAPE does not change when the next day arrives.</p>
-      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. They can also differ slightly from the current-month CAPE shown on multpl.com, because the price average is taken differently.</p>
+      <p>On the month's last day it equals the month's CAPE. The current month's CAPE is not final yet, so its E10 is <b>that of the last completed month</b>. multpl.com's current-month figures update at no fixed time (hours after the US close), so they are not used. Today (realtime) is calculated the same way, with today's S&amp;P 500 added to the average. Because every day uses the same method, a confirmed day's CAPE does not change when the next day arrives.</p>
+      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. They can also differ slightly from the current-month CAPE shown on multpl.com, because E10 is handled differently. Once a month ends and its CAPE is final, that month's daily CAPE values are recalculated with it.</p>
 
       <h3>Realtime estimates</h3>
       <p><b>SKEW:</b> Cboe calculates SKEW only once a day, after the close. So it is recalculated from S&amp;P 500 option quotes with Cboe's published method. The recalculated value does not match the official one exactly, so only its <b>change</b> since the previous close is used:</p>
@@ -438,7 +438,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <li><b>Later months:</b> the revised value enters the 10-year averages of the next 120 months, and the deviations from those enter the means and standard deviations after that. CAPE risk and MRI for up to 239 months after the revised month shift slightly.</li>
         <li><b>Earlier months:</b> unchanged, since they do not use the revised value.</li>
       </ul>
-      <p>That is why an MRI value seen earlier may not match the same day on the chart now, and why tables kept with pre-revision values drift from the revised month on. The current month also moves a little when multpl.com updates its price or CAPE for the month.</p>
+      <p>That is why an MRI value seen earlier may not match the same day on the chart now, and why tables kept with pre-revision values drift from the revised month on. The current month's daily values also move a little once the month ends and its CAPE is final.</p>
 
       <h3>Risk levels and markers</h3>
       <table>
@@ -758,7 +758,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v63";
+const APP_VER="mri-v64";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

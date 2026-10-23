@@ -8,8 +8,9 @@ Method (『VIXの声を聴け』, 第一章):
 
 As in the MRI workbook, today's value is the current month's row, so the 120 months include it;
 history is scored the same way, each day as its month's row. VIX and SKEW are Cboe's month-end
-closes; CAPE is multpl.com's monthly table (revised values). Today's CAPE is multpl's live value;
-earlier days use the month's average S&P 500 close so far divided by that month's E10.
+closes; CAPE is multpl.com's monthly table (revised values) for completed months. A day's CAPE is
+the month's average S&P 500 close so far divided by that month's E10; the current month uses the
+last completed month's E10, so multpl.com's current-month figures are not used.
 
 Sources: Cboe (VIX and SKEW history, delayed quotes for VIX, SKEW and the S&P 500), multpl.com
 (monthly CAPE and S&P 500 price), FRED (S&P 500 daily closes). Runs in GitHub Actions.
@@ -392,7 +393,16 @@ def build():
     # (with its revisions); the current month holds today's values
     vme, kme = month_ends(vix), month_ends(skew)
     months = {m: {"vix": vme[m], "skew": kme[m], "cape": cape_m[m]}
-              for m in sorted(set(vme) & set(kme) & set(cape_m)) if m <= cur_m}
+              for m in sorted(set(vme) & set(kme) & set(cape_m)) if m < cur_m}
+    # the current month does not use multpl.com's current-month figures (they update at random times,
+    # hours after the close, and its price and CAPE rows do not always update together): its E10 is the
+    # last completed month's (Cboe's average close for that month / multpl.com's CAPE for it), and its
+    # CAPE is this month's average close so far over that E10
+    avg = month_means(spx)
+    prev_m = max(months)
+    e10_cur = avg[prev_m] / months[prev_m]["cape"]
+    if cur_m in vme and cur_m in kme and cur_m in avg:
+        months[cur_m] = {"vix": vme[cur_m], "skew": kme[cur_m], "cape": avg[cur_m] / e10_cur}
     # the same month-end values as a table, to check or correct a spreadsheet against
     lines = ["month,VIX,SKEW,CAPE"] + [f"{m // 100}-{m % 100:02d},{r['vix']},{r['skew']},{r['cape']}"
                                       for m, r in months.items() if m < cur_m]
@@ -409,9 +419,8 @@ def build():
     ind_spx = Indicator(spx_me, False, False)
 
     # daily CAPE: the month's average S&P 500 close so far divided by the month's E10
-    # (E10 = month average / month-end CAPE; for the current month, multpl.com's price / CAPE);
-    # at the month's end it equals that month's CAPE.
-    avg = month_means(spx)
+    # (E10 = month average / month-end CAPE; for the current month, the last completed month's);
+    # at a completed month's end it equals that month's CAPE.
     run = {}
     rows = []
     for d in sorted(set(vix) & set(skew) & set(spx)):
@@ -421,10 +430,7 @@ def build():
         acc = run.setdefault(m, [0.0, 0])
         acc[0] += spx[d]
         acc[1] += 1
-        if m == cur_m:
-            e10 = spx_m[m] / cape_m[m] if cape_m.get(m) and spx_m.get(m) else avg[m] / months[m]["cape"]
-        else:
-            e10 = avg[m] / months[m]["cape"]
+        e10 = e10_cur if m == cur_m else avg[m] / months[m]["cape"]
         # every day the same way, today included, so a day's value does not change when the next
         # day arrives
         cape = (acc[0] / acc[1]) / e10
