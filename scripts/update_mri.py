@@ -463,7 +463,10 @@ def build():
     intra = old.get("intraday") or {}
     if live_day:
         if intra.get("day") != live_day:
-            intra = {"day": live_day, "prevClose": rows[-2][7] if len(rows) > 1 else None, "points": []}
+            intra = {"day": live_day, "points": []}
+        # the previous day's confirmed MRI, from this build (it changes when that day's values or the method do)
+        before = [r for r in rows if r[0] < live_day]
+        intra["prevClose"] = before[-1][7] if before else None
         r = rows[-1]
         pt = [now.isoformat(timespec="minutes"), r[7], r[4], r[5], r[6]]
         pts = intra["points"]
