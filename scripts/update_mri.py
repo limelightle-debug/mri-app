@@ -399,10 +399,20 @@ def build():
     # last completed month's (Cboe's average close for that month / multpl.com's CAPE for it), and its
     # CAPE is this month's average close so far over that E10
     avg = month_means(spx)
+    e10_m = {m: avg[m] / r["cape"] for m, r in months.items()}
+    # multpl.com finalises a month hours after its last close (later still when the month ends on a
+    # Friday: Saturday morning in Japan). Its price for a finished month is exactly Cboe's average close
+    # for that month, so until the two agree, the last month is not final yet: it keeps the E10 of the
+    # month before, like the current month
     prev_m = max(months)
-    e10_cur = avg[prev_m] / months[prev_m]["cape"]
+    if abs(spx_m.get(prev_m, 0) - avg[prev_m]) > .006 and len(months) > 1:
+        e10_m[prev_m] = e10_m[max(m for m in months if m < prev_m)]
+        months[prev_m]["cape"] = avg[prev_m] / e10_m[prev_m]
+        print(f"note: multpl.com has not finalised {prev_m} yet", file=sys.stderr)
+    e10_cur = e10_m[prev_m]
     if cur_m in vme and cur_m in kme and cur_m in avg:
         months[cur_m] = {"vix": vme[cur_m], "skew": kme[cur_m], "cape": avg[cur_m] / e10_cur}
+        e10_m[cur_m] = e10_cur
     # the same month-end values as a table, to check or correct a spreadsheet against
     lines = ["month,VIX,SKEW,CAPE"] + [f"{m // 100}-{m % 100:02d},{r['vix']},{r['skew']},{r['cape']}"
                                       for m, r in months.items() if m < cur_m]
@@ -430,7 +440,7 @@ def build():
         acc = run.setdefault(m, [0.0, 0])
         acc[0] += spx[d]
         acc[1] += 1
-        e10 = e10_cur if m == cur_m else avg[m] / months[m]["cape"]
+        e10 = e10_m.get(m, e10_cur)
         # every day the same way, today included, so a day's value does not change when the next
         # day arrives
         cape = (acc[0] / acc[1]) / e10
