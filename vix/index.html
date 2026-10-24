@@ -65,7 +65,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .gauge .pv{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:34px;line-height:1;margin-top:-44px;font-variant-numeric:tabular-nums;text-shadow:0 0 16px var(--gc)}
 .gauge .pv small{font-size:16px;margin-left:1px}
 .pvars{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.pvars div{background:#0c0c22;border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:center}
+.pvars div{--vc:#3a3a6a;background:linear-gradient(180deg,color-mix(in srgb,var(--vc) 22%,#0c0c22),color-mix(in srgb,var(--vc) 8%,#0c0c22));border:1px solid color-mix(in srgb,var(--vc) 60%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--vc) 25%,transparent);border-radius:10px;padding:7px 10px;text-align:center}
 .pvars small{display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.04em}
 .pvars b{font-family:var(--f-tick);font-stretch:85%;font-size:22px;color:var(--ink)}
 .pvars b span{font-family:var(--f-body);font-size:12px;font-weight:700;margin-left:2px;color:var(--ink2)}
@@ -419,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v51";
+const APP_VER="vix-v52";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -514,7 +514,11 @@ function gaugeSVG(p,id,post){
 function renderProb(){
   const P=eventProb();$("probp").hidden=!P;if(!P)return;
   $("probsub").textContent=P.ongoing?t("ongoing"):"";
-  $("pvars").innerHTML=`<div><small>${t("vInt")}</small><b>${P.e}<span>${t("vMon")}</span></b><i>${P.quiet?t("vQuiet",P.quiet):t("vIntSub")}</i></div><div><small>MRI</small><b>${D.bayes&&D.bayes.mri6!=null?D.bayes.mri6.toFixed(1):"–"}</b><i>${t(D.bayes&&D.bayes.sinceEnd?"vMriEnd":"vMriSub")}</i></div>`;
+  // the two variables take the colour of their state: interval green in the quiet period, orange once events can
+  // come, red during an event; MRI from green to red across the 75 line (the same smooth step as its factor)
+  const B=D.bayes||{},x=B.mri6,w=x==null?0:1/(1+Math.exp(-(x-(B.line||75))/(B.width||3)));
+  const ci=P.ongoing?COL.s3:P.quiet?COL.s1:COL.s2,cm=x==null?"#3a3a6a":d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(w);
+  $("pvars").innerHTML=`<div style="--vc:${ci}"><small>${t("vInt")}</small><b>${P.e}<span>${t("vMon")}</span></b><i>${P.ongoing?t("ongoing"):P.quiet?t("vQuiet",P.quiet):t("vIntSub")}</i></div><div style="--vc:${cm}"><small>MRI</small><b>${D.bayes&&D.bayes.mri6!=null?D.bayes.mri6.toFixed(1):"–"}</b><i>${t(D.bayes&&D.bayes.sinceEnd?"vMriEnd":"vMriSub")}</i></div>`;
   {const r1=P.rows[0];$("bayesnote").textContent=t("bayesNote",r1.fInt!=null?r1.fInt.toFixed(2):"–",D.bayes?D.bayes.mri6.toFixed(1):"–",r1.fMri.toFixed(2));}
   $("gauges").innerHTML=P.rows.map((r,i)=>{const c=pColor(r.post),v=r.post*100,f=x=>x<.001?"<0.1":x*100<10?(x*100).toFixed(1):(x*100).toFixed(0);
     return `<div class="gauge" style="--gc:${c}">${gaugeSVG(r.post,i,r.base)}<div class="pv" style="color:${c}">${v===0?"0":v<10?v.toFixed(1):v.toFixed(0)}<small>%</small></div><div class="hz">${t("hz",r.k)}</div>
