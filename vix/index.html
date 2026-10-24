@@ -412,7 +412,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v75";
+const APP_VER="vix-v76";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -550,7 +550,7 @@ function renderGaugeBar(r){
   const x=v=>ML+PW*(Math.log10(v)-(c-d))/(2*d),f=v=>v.toFixed(2);
   let g=`<rect x="${ML}" y="${Y-3}" width="${PW}" height="6" rx="3" fill="#1f1f44"/>`;
   g+=`<rect x="${x(r.nL)}" y="${Y-8}" width="${x(r.nH)-x(r.nL)}" height="16" rx="3" fill="rgba(127,168,255,.28)"/>`;
-  g+=`<line x1="${x(10**c)}" x2="${x(10**c)}" y1="${Y-12}" y2="${Y+12}" stroke="${COL.mean}" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+  g+=`<line x1="${x(10**c)}" x2="${x(10**c)}" y1="${Y-12}" y2="${Y+12}" stroke="${COL.mean}" stroke-width="1.5" stroke-dasharray="3 2"/><text x="${x(10**c)}" y="${Y+26}" text-anchor="middle" class="vgv" style="fill:${COL.mean}">${f(10**c)}</text><text x="${x(10**c)}" y="${Y+39}" text-anchor="middle" style="fill:${COL.mean};font:700 11px var(--f-body)">${t("nCentre")}</text>`;
   const tick=(v,col,lab)=>{const xx=x(v);return `<line x1="${xx}" x2="${xx}" y1="${Y-12}" y2="${Y+12}" stroke="${col}" stroke-width="2.5" stroke-linecap="round" style="filter:drop-shadow(0 0 3px ${col})"/>`+
     `<text x="${xx}" y="${Y+26}" text-anchor="middle" class="vgv">${f(v)}</text><text x="${xx}" y="${Y+39}" text-anchor="middle" style="fill:${col};font:700 11px var(--f-tick)">${lab}</text>`};
   g+=tick(l2,COL.s2,"−2σ")+tick(l1,COL.s1,"−1σ")+tick(h1,COL.s1,"+1σ")+tick(h2,COL.s2,"+2σ")+(s3?tick(h3,COL.s3,"+3σ"):"");
@@ -567,7 +567,7 @@ function renderGaugeBar(r){
   if(lp){const xx=Math.min(x(r.h),Math.max(x(r.l),x(lp))),zl=zoneOf(lp,r.th),lc=zl?ZC()[zl]:COL.ink,tx=Math.min(W-36,Math.max(36,xx));
     g+=`<circle cx="${xx}" cy="${YM}" r="4.5" fill="var(--panel)" stroke="${lc}" stroke-width="2.2"/><text x="${tx}" y="${YM-11}" text-anchor="middle" class="vgv" style="fill:${lc}">${nm("lgLatest")} ${f(lp)}</text>`}
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cBand")}">${GLOW}<style>.vgv{fill:var(--ink);font:600 11px var(--f-tick);font-stretch:85%}.vgn{fill:var(--muted);font:600 10px var(--f-body)}</style>${g}</svg>`;
-  $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.mean}"></i>${t("nCentre")} ${f(10**c)}</span>`;
+  $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")}</span>`;
 }
 
 function renderTop(){
