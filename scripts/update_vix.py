@@ -131,6 +131,7 @@ def main():
             r[0], r[1], r[2], r[3] = max(r[0], h), min(r[1], lo), c, d
     keys = sorted(months)
     lh = [math.log10(months[m][0]) for m in keys]
+    lc = [math.log10(months[m][2]) for m in keys]
     ll = [math.log10(months[m][1]) for m in keys]
     i0 = keys.index(FIXED_UNTIL)
     rows, events, last = [], [], -99
@@ -138,8 +139,9 @@ def main():
         j = max(i, i0)
         wh, wl = lh[j - WINDOW + 1:j + 1], ll[j - WINDOW + 1:j + 1]
         mh, sh, ml, sl = st.mean(wh), st.stdev(wh), st.mean(wl), st.stdev(wl)
+        mc = st.mean(lc[j - WINDOW + 1:j + 1])  # the mean of the log of monthly closes (the candle chart's centre)
         h, lo, c, lastday, o = months[m]
-        rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o])
+        rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o, round(mc, 6)])
         if h > 10 ** (mh + K_EVENT * sh):
             if i - last > GAP:
                 events.append(m)
