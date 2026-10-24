@@ -33,7 +33,7 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM, MRI_LINE, MRI_WIDTH = 201801, 75, 3
+BAYES_FROM, MRI_LINE, MRI_WIDTH, QUIET = 201801, 75, 3, 6
 
 
 def get(url):
@@ -79,37 +79,52 @@ def add_months(m, k):
     return y * 100 + mo + 1
 
 
-def bpt_cdf(t, mu, a):
-    """Brownian Passage Time: the share of intervals shorter than t months (mean mu, aperiodicity a)."""
-    if t <= 0:
-        return 0.0
-    phi = lambda z: .5 * (1 + math.erf(z / math.sqrt(2)))
-    u1 = (math.sqrt(t / mu) - math.sqrt(mu / t)) / a
-    u2 = (math.sqrt(t / mu) + math.sqrt(mu / t)) / a
-    return phi(u1) + math.exp(2 / a ** 2) * phi(-u2)
+def model(spans, mri, months, today):
+    """The event probability, now and at the start of each past month (the backtest).
 
-
-def backtest(spans, mri, months):
-    """The event probability as it would have read at the start of each month since the first event, two ways:
-    "in" with parameters from all the data (the model as it stands, applied to the past) and "out" with only what
-    was known then (intervals, frequency and the MRI factor from earlier events; until 3 intervals are known the
-    interval part is random). MRI counts from 2018, when it works. Rows: [month, during an event (1/0), then
-    in Bayes, in interval, in random, out Bayes, out interval, out random, each for 1, 3, 6 and 12 months, in %]."""
+    Random: events come with the same chance every month outside events, lam_r = events / months outside events.
+    Interval: no event has come within 6 months of the previous one ending (0 in 60 such months, against about 1 in
+    30 otherwise), so the hazard is 0 during an event and for 6 months after it ends, and constant after that:
+    lam_q = events / months outside events and those quiet periods. Over k months, P = 1 - exp(-lam_q * months of
+    the k that are past the quiet period).
+    MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
+    that is more recent. Every event so far came with x at or above 75, but so did many quiet months: the line works
+    as a step. The likelihood ratio is P(x >= 75 | before an event) / P(x >= 75 | other months) above the line and
+    the same for below, the event share smoothed by Laplace's rule (+1 / +2). What counts is x when an event starts,
+    not now: q_j = the share of months with x near today's (within 5, wider if too few) whose x j months later was
+    at or above 75, and the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below.
+    Bayes: posterior odds = interval odds x MRI factor.
+    Backtest rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
+    was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""
     import bisect
     md = sorted(mri)
     idx = lambda m: m // 100 * 12 + m % 100
     smon = [s_ // 100 for s_, _ in spans]
+    odds = lambda p: p / (1 - p)
     def last_end(d):
         ends = [e for s_, e in spans if e and e < d]
         return max(ends) if ends else 0
-    def xat(d):
+    def xat(d, inclusive=False):
         lo = max(last_end(d), add_months(d // 100, -6) * 100 + d % 100)
-        vals = [mri[k] for k in md[bisect.bisect_right(md, lo):bisect.bisect_left(md, d)]]
-        return max(vals) if vals else None
+        hi_ = bisect.bisect_right(md, d) if inclusive else bisect.bisect_left(md, d)
+        vals = [mri[k] for k in md[bisect.bisect_right(md, lo):hi_]]
+        return (max(vals), lo == last_end(d)) if vals else (None, False)
     in_event = lambda d: any(s_ <= d <= (e or 99999999) for s_, e in spans)
+    ongoing_at = lambda d: any(s_ < d and (e is None or e >= d) for s_, e in spans)
+    def quiet_until(d):  # the month index from which events can come again
+        e = last_end(d)
+        return idx(e // 100) + QUIET if e else -1
+    ONG = {m: ongoing_at(m * 100 + 1) for m in months}
+    QM = {m: idx(m) < quiet_until(m * 100 + 1) for m in months}
+    def rates(upto):
+        ms = [m for m in months if upto is None or m < upto]
+        n = sum(1 for s_ in smon if upto is None or s_ < upto)
+        free = [m for m in ms if not ONG[m]]
+        act = [m for m in free if not QM[m]]
+        return n / len(free), n / len(act)
     mm = [m for m in months if m >= BAYES_FROM]
-    X = {m: xat(m * 100 + 1) for m in mm}
-    XE = {s_: xat(s_) for s_, _ in spans if s_ >= BAYES_FROM * 100}
+    X = {m: xat(m * 100 + 1)[0] for m in mm}
+    XE = {s_: xat(s_)[0] for s_, _ in spans if s_ >= BAYES_FROM * 100}
     def mri_params(upto):
         xe = [x for s_, x in XE.items() if x is not None and (upto is None or s_ < upto * 100 + 1)]
         xn = [X[k] for k in mm if X[k] is not None and not in_event(k * 100 + 1) and (upto is None or k < upto)]
@@ -119,9 +134,9 @@ def backtest(spans, mri, months):
         pn = sum(x >= MRI_LINE for x in xn) / len(xn)
         if pn in (0, 1):
             return None
-        return pe / pn, (1 - pe) / (1 - pn), pn
+        return {"hi": pe / pn, "lo": (1 - pe) / (1 - pn), "pn": pn, "events": len(xe),
+                "eventsAbove": sum(x >= MRI_LINE for x in xe), "months": len(xn)}
     def factors(x, par, upto):
-        hi, lo, pn = par
         known = lambda k: upto is None or k < upto
         for band in (5, 8, 12, 100):
             base = [k for k in mm if X[k] is not None and abs(X[k] - x) <= band and not in_event(k * 100 + 1) and known(k)]
@@ -130,43 +145,56 @@ def backtest(spans, mri, months):
         q = []
         for j in range(1, 13):
             fut = [X[add_months(k, j)] for k in base if X.get(add_months(k, j)) is not None and known(add_months(k, j))]
-            q.append(sum(f >= MRI_LINE for f in fut) / len(fut) if len(fut) >= 3 else pn)
-        return {k: st.mean(qq * hi + (1 - qq) * lo for qq in q[:k]) for k in (1, 3, 6, 12)}
+            q.append(sum(f >= MRI_LINE for f in fut) / len(fut) if len(fut) >= 3 else par["pn"])
+        return q, {k: st.mean(qq * par["hi"] + (1 - qq) * par["lo"] for qq in q[:k]) for k in (1, 3, 6, 12)}
+    def probs(m, ongoing, qu, lam, fk):
+        lam_r, lam_q = lam
+        out = []
+        for k in (1, 3, 6, 12):
+            act = sum(1 for j in range(k) if idx(m) + j >= qu)
+            b = 1 - math.exp(-lam_r * k)
+            pi = 0 if ongoing else 1 - math.exp(-lam_q * act)
+            o = odds(pi) * fk.get(k, 1) if 0 < pi < 1 else 0
+            out.append((k, o / (1 + o), pi, b))
+        return out
+    # now
     par_in = mri_params(None)
-    iv_all = [idx(b) - idx(a) for a, b in zip(smon, smon[1:])]
+    lam_in = rates(None)
+    ongoing = bool(spans) and spans[-1][1] is None
+    now, since_end = xat(md[-1], inclusive=True)
+    q, fk = factors(now, par_in, None) if now is not None and par_in else ([], {})
+    cur = months[-1]
+    qu = quiet_until(today + 1)
+    lr = None
+    if now is not None and par_in:
+        w = 1 / (1 + math.exp(-(now - MRI_LINE) / MRI_WIDTH))
+        lr = math.exp(math.log(par_in["lo"]) + w * (math.log(par_in["hi"]) - math.log(par_in["lo"])))
+    bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
+             "ongoing": ongoing, "quiet": QUIET, "quietLeft": max(0, qu - idx(cur)), "lamR": round(lam_in[0], 5),
+             "lamQ": round(lam_in[1], 5), "line": MRI_LINE, "width": MRI_WIDTH, "from": BAYES_FROM,
+             "lr": None if lr is None else round(lr, 4), "lrK": {k: round(v, 4) for k, v in fk.items()},
+             "q": [round(v, 2) for v in q],
+             "prob": [{"k": k, "post": round(p, 5), "int": round(pi, 5), "base": round(b, 5)}
+                      for k, p, pi, b in probs(cur, ongoing, qu, lam_in, fk)]}
+    if par_in:
+        bayes.update({"lrHi": round(par_in["hi"], 3), "lrLo": round(par_in["lo"], 3), "events": par_in["events"],
+                      "eventsAbove": par_in["eventsAbove"], "months": par_in["months"], "monthsAbove": round(par_in["pn"], 3)})
+    # backtest
     rows = []
     for m in months:
         if m <= smon[0]:
             continue
         d = m * 100 + 1
-        ongoing = any(s_ < d and (e is None or e >= d) for s_, e in spans)
-        prior = [s_ for s_ in smon if s_ < m]
-        e = idx(m) - idx(prior[-1])
-        row = [m, int(ongoing)]
+        row = [m, int(ONG[m])]
         for mode in ("in", "out"):
-            if mode == "in":
-                iv, lam, par, upto = iv_all, len(smon) / len(months), par_in, None
-            else:
-                iv = [idx(b) - idx(a) for a, b in zip(prior, prior[1:])]
-                lam, par, upto = len(prior) / (idx(m) - idx(months[0])), mri_params(m), m
+            upto = None if mode == "in" else m
+            par = par_in if mode == "in" else mri_params(m)
             x = X.get(m)
-            fk = factors(x, par, upto) if x is not None and par else {}
-            post, bpt, base = [], [], []
-            for k in (1, 3, 6, 12):
-                b = 1 - math.exp(-lam * k)
-                if len(iv) >= 3:
-                    mu = st.mean(iv)
-                    a = st.stdev(iv) / mu
-                    p = (bpt_cdf(e + k, mu, a) - bpt_cdf(e, mu, a)) / (1 - bpt_cdf(e, mu, a))
-                else:
-                    p = b
-                o = p / (1 - p) * fk.get(k, 1)
-                post.append(0 if ongoing else o / (1 + o))
-                bpt.append(0 if ongoing else p)
-                base.append(b)
-            row += [round(v * 100, 2) for v in post + bpt + base]
+            fkm = factors(x, par, upto)[1] if x is not None and par else {}
+            pr = probs(m, ONG[m], quiet_until(d), lam_in if mode == "in" else rates(m), fkm)
+            row += [round(v[c] * 100, 2) for c in (1, 2, 3) for v in pr]
         rows.append(row)
-    return rows
+    return bayes, rows
 
 
 def history():
@@ -309,64 +337,13 @@ def main():
         before = [d for d in days if d < lv[0]]
         if before:
             quote["prevClose"] = days[max(before)][3]
-    # MRI as evidence (Bayes). x = the highest daily MRI over the last 6 months, or since the last event ended if that
-    # is more recent (during an event there is no next event to forecast). Every event so far came with x at or above
-    # the 75 line, but so did many quiet months: the line works as a step, not a slope. The likelihood ratio is
-    # P(x >= 75 | before an event) / P(x >= 75 | other months) above the line and the same for below, the event share
-    # smoothed by Laplace's rule, +1 / +2 (4 of 4 is not certainty), switching over a logistic of width 3 in the log odds.
-    # Since 2018, when MRI works; other months are month starts outside events
-    bayes = None
-    try:
-        mri = {r[0]: r[7] * 100 for r in json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]}
-        md = sorted(mri)
-        def last_end(d):
-            ends = [e for s_, e in spans if e and e < d]
-            return max(ends) if ends else 0
-        def xat(d, inclusive=False):
-            lo = max(last_end(d), add_months(d // 100, -6) * 100 + d % 100)
-            vals = [mri[k] for k in md if lo < k and (k <= d if inclusive else k < d)]
-            return (max(vals), lo == last_end(d)) if vals else (None, False)
-        in_event = lambda d: any(s_ <= d <= (e or 99999999) for s_, e in spans)
-        firsts = [k * 100 + 1 for k in sorted({d // 100 for d in md}) if k >= BAYES_FROM]
-        x0 = [x for x, _ in (xat(d) for d in firsts if not in_event(d)) if x is not None]
-        x1 = [x for x, _ in (xat(s_) for s_, _ in spans if s_ >= BAYES_FROM * 100) if x is not None]
-        pe = (sum(x >= MRI_LINE for x in x1) + 1) / (len(x1) + 2)
-        pn = sum(x >= MRI_LINE for x in x0) / len(x0)
-        hi, lo_ = pe / pn, (1 - pe) / (1 - pn)
-        ongoing = bool(spans) and spans[-1][1] is None
-        now, since_end = xat(md[-1], inclusive=True)
-        lr = None
-        if now is not None:
-            w = 1 / (1 + math.exp(-(now - MRI_LINE) / MRI_WIDTH))
-            lr = math.exp(math.log(lo_) + w * (math.log(hi) - math.log(lo_)))
-        # the event needs x >= 75 when it starts, not now: over the next k months x may rise past the line or fall back.
-        # q_j = the share of months since 2018 with x near today's (within 5, wider if too few) whose x j months later
-        # was at or above 75; the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below
-        lr_k, q = {}, []
-        if now is not None:
-            mo = [k for k in sorted({d // 100 for d in md}) if k >= BAYES_FROM]
-            X = {k: xat(k * 100 + 1)[0] for k in mo}
-            for band in (5, 8, 12, 100):
-                base = [k for k in mo if X[k] is not None and abs(X[k] - now) <= band and not in_event(k * 100 + 1)]
-                if len(base) >= 20:
-                    break
-            for j in range(1, 13):
-                fut = [X[add_months(k, j)] for k in base if X.get(add_months(k, j)) is not None]
-                q.append(sum(f >= MRI_LINE for f in fut) / len(fut) if fut else pn)
-            for k in (1, 3, 6, 12):
-                lr_k[k] = round(st.mean(qq * hi + (1 - qq) * lo_ for qq in q[:k]), 4)
-        bayes = {"mri6": None if now is None else round(now, 1), "lrK": lr_k, "q": [round(v, 2) for v in q], "sinceEnd": since_end, "lastEnd": last_end(md[-1] + 1),
-                 "ongoing": ongoing, "line": MRI_LINE, "width": MRI_WIDTH, "lrHi": round(hi, 3), "lrLo": round(lo_, 3),
-                 "lr": None if lr is None else round(lr, 4), "from": BAYES_FROM, "events": len(x1),
-                 "eventsAbove": sum(x >= MRI_LINE for x in x1), "months": len(x0), "monthsAbove": round(pn, 3)}
-    except (OSError, ValueError, KeyError, st.StatisticsError) as e:
-        print(f"warning: bayes: {e}", file=sys.stderr)
-    bt = None
+    # the event probability (Bayes: interval x MRI) and its backtest; see model()
+    bayes = bt = None
     try:
         mri_d = {r[0]: r[7] * 100 for r in json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]}
-        bt = backtest(spans, mri_d, [r[0] for r in rows])
+        bayes, bt = model(spans, mri_d, [r[0] for r in rows], dl[-1])
     except (OSError, ValueError, KeyError, st.StatisticsError, ZeroDivisionError) as e:
-        print(f"warning: backtest: {e}", file=sys.stderr)
+        print(f"warning: bayes: {e}", file=sys.stderr)
     lastday = max(days)
     data = {
         "source": "Cboe",
