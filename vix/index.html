@@ -109,6 +109,22 @@ table.ev small.enm .evt{margin-left:6px;vertical-align:1px}
 .topfix{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
 .stick{background:var(--bg);padding-block:6px 8px}
 .tabs{margin:0}.tabs button{flex:1;padding:9px 6px;font-size:14px}
+.doc{font-size:13.5px;line-height:1.8;color:var(--ink2)}
+.doc h3{margin:24px 0 8px;font-size:14px;color:var(--ink);letter-spacing:.03em}
+.doc h3:first-child{margin-top:0}
+.doc p{margin:0 0 10px}
+.doc b{color:var(--ink)}
+.doc ol,.doc ul{margin:0 0 10px;padding-left:1.4em}
+.doc li{margin-bottom:6px}
+.doc .eq{background:#0c0c22;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0 12px;font-family:var(--f-tick);font-stretch:90%;font-size:14px;color:var(--ink);line-height:1.9}
+.doc .eq small{font-family:var(--f-body);font-size:11.5px;color:var(--muted);margin-left:6px}
+.doc .note{font-size:12.5px;color:var(--muted)}
+.doc table{width:100%;border-collapse:collapse;margin:4px 0 12px;font-size:12.5px}
+.doc th,.doc td{text-align:left;padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+.doc th{color:var(--muted);font-weight:700;font-size:11.5px}
+.doc td:first-child{white-space:nowrap}.doc td:first-child{color:var(--ink)}
+.doc .lv{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 /* chart */
 .seg{display:flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px;margin-bottom:8px}
 .seg button{flex:1;appearance:none;border:0;background:transparent;color:var(--ink2);font:500 13px/1 var(--f-body);padding:8px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
@@ -163,6 +179,7 @@ table.ev tr.on td{background:var(--chip)}
     <div class="seg tabs" id="tabs" role="group">
       <button type="button" data-tab="vix">VIX</button>
       <button type="button" data-tab="ev" data-i18n="tabEv">イベント</button>
+      <button type="button" data-tab="method" data-i18n="tabMethod">算出方法</button>
     </div>
   </div>
   </div>
@@ -246,6 +263,115 @@ table.ev tr.on td{background:var(--chip)}
     </section>
 
    </div>
+   <div id="t-method" hidden>
+    <section class="panel doc">
+     <div class="l-ja">
+      <h3>VIXイベントとは</h3>
+      <p>VIX の月足高値が、統計的な異常値（+2σ）を超えた月を「VIXイベント」とする（『VIXの声を聴け』の定義）。</p>
+      <ol>
+        <li><b>月足高値・安値</b>：その月の日足の高値の最大と、安値の最小。</li>
+        <li><b>対数</b>：月足高値の常用対数（log<sub>10</sub>）をとる。VIX は対数正規分布に近いため。</li>
+        <li><b>平均と標準偏差</b>：その月を含む直近360か月（30年）の対数の平均 μ と標準偏差 σ（n−1）。データが1990年1月からなので、2019年11月以前の月は、1990年1月〜2019年12月の値で固定する。</li>
+        <li><b>閾値</b>：<div class="eq">+kσ ＝ 10<sup>μ＋kσ</sup>　（k＝1, 2, 3）</div></li>
+        <li><b>イベント</b>：月足高値が +2σ を最初に超えた月。前に超えた月から3か月以内の再突破は同じイベントとする。</li>
+        <li><b>規模</b>：イベント中のピークの月足高値が +3σ を超えたら「+3σイベント」、そうでなければ「+2σイベント」。</li>
+      </ol>
+
+      <h3>データと更新</h3>
+      <table>
+        <tr><th>項目</th><th>出所</th></tr>
+        <tr><td>VIX</td><td>Cboe の日次履歴（始値・高値・安値・終値）と、約15分遅れの気配値</td></tr>
+        <tr><td>S&amp;P500</td><td>Cboe の日次履歴（最大震度の計算に使う）</td></tr>
+        <tr><td>MRI</td><td>MRI アプリの日次データ（発生確率の補正に使う）</td></tr>
+      </table>
+      <p>平日、米東部3:15からの時間外取引と、9:30〜16:15の取引時間中は5分ごとに更新する。Cboe の値は約15分遅れなので、画面に出るのは米東部3:30〜16:30ごろ。</p>
+
+      <h3>最新値</h3>
+      <p>Cboe の気配値。取引時間中は前日終値との差、時間外取引中はその日の終値との差を出す。最新値の色は、今月の閾値（+1σ・+2σ・+3σ）に対する位置。</p>
+
+      <h3>月足ローソクと平常範囲</h3>
+      <p>平常範囲は、直近360か月の<b>月足安値の中央値</b>から<b>月足高値の中央値</b>まで（2019年までは1990〜2019年で固定、閾値と同じ扱い）。</p>
+      <div class="eq">平常範囲の中心 ＝ √(下限 × 上限)<small>対数での中心</small></div>
+      <p>対数表示では、表示している期間の中心の平均（対数）がチャートの真ん中に来る。月足高値チャートは、月足高値の対数の平均が真ん中。</p>
+
+      <h3>発生確率</h3>
+      <p><b>BPT モデル</b>：地震の長期評価で使われる更新過程モデル（Brownian Passage Time）。イベントの間隔（月）の平均 μ と、ばらつき α（標準偏差 ÷ 平均）から、前回イベントからの経過 e か月の時点で、今後 k か月以内に起きる確率を出す。</p>
+      <div class="eq">P ＝ ( F(e＋k) − F(e) ) ÷ ( 1 − F(e) )<br><small style="margin:0">F：BPT 分布の累積分布関数</small></div>
+      <p><b>ランダム</b>：毎月同じ確率で起きると考えた場合（ポアソン）。月あたり λ ＝ イベント数 ÷ 月数で、k か月では 1 − e<sup>−λk</sup>。</p>
+      <p><b>▼ MRI</b>：BPT の確率を事前確率とし、MRI で更新したベイズ確率。証拠は直近6か月の MRI の最高値 x。2019年7月以降（MRI が機能する期間）について、イベント直前の x と普段の月の x を正規分布とみなし、尤度比をオッズに掛ける。</p>
+      <div class="eq">事後オッズ ＝ 事前オッズ × e<sup>β(x − c)</sup><br><small style="margin:0">β ＝ (イベント前の平均 − 普段の平均) ÷ σ²　c ＝ 両平均の中間</small></div>
+      <p class="note">どの確率も過去の間隔と頻度からの推定で、予測ではない。イベントは12回と少なく、とくに MRI の係数はイベント3回からの推定。</p>
+
+      <h3>マグニチュード</h3>
+      <p>地震のマグニチュードが振幅の対数であるのにならい、月足高値の対数が平均から何σ離れているか（z）で表す。+2σ がちょうど M7.0。イベントはピークの月の値。</p>
+      <div class="eq">M ＝ 5 ＋ z　　z ＝ ( log<sub>10</sub> 高値 − μ ) ÷ σ</div>
+
+      <h3>最大震度</h3>
+      <p>マグニチュード（震源の規模）を VIX、震度（実際の揺れ）を株価に対応させる。イベントの1か月前から、最後に +2σ を超えた月の3か月後までの S&amp;P500 の最安値と、その直前6か月の最高値から下落率を出し、気象庁の震度階級に当てはめる。</p>
+      <table>
+        <tr><th>下落率</th><th>震度</th></tr>
+        <tr><td>5%〜</td><td>4</td></tr><tr><td>10%〜</td><td>5弱</td></tr><tr><td>15%〜</td><td>5強</td></tr>
+        <tr><td>20%〜</td><td>6弱</td></tr><tr><td>30%〜</td><td>6強</td></tr><tr><td>40%〜</td><td>7</td></tr>
+      </table>
+
+      <h3>震源地と分類</h3>
+      <p>『VIXの声を聴け』図1-1の「針」が刺さった場所。グレースワン（影の方向から針が来た）、ブラックスワン（影と違う方向から来た）、純粋なブラックスワン（風船も影もなかった）の分類も同書による。</p>
+     </div>
+     <div class="l-en">
+      <h3>What a VIX event is</h3>
+      <p>A month whose VIX monthly high passes a statistical outlier level (+2σ) is a VIX event (as defined in the book 『VIXの声を聴け』).</p>
+      <ol>
+        <li><b>Monthly high and low</b>: the highest daily high and the lowest daily low of the month.</li>
+        <li><b>Logs</b>: take log<sub>10</sub> of the monthly high; VIX is close to log-normal.</li>
+        <li><b>Mean and standard deviation</b>: μ and σ (n−1) of the logs over the latest 360 months (30 years) including that month. Data starts in January 1990, so months up to November 2019 use the January 1990–December 2019 values.</li>
+        <li><b>Thresholds</b>: <div class="eq">+kσ = 10<sup>μ + kσ</sup>　(k = 1, 2, 3)</div></li>
+        <li><b>Event</b>: the first month whose high passes +2σ; passing it again within 3 months of the last month above it counts as the same event.</li>
+        <li><b>Scale</b>: a "+3σ event" if the peak monthly high of the event passed +3σ, otherwise a "+2σ event".</li>
+      </ol>
+
+      <h3>Data and updates</h3>
+      <table>
+        <tr><th>Item</th><th>Source</th></tr>
+        <tr><td>VIX</td><td>Cboe daily history (open, high, low, close) and its quote, about 15 minutes delayed</td></tr>
+        <tr><td>S&amp;P 500</td><td>Cboe daily history (for the max. intensity)</td></tr>
+        <tr><td>MRI</td><td>The MRI app's daily data (for the probability update)</td></tr>
+      </table>
+      <p>On weekdays it updates every 5 minutes in VIX's extended hours from 3:15 ET and in the session from 9:30 to 16:15 ET. Cboe's values are about 15 minutes late, so they show from about 3:30 to 16:30 ET.</p>
+
+      <h3>Latest</h3>
+      <p>Cboe's quote. In the session the change is from the previous close; in extended hours, from that day's close. Its colour shows where it stands against this month's thresholds (+1σ, +2σ, +3σ).</p>
+
+      <h3>Monthly candles and the normal range</h3>
+      <p>The normal range runs from the <b>median of monthly lows</b> to the <b>median of monthly highs</b> over the latest 360 months (fixed at 1990–2019 until 2019, as for the thresholds).</p>
+      <div class="eq">Centre of the normal range = √(low × high)<small>the centre in logs</small></div>
+      <p>On the log scale, the mean (in logs) of the centre over the shown period is in the middle of the chart; on the monthly-high chart, the mean of the log of monthly highs is.</p>
+
+      <h3>Event probability</h3>
+      <p><b>BPT model</b>: the renewal model used in long-term earthquake forecasts (Brownian Passage Time). From the mean μ of the intervals between events (months) and their aperiodicity α (standard deviation ÷ mean), it gives the probability of an event within k months, e months after the last one.</p>
+      <div class="eq">P = ( F(e + k) − F(e) ) ÷ ( 1 − F(e) )<br><small style="margin:0">F: the BPT cumulative distribution</small></div>
+      <p><b>Random</b>: if events came with the same chance every month (Poisson): λ = events ÷ months per month, and 1 − e<sup>−λk</sup> over k months.</p>
+      <p><b>▼ MRI</b>: the BPT probability as the prior, updated with the MRI by Bayes. The evidence is the MRI's highest in the last 6 months, x. Since July 2019 (when MRI works), x before events and x in other months are taken as normal, and the likelihood ratio multiplies the odds.</p>
+      <div class="eq">posterior odds = prior odds × e<sup>β(x − c)</sup><br><small style="margin:0">β = (mean before events − mean in other months) ÷ σ²　c = midpoint of the two means</small></div>
+      <p class="note">All probabilities are estimates from past intervals and frequencies, not forecasts. There are only 12 events, and the MRI coefficient rests on 3 of them.</p>
+
+      <h3>Magnitude</h3>
+      <p>As earthquake magnitude is a log of amplitude, it is how many σ the log of the monthly high is above its mean (z). +2σ is exactly M7.0. An event uses its peak month.</p>
+      <div class="eq">M = 5 + z　　z = ( log<sub>10</sub> high − μ ) ÷ σ</div>
+
+      <h3>Max. intensity</h3>
+      <p>Magnitude (the size at the source) is VIX; intensity (the shaking) is the stock market. The fall is from the highest S&amp;P 500 close in the 6 months before its lowest close, found from a month before the event to 3 months after its last month above +2σ, put on Japan's shindo scale.</p>
+      <table>
+        <tr><th>Fall</th><th>Intensity</th></tr>
+        <tr><td>5%+</td><td>4</td></tr><tr><td>10%+</td><td>5 lower</td></tr><tr><td>15%+</td><td>5 upper</td></tr>
+        <tr><td>20%+</td><td>6 lower</td></tr><tr><td>30%+</td><td>6 upper</td></tr><tr><td>40%+</td><td>7</td></tr>
+      </table>
+
+      <h3>Epicentres and types</h3>
+      <p>Where the "needle" struck, from figure 1-1 of the book. The types are also the book's: grey swan (the needle came from where the shadow was), black swan (from elsewhere), pure black swan (no balloon, no shadow).</p>
+     </div>
+    </section>
+   </div>
+
     <div class="foot">
       <span class="labname"><img src="icons/lab.jpg" alt="" width="36" height="36"><span data-i18n="lab">恐怖指数研究所</span></span>
       <span><a href="../">MRI</a><a href="https://limelightle-debug.github.io/tqqq/">TQQQ</a><a href="https://limelightle-debug.github.io/ndx-heatmap/">Nasdaq 100</a></span>
@@ -257,11 +383,11 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v35";
+const APP_VER="vix-v36";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
-  rALL:"全期間",r2:"2年",tabEv:"イベント",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+  rALL:"全期間",r2:"2年",tabEv:"イベント",tabMethod:"算出方法",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
@@ -269,7 +395,7 @@ const T={
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
-  rALL:"All",r2:"2Y",tabEv:"Events",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
+  rALL:"All",r2:"2Y",tabEv:"Events",tabMethod:"Method",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
@@ -534,7 +660,7 @@ function renderMap(){
   $("maplegend").innerHTML=`<span style="color:var(--muted)">${t("bSh")}</span>`+["4","5-","5+","6-","6+","7"].map(v=>shBadge(v)).join("");
 }
 
-function renderTabs(){$("t-vix").hidden=state.tab!=="vix";$("t-ev").hidden=state.tab!=="ev";
+function renderTabs(){$("t-vix").hidden=state.tab!=="vix";$("t-ev").hidden=state.tab!=="ev";$("t-method").hidden=state.tab!=="method";
   document.querySelectorAll("#tabs [data-tab]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab))}
 function renderAll(){
   applyLang();renderTabs();markScale();renderLatest();renderProb();renderTop();renderLegend();renderChart();renderCandle();renderMap();renderEvents();
