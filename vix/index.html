@@ -412,7 +412,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v78";
+const APP_VER="vix-v79";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -441,7 +441,7 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const COL={ink:css("--ink"),s1:css("--s1"),s2:css("--s2"),s3:css("--s3"),mean:css("--mean"),ev:css("--ev"),line:css("--line")};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 
-let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null,bh:+store.get("vixBH","3"),bm:store.get("vixBM","in"),bpick:null};
+let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null,bh:+store.get("vixBH","12"),bm:store.get("vixBM","in"),bpick:null};
 // month rows: {m, h, l, c, th:[mean,+1σ,+2σ,+3σ]}
 // neon glow for lines and dots
 const GLOW=`<defs><filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
@@ -513,7 +513,8 @@ function renderProb(){
   const r1=P.rows[0],hr=r1.base>0?r1.p/r1.base:1,ci=P.ongoing?COL.s3:P.quiet?COL.s1:d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(Math.max(0,Math.min(1,(hr-.5)/2.5))),cm=x==null?"#3a3a6a":d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(w);
   $("pvars").innerHTML=`<div style="--vc:${ci}"><small>${t("vInt")}</small><b>${P.e}<span>${t("vMon")}</span></b><i>${P.ongoing?t("ongoing"):P.quiet?t("vQuiet",P.quiet):t("vIntSub")}</i></div><div style="--vc:${cm}"><small>MRI</small><b>${D.bayes&&D.bayes.mri6!=null?D.bayes.mri6.toFixed(1):"–"}</b><i>${t(D.bayes&&D.bayes.sinceEnd?"vMriEnd":"vMriSub")}</i></div>`;
   {const r1=P.rows[0];$("bayesnote").textContent=t("bayesNote",r1.fInt!=null?r1.fInt.toFixed(2):"–",D.bayes?D.bayes.mri6.toFixed(1):"–",r1.fMri.toFixed(2));}
-  $("gauges").innerHTML=P.rows.map((r,i)=>{const c=pColor(r.post),v=r.post*100,f=x=>x<.001?"<0.1":x*100<10?(x*100).toFixed(1):(x*100).toFixed(0);
+  // only 6 and 12 months: shorter ones barely move and read as forecasts of timing
+  $("gauges").innerHTML=P.rows.filter(r=>r.k>=6).map((r,i)=>{const c=pColor(r.post),v=r.post*100,f=x=>x<.001?"<0.1":x*100<10?(x*100).toFixed(1):(x*100).toFixed(0);
     return `<div class="gauge" style="--gc:${c}">${gaugeSVG(r.post,i,r.base)}<div class="pv" style="color:${c}">${v===0?"0":v<10?v.toFixed(1):v.toFixed(0)}<small>%</small></div><div class="hz">${t("hz",r.k)}</div>
       <div class="gx"><span class="gm"><i></i>${t("rnd")} ${f(r.base)}%</span></div></div>`}).join("");
 }
@@ -728,10 +729,10 @@ function renderMap(){
 function renderTabs(){$("t-vix").hidden=state.tab!=="vix";$("t-ev").hidden=state.tab!=="ev";$("t-method").hidden=state.tab!=="method";
   document.querySelectorAll("#tabs [data-tab]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab))}
 // backtest: the probability at the start of each month against when events came
-const HZ=[1,3,6,12];
+const HZ=[6,12];
 function renderBacktest(){
   const B=D.backtest;$("btp").hidden=!B||!B.length;if(!B||!B.length)return;
-  const hi=Math.max(0,HZ.indexOf(state.bh)),k=HZ[hi],off=state.bm==="out"?14:2,col={bay:off+hi,int:off+4+hi,rnd:off+8+hi};
+  const k=HZ.includes(state.bh)?state.bh:12,hi=[1,3,6,12].indexOf(k),off=state.bm==="out"?14:2,col={bay:off+hi,int:off+4+hi,rnd:off+8+hi};
   $("bthz").innerHTML=HZ.map(h=>`<button type="button" data-h="${h}" aria-pressed="${h===k}">${t("hz",h)}</button>`).join("");
   document.querySelectorAll("#btmode [data-bm]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.bm===state.bm));
   const CB=COL.mean,CI="#7fa8ff",CR="#8a8aa6";
