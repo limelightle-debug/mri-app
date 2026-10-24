@@ -56,9 +56,10 @@ def cached(url, path):
 def spx_closes():
     out = {}
     for row in csv.DictReader(io.StringIO(cached(SPX_HIST, SPX_CACHE))):
+        row = {k.strip().upper(): v for k, v in row.items() if k}  # the header's case and spacing vary
         try:
             m, d, y = row["DATE"].split("/")
-            c = float(row["CLOSE"])
+            c = float(str(row.get("CLOSE") or row.get("SPX")).replace(",", ""))
         except (KeyError, ValueError):
             continue
         if c > 0:
