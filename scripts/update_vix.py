@@ -125,7 +125,7 @@ def main():
         m = d // 100
         o, h, lo, c = days[d]
         if m not in months:
-            months[m] = [h, lo, c, d]
+            months[m] = [h, lo, c, d, o]  # o: the month's first open
         else:
             r = months[m]
             r[0], r[1], r[2], r[3] = max(r[0], h), min(r[1], lo), c, d
@@ -138,8 +138,8 @@ def main():
         j = max(i, i0)
         wh, wl = lh[j - WINDOW + 1:j + 1], ll[j - WINDOW + 1:j + 1]
         mh, sh, ml, sl = st.mean(wh), st.stdev(wh), st.mean(wl), st.stdev(wl)
-        h, lo, c, lastday = months[m]
-        rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6)])
+        h, lo, c, lastday, o = months[m]
+        rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o])
         if h > 10 ** (mh + K_EVENT * sh):
             if i - last > GAP:
                 events.append(m)
