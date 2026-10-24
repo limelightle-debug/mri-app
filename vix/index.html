@@ -55,6 +55,8 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .thr div{background:#0c0c22;border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center}
 .thr small{display:block;font-size:11px;color:var(--muted);font-weight:700}
 .thr b{font-family:var(--f-tick);font-stretch:82%;font-size:18px}
+.thr.two{margin-top:6px}
+.thr.two div:first-child{grid-column:span 2}
 .since{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
 .since b{font-family:var(--f-tick);font-stretch:85%;font-size:15px;color:var(--ink)}
 /* probability gauges */
@@ -212,18 +214,19 @@ table.ev tr.on td{background:var(--chip)}
     </section>
 
     <section class="panel">
-      <h2><b data-i18n="thisMonth">今月の高値</b><span id="asof"></span></h2>
+      <h2><b data-i18n="thisMonth">今月の高値・安値</b><span id="asof"></span></h2>
       <div class="hero">
         <div>
           <div class="big" id="hi">–</div>
           <div class="zone" id="zone"></div>
         </div>
         <div style="text-align:right">
-          <div class="lab" data-i18n="price">現在値</div>
-          <div class="num" id="px" style="font-size:22px;font-weight:700">–</div>
+          <div class="lab" data-i18n="lowLab">今月の安値</div>
+          <div class="num" id="lo" style="font-size:22px;font-weight:700">–</div>
         </div>
       </div>
       <div class="thr" id="thr"></div>
+      <div class="thr two" id="nrm"></div>
       <div class="since" id="since"></div>
     </section>
 
@@ -419,10 +422,10 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v62";
+const APP_VER="vix-v63";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",nCentre:"中心",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
   rALL:"全期間",r2:"2年",tabEv:"履歴",tabNow:"現況",tabMethod:"解説",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
@@ -430,7 +433,7 @@ const T={
   probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>`${n}か月`,rnd:"ランダム",vInt:"インターバル",vMon:"か月",vIntSub:"前回イベントから",vQuiet:n=>`静穏期間 あと${n}か月`,vMriSub:"直近6か月の最高",vMriEnd:"イベント終了からの最高",since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(fi,m,fm)=>`ベイズ確率：2つの変数から計算。インターバル＝イベント終了後6か月の静穏期間を過ぎると、経過とともに上がり、直近5回の平均間隔でランダムの2倍になる。MRI＝直近6か月（前回イベントの終了から6か月未満なら終了から）の MRI の最高。イベント中は0%。▼ はランダムの場合。`,ongoing:"発生中",btTitle:"発生確率のバックテスト",btIn:"全データ",btOut:"当時のデータ",lgBay:"ベイズ",lgInt:"インターバルのみ",lgRnd:"ランダム",lgWin:"イベント前の期間",btEv:"イベント前",btNo:"それ以外",btScore:"スコア",btHit:(k,n)=>`${k}か月以内にイベント #${n}`,btMiss:k=>`${k}か月以内のイベントなし`,btOpen:"結果待ち",btNote:"MRI が入った2018年以降、各月の初めに出ていた確率。全データ＝今のパラメータで過去を計算（後知恵あり）。当時のデータ＝その時点までのイベントだけで計算。網掛けはイベントの前の期間（そこで確率が高ければ当たり）。イベント前／それ以外＝その期間内にイベントが起きた月と起きなかった月の平均確率。スコア＝ブライアスコアのランダムに対する改善（0＝ランダムと同じ、プラスなら上回る）。",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
- en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
+ en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high and low",lowLab:"This month's low",nCentre:"Centre",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
   rALL:"All",r2:"2Y",tabEv:"History",tabNow:"Now",tabMethod:"Notes",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
@@ -549,7 +552,9 @@ function renderTop(){
   $("hi").textContent=r.h.toFixed(2);$("hi").style.color=z?zc:COL.ink;
   $("zone").textContent=`${t("zone")[z]}　M${magOf(r).toFixed(1)}`;$("zone").style.background=z?zc:"var(--chip)";$("zone").style.color=z?"#0a0a1a":"var(--ink2)";
   const lv=D.live,lt=lv&&nyDate(lv.time);
-  $("px").textContent=lv?lv.price.toFixed(2):"–";
+  $("lo").textContent=r.l.toFixed(2);
+  // the normal range (medians of monthly lows and highs) and its centre in logs, as on the candle chart
+  $("nrm").innerHTML=`<div><small>${t("cBand")}</small><b>${r.nL.toFixed(2)} – ${r.nH.toFixed(2)}</b></div><div><small>${t("nCentre")}</small><b>${Math.sqrt(r.nL*r.nH).toFixed(2)}</b></div>`;
   $("asof").textContent=lt?t("asof",fmtTime(lt,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})):"";
   $("thr").innerHTML=[1,2,3].map(k=>`<div><small style="color:${ZC()[k]}">+${k}σ</small><b>${r.th[k].toFixed(2)}</b></div>`).join("");
   const ev=D.events,last=ev[ev.length-1];
