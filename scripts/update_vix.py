@@ -33,7 +33,7 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM, MRI_LINE, MRI_WIDTH, QUIET = 201801, 72, 3, 6
+BAYES_FROM, MRI_LINE, MRI_WIDTH, QUIET = 201801, 70, 3, 6
 EVEN_N, SHAPE = 5, 1.5  # the interval's chance passes its average at the mean of the last 5 intervals, rising with time
 
 
@@ -90,11 +90,11 @@ def model(spans, mri, months, today):
     and quiet periods) at the mean m of the last 5 intervals: h(e) = lam_q * (e / m)^0.5, cumulative
     H(e) = lam_q * m / 1.5 * (e / m)^1.5, P = 1 - exp(-sum over the months past the quiet period).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
-    that is more recent. Every event so far came with x at or above 72, but so did many quiet months: the line works
-    as a step. The likelihood ratio is P(x >= 72 | before an event) / P(x >= 72 | other months) above the line and
+    that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
+    as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
     the same for below, the event share smoothed by Laplace's rule (+1 / +2). What counts is x when an event starts,
     not now: q_j = the share of months with x near today's (within 5, wider if too few) whose x j months later was
-    at or above 72, and the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below.
+    at or above 70, and the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below.
     Bayes: posterior odds = interval odds x MRI factor.
     Backtest rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
     was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""

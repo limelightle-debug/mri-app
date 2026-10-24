@@ -327,10 +327,10 @@ table.ev tr.on td{background:var(--chip)}
       <p><b>インターバル</b>：イベントの終了から6か月以内に次のイベントが起きたことは一度もない。そこでイベント中と終了後6か月を「静穏期間」として確率0とする。静穏期間を過ぎると、前回イベントからの経過月数 e とともに確率が上がる。直近5回の平均インターバル m の時点で、静穏期間を除いた平均の確率 λ′ になる。それより前は低く、後は高い。</p>
       <div class="eq">月あたり h(e) ＝ λ′ × (e ÷ m)<sup>0.5</sup><br><small style="margin:0">λ′ ＝ イベント数 ÷ 最初のイベント以降で、イベント中と静穏期間以外の月数　m ＝ 直近5回の間隔の平均</small></div>
       <p class="note">地震の長期評価の BPT モデル（間隔がたつほど確率が上がる）も試したが、バックテストではランダムに負けた。VIX イベントの間隔は8〜74か月とばらつきが大きく、周期性がないため。</p>
-      <p><b>MRI</b>：証拠は MRI の最高値 x。直近6か月の最高値、ただし前回イベントの終了から6か月に満たないときは終了からの最高値。イベントはどれも x が72以上で起きているが、72以上の月はイベントがなくても多い。MRI は傾きではなく段差として効くので、72の上と下で倍率を分ける。2018年以降（MRI が機能する期間）のイベント直前と普段の月（イベント中を除く）から出す。</p>
-      <div class="eq">72以上の倍率 ＝ P(x≧72｜イベント前) ÷ P(x≧72｜普段)<br>72未満の倍率 ＝ P(x＜72｜イベント前) ÷ P(x＜72｜普段)<br><small style="margin:0">イベント前の割合は (回数＋1) ÷ (イベント数＋2)（ラプラスの継起の法則）</small></div>
-      <p>ただし効くのはイベント発生時の x で、いまの x ではない。今後 k か月のうちに x は72を超えることも下がることもある。いまと近い x（±5）だった過去の月から、j か月後に72以上だった割合 q<sub>j</sub> を出し、期間の倍率はその平均にする。</p>
-      <div class="eq">k か月の MRI の倍率 ＝ q<sub>j</sub>×72以上の倍率 ＋ (1−q<sub>j</sub>)×72未満の倍率 の j＝1〜k の平均</div>
+      <p><b>MRI</b>：証拠は MRI の最高値 x。直近6か月の最高値、ただし前回イベントの終了から6か月に満たないときは終了からの最高値。イベントはどれも x が70以上で起きているが、70以上の月はイベントがなくても多い。MRI は傾きではなく段差として効くので、70の上と下で倍率を分ける。2018年以降（MRI が機能する期間）のイベント直前と普段の月（イベント中を除く）から出す。</p>
+      <div class="eq">70以上の倍率 ＝ P(x≧70｜イベント前) ÷ P(x≧70｜普段)<br>70未満の倍率 ＝ P(x＜70｜イベント前) ÷ P(x＜70｜普段)<br><small style="margin:0">イベント前の割合は (回数＋1) ÷ (イベント数＋2)（ラプラスの継起の法則）</small></div>
+      <p>ただし効くのはイベント発生時の x で、いまの x ではない。今後 k か月のうちに x は70を超えることも下がることもある。いまと近い x（±5）だった過去の月から、j か月後に70以上だった割合 q<sub>j</sub> を出し、期間の倍率はその平均にする。</p>
+      <div class="eq">k か月の MRI の倍率 ＝ q<sub>j</sub>×70以上の倍率 ＋ (1−q<sub>j</sub>)×70未満の倍率 の j＝1〜k の平均</div>
       <p><b>バックテスト</b>（上）：各月の初めに出ていた確率と、実際のイベントを比べる。全データ＝今のパラメータで過去を計算、当時のデータ＝その時点までのイベントだけで計算。</p>
       <p class="note">どの確率も過去の頻度からの推定で、予測ではない。イベントは12回と少なく、とくに MRI の倍率はイベント4回からの推定。</p>
       <h3>マグニチュード</h3>
@@ -384,10 +384,10 @@ table.ev tr.on td{background:var(--chip)}
       <p><b>Interval</b>: no event has ever come within 6 months of the previous one ending. So an event and the 6 months after it are a quiet period with probability 0. After it, the chance rises with the months e since the last event, passing its average λ′ (outside quiet periods) at the mean m of the last 5 intervals: lower before, higher after.</p>
       <div class="eq">monthly h(e) = λ′ × (e ÷ m)<sup>0.5</sup><br><small style="margin:0">λ′ = events ÷ months since the first event outside events and quiet periods　m = mean of the last 5 intervals</small></div>
       <p class="note">The BPT model of long-term earthquake forecasts (the chance rising as time passes) was tried too, but lost to random in the backtest: intervals between VIX events range from 8 to 74 months, with no period to them.</p>
-      <p><b>MRI</b>: the evidence is the MRI's highest, x: over the last 6 months, or since the last event ended if that was less than 6 months ago. Every event came with x at 72 or above, but so did many quiet months: MRI works as a step, not a slope, so the factor differs above and below 72. It is taken from x before events and in other months (outside events) since 2018, when MRI works.</p>
-      <div class="eq">factor above 72 = P(x ≥ 72 | before an event) ÷ P(x ≥ 72 | other months)<br>factor below 72 = P(x &lt; 72 | before an event) ÷ P(x &lt; 72 | other months)<br><small style="margin:0">the event share is (count + 1) ÷ (events + 2) (Laplace's rule of succession)</small></div>
-      <p>But what counts is x when an event starts, not x now: over the next k months x may rise past 72 or fall. From past months with x near today's (±5), q<sub>j</sub> is the share with x at 72 or above j months later, and the factor for a period is the mean.</p>
-      <div class="eq">MRI factor for k months = mean over j = 1..k of q<sub>j</sub> × factor above 72 + (1 − q<sub>j</sub>) × factor below 72</div>
+      <p><b>MRI</b>: the evidence is the MRI's highest, x: over the last 6 months, or since the last event ended if that was less than 6 months ago. Every event came with x at 70 or above, but so did many quiet months: MRI works as a step, not a slope, so the factor differs above and below 70. It is taken from x before events and in other months (outside events) since 2018, when MRI works.</p>
+      <div class="eq">factor above 70 = P(x ≥ 70 | before an event) ÷ P(x ≥ 70 | other months)<br>factor below 70 = P(x &lt; 70 | before an event) ÷ P(x &lt; 70 | other months)<br><small style="margin:0">the event share is (count + 1) ÷ (events + 2) (Laplace's rule of succession)</small></div>
+      <p>But what counts is x when an event starts, not x now: over the next k months x may rise past 70 or fall. From past months with x near today's (±5), q<sub>j</sub> is the share with x at 70 or above j months later, and the factor for a period is the mean.</p>
+      <div class="eq">MRI factor for k months = mean over j = 1..k of q<sub>j</sub> × factor above 70 + (1 − q<sub>j</sub>) × factor below 70</div>
       <p><b>Backtest</b> (above): the probability as it read at the start of each month against the events. All data: today's parameters applied to the past; data then: only the events known by then.</p>
       <p class="note">All probabilities are estimates from past frequencies, not forecasts. There are only 12 events, and the MRI factor rests on 4 of them.</p>
       <h3>Magnitude</h3>
@@ -419,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v56";
+const APP_VER="vix-v57";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -515,7 +515,7 @@ function renderProb(){
   const P=eventProb();$("probp").hidden=!P;if(!P)return;
   $("probsub").textContent=P.ongoing?t("ongoing"):"";
   // the two variables take the colour of their state: interval green in the quiet period, red during an event, and
-  // in between by its monthly chance against random (half: green, equal: orange, 1.5 times: red); MRI from green to red across the 72 line (the same smooth step as its factor)
+  // in between by its monthly chance against random (half: green, equal: orange, 1.5 times: red); MRI from green to red across the 70 line (the same smooth step as its factor)
   const B=D.bayes||{},x=B.mri6,w=x==null?0:1/(1+Math.exp(-(x-(B.line||75))/(B.width||3)));
   const r1=P.rows[0],hr=r1.base>0?r1.p/r1.base:1,ci=P.ongoing?COL.s3:P.quiet?COL.s1:d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(Math.max(0,Math.min(1,hr-.5))),cm=x==null?"#3a3a6a":d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(w);
   $("pvars").innerHTML=`<div style="--vc:${ci}"><small>${t("vInt")}</small><b>${P.e}<span>${t("vMon")}</span></b><i>${P.ongoing?t("ongoing"):P.quiet?t("vQuiet",P.quiet):t("vIntSub")}</i></div><div style="--vc:${cm}"><small>MRI</small><b>${D.bayes&&D.bayes.mri6!=null?D.bayes.mri6.toFixed(1):"–"}</b><i>${t(D.bayes&&D.bayes.sinceEnd?"vMriEnd":"vMriSub")}</i></div>`;
