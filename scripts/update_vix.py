@@ -34,6 +34,7 @@ SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, MRI_WIDTH, QUIET = 201801, 75, 3, 6
+WEIB_K = 1.2  # the hazard rises gently with time past the quiet period (the free fit gives about 1.0 to 1.1)
 
 
 def get(url):
@@ -84,9 +85,9 @@ def model(spans, mri, months, today):
 
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
     Interval: no event has come within 6 months of the previous one ending (0 in 60 such months, against about 1 in
-    30 otherwise), so the hazard is 0 during an event and for 6 months after it ends, and constant after that:
-    lam_q = events / months outside events and those quiet periods. Over k months, P = 1 - exp(-lam_q * months of
-    the k that are past the quiet period).
+    30 otherwise), so the hazard is 0 during an event and for 6 months after it ends. After that it rises gently with
+    time (Weibull, shape 1.2, scale fitted by maximum likelihood to the months from the end of each quiet period to the
+    next event, the open one censored): over months s..e past the quiet period, P = 1 - exp(-((e/L)^1.2 - (s/L)^1.2)).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 75, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 75 | before an event) / P(x >= 75 | other months) above the line and
@@ -116,12 +117,38 @@ def model(spans, mri, months, today):
         return idx(e // 100) + QUIET if e else -1
     ONG = {m: ongoing_at(m * 100 + 1) for m in months}
     QM = {m: idx(m) < quiet_until(m * 100 + 1) for m in months}
+    def weib(upto):
+        # Weibull hazard in the months past the quiet period, fitted by maximum likelihood: T = months from the end of
+        # the quiet period (or the start of the data) to the next event; the open interval up to now is censored
+        lim = idx(upto) if upto else idx(months[-1]) + 1
+        known = [(s_, e) for s_, e in spans if idx(s_ // 100) < lim]
+        T, E, prev = [], [], idx(months[0])
+        for s_, e in known:
+            T.append(max(1, idx(s_ // 100) - prev + 1))
+            E.append(1)
+            if not e or e >= (upto or 999999) * 100 + 1:
+                prev = None
+                break
+            prev = idx(e // 100) + QUIET
+        if prev is not None and lim - prev > 0:
+            T.append(lim - prev)
+            E.append(0)
+        if sum(E) < 4:
+            return 1.0, sum(T) / max(1, sum(E))
+        if WEIB_K:
+            return WEIB_K, (sum(t ** WEIB_K for t in T) / sum(E)) ** (1 / WEIB_K)
+        best = None
+        for kk in (x / 100 for x in range(70, 201)):
+            lam = (sum(t ** kk for t in T) / sum(E)) ** (1 / kk)
+            ll = sum(e * (math.log(kk / lam) + (kk - 1) * math.log(t / lam)) for t, e in zip(T, E)) - sum((t / lam) ** kk for t in T)
+            if best is None or ll > best[0]:
+                best = (ll, kk, lam)
+        return best[1], best[2]
     def rates(upto):
         ms = [m for m in months if upto is None or m < upto]
         n = sum(1 for s_ in smon if upto is None or s_ < upto)
         free = [m for m in ms if not ONG[m]]
-        act = [m for m in free if not QM[m]]
-        return n / len(free), n / len(act)
+        return n / len(free), weib(upto)
     mm = [m for m in months if m >= BAYES_FROM]
     X = {m: xat(m * 100 + 1)[0] for m in mm}
     XE = {s_: xat(s_)[0] for s_, _ in spans if s_ >= BAYES_FROM * 100}
@@ -148,12 +175,12 @@ def model(spans, mri, months, today):
             q.append(sum(f >= MRI_LINE for f in fut) / len(fut) if len(fut) >= 3 else par["pn"])
         return q, {k: st.mean(qq * par["hi"] + (1 - qq) * par["lo"] for qq in q[:k]) for k in (1, 3, 6, 12)}
     def probs(m, ongoing, qu, lam, fk):
-        lam_r, lam_q = lam
+        lam_r, (kw, lw) = lam
         out = []
         for k in (1, 3, 6, 12):
-            act = sum(1 for j in range(k) if idx(m) + j >= qu)
+            s0, e0 = max(idx(m), qu) - qu, idx(m) + k - qu  # months past the quiet period at the window's ends
             b = 1 - math.exp(-lam_r * k)
-            pi = 0 if ongoing else 1 - math.exp(-lam_q * act)
+            pi = 0 if ongoing or e0 <= 0 else 1 - math.exp(-((e0 / lw) ** kw - (s0 / lw) ** kw))
             o = odds(pi) * fk.get(k, 1) if 0 < pi < 1 else 0
             out.append((k, o / (1 + o), pi, b))
         return out
@@ -171,7 +198,7 @@ def model(spans, mri, months, today):
         lr = math.exp(math.log(par_in["lo"]) + w * (math.log(par_in["hi"]) - math.log(par_in["lo"])))
     bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
              "ongoing": ongoing, "quiet": QUIET, "quietLeft": max(0, qu - idx(cur)), "lamR": round(lam_in[0], 5),
-             "lamQ": round(lam_in[1], 5), "line": MRI_LINE, "width": MRI_WIDTH, "from": BAYES_FROM,
+             "weibK": round(lam_in[1][0], 3), "weibL": round(lam_in[1][1], 2), "sinceQuiet": max(0, idx(cur) - qu), "line": MRI_LINE, "width": MRI_WIDTH, "from": BAYES_FROM,
              "lr": None if lr is None else round(lr, 4), "lrK": {k: round(v, 4) for k, v in fk.items()},
              "q": [round(v, 2) for v in q],
              "prob": [{"k": k, "post": round(p, 5), "int": round(pi, 5), "base": round(b, 5)}
