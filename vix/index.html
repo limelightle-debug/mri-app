@@ -106,6 +106,8 @@ table.ev small.enm .evt{margin-left:6px;vertical-align:1px}
 .lsub{font-family:var(--f-tick);font-stretch:85%;font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
 .lnext{font-size:12px;color:var(--muted);margin-top:8px}
 .lnext:empty{display:none}
+.stick{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:6px 8px;border-bottom:1px solid var(--line)}
+.tabs{margin:0}.tabs button{flex:1;padding:9px 6px;font-size:14px}
 /* chart */
 .seg{display:flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px;margin-bottom:8px}
 .seg button{flex:1;appearance:none;border:0;background:transparent;color:var(--ink2);font:500 13px/1 var(--f-body);padding:8px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
@@ -155,8 +157,15 @@ table.ev tr.on td{background:var(--chip)}
     </div>
     <div class="langseg" id="lang" role="group" aria-label="Language"><button type="button" data-lang="ja">JP</button><button type="button" data-lang="en">EN</button></div>
   </header>
+  <div class="stick">
+    <div class="seg tabs" id="tabs" role="group">
+      <button type="button" data-tab="vix">VIX</button>
+      <button type="button" data-tab="ev" data-i18n="tabEv">イベント</button>
+    </div>
+  </div>
 
   <div id="app" hidden>
+   <div id="t-vix">
     <section class="panel" id="latest">
       <h2><b data-i18n="lTitle">VIX 最新値</b><span class="lpill" id="lpill"></span></h2>
       <div class="lrow">
@@ -203,6 +212,8 @@ table.ev tr.on td{background:var(--chip)}
       <p class="pnote" id="bayesnote"></p>
     </section>
 
+   </div>
+   <div id="t-ev">
     <section class="panel">
       <h2><b data-i18n="chartTitle">VIXイベント</b><span class="scseg" role="group"><button type="button" data-sc="lin" data-i18n="scLin">通常</button><button type="button" data-sc="log" data-i18n="scLog">対数</button></span></h2>
       <div class="seg" id="range" role="group" aria-label="期間">
@@ -231,6 +242,7 @@ table.ev tr.on td{background:var(--chip)}
       <p class="pnote" data-i18n="shNote"></p>
     </section>
 
+   </div>
     <div class="foot">
       <span class="labname"><img src="icons/lab.jpg" alt="" width="36" height="36"><span data-i18n="lab">恐怖指数研究所</span></span>
       <span><a href="../">MRI</a><a href="https://limelightle-debug.github.io/tqqq/">TQQQ</a><a href="https://limelightle-debug.github.io/ndx-heatmap/">Nasdaq 100</a></span>
@@ -242,11 +254,11 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v32";
+const APP_VER="vix-v33";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
-  rALL:"全期間",r2:"2年",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+  rALL:"全期間",r2:"2年",tabEv:"イベント",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
@@ -254,7 +266,7 @@ const T={
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
-  rALL:"All",r2:"2Y",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
+  rALL:"All",r2:"2Y",tabEv:"Events",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
@@ -271,7 +283,7 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const COL={ink:css("--ink"),s1:css("--s1"),s2:css("--s2"),s3:css("--s3"),mean:css("--mean"),ev:css("--ev"),line:css("--line")};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 
-let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),sc:store.get("vixScale","log"),pick:null,cpick:null};
+let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null};
 // month rows: {m, h, l, c, th:[mean,+1σ,+2σ,+3σ]}
 // neon glow for lines and dots
 const GLOW=`<defs><filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
@@ -519,8 +531,10 @@ function renderMap(){
   $("maplegend").innerHTML=`<span style="color:var(--muted)">${t("bSh")}</span>`+["4","5-","5+","6-","6+","7"].map(v=>shBadge(v)).join("");
 }
 
+function renderTabs(){$("t-vix").hidden=state.tab!=="vix";$("t-ev").hidden=state.tab!=="ev";
+  document.querySelectorAll("#tabs [data-tab]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab))}
 function renderAll(){
-  applyLang();markScale();renderLatest();renderProb();renderTop();renderLegend();renderChart();renderCandle();renderMap();renderEvents();
+  applyLang();renderTabs();markScale();renderLatest();renderProb();renderTop();renderLegend();renderChart();renderCandle();renderMap();renderEvents();
   document.querySelectorAll("#range [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.r));
 }
 
@@ -542,6 +556,8 @@ document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
 $("range").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.r=b.dataset.r;store.set("vixRange",state.r);renderAll()});
 document.querySelectorAll(".scseg").forEach(el=>el.addEventListener("click",e=>{const b=e.target.closest("[data-sc]");if(!b)return;state.sc=b.dataset.sc;store.set("vixScale",state.sc);markScale();renderChart();renderCandle()}));
 function markScale(){document.querySelectorAll(".scseg [data-sc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sc===state.sc))}
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b||b.dataset.tab===state.tab)return;state.tab=b.dataset.tab;store.set("vixTab",state.tab);
+  renderTabs();window.scrollTo(0,0);if(D){if(state.tab==="vix"){renderCandle();renderProb()}else{renderChart();renderMap();renderEvents()}}});
 $("crange").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.cr=b.dataset.r;store.set("vixCRange",state.cr);renderCandle()});
 $("evchips").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;state.pick=+b.dataset.m;renderMap();renderChart();markRow()});
 $("evbody").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const m=+tr.dataset.m;state.pick=m;
