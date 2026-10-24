@@ -179,7 +179,7 @@ table.ev tr.on td{background:var(--chip)}
     </section>
 
     <section class="panel">
-      <h2><b data-i18n="chartTitle">VIX 月足高値</b><span class="scseg" role="group"><button type="button" data-sc="lin" data-i18n="scLin">通常</button><button type="button" data-sc="log" data-i18n="scLog">対数</button></span></h2>
+      <h2><b data-i18n="chartTitle">VIXイベント</b><span class="scseg" role="group"><button type="button" data-sc="lin" data-i18n="scLin">通常</button><button type="button" data-sc="log" data-i18n="scLog">対数</button></span></h2>
       <div class="seg" id="range" role="group" aria-label="期間">
         <button type="button" data-r="all" data-i18n="rALL">全期間</button>
         <button type="button" data-r="20" data-i18n="r20">20年</button>
@@ -201,7 +201,7 @@ table.ev tr.on td{background:var(--chip)}
     </section>
 
     <section class="panel">
-      <h2><b data-i18n="events">VIXイベント</b><span id="evcount"></span></h2>
+      <h2><b data-i18n="events">VIXイベント一覧</b><span id="evcount"></span></h2>
       <table class="ev"><thead><tr><th>#</th><th data-i18n="month">年月</th><th>M</th><th data-i18n="shCol">震度</th></tr></thead><tbody id="evbody"></tbody></table>
       <p class="pnote" data-i18n="shNote"></p>
     </section>
@@ -217,19 +217,19 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v16";
+const APP_VER="vix-v17";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
-  rALL:"全期間",r2:"2年",scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は月足安値の−1σから月足高値の+1σまで。平均は月足終値の対数の平均（どちらも閾値と同じ窓）。対数表示では平均が中央。",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
+  rALL:"全期間",r2:"2年",scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は月足安値の−1σから月足高値の+1σまで。平均は月足終値の対数の平均（どちらも閾値と同じ窓）。対数表示では平均が中央。",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",
   probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>n===1?"今後1か月":`今後${n}か月`,since:n=>`前回から${n}か月`,base:v=>`平常時 ${v}%`,ongoing:"発生中",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
- en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX monthly high",logScale:"log scale",
-  rALL:"All",r2:"2Y",scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the monthly low’s −1σ to the monthly high’s +1σ. Mean: the mean of the log of monthly closes (same window as the thresholds). On the log scale the mean is in the middle.",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"VIX events",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
+ en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
+  rALL:"All",r2:"2Y",scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the monthly low’s −1σ to the monthly high’s +1σ. Mean: the mean of the log of monthly closes (same window as the thresholds). On the log scale the mean is in the middle.",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",
