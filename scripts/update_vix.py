@@ -249,7 +249,23 @@ def main():
         if now is not None:
             w = 1 / (1 + math.exp(-(now - MRI_LINE) / MRI_WIDTH))
             lr = math.exp(math.log(lo_) + w * (math.log(hi) - math.log(lo_)))
-        bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(md[-1] + 1),
+        # the event needs x >= 75 when it starts, not now: over the next k months x may rise past the line or fall back.
+        # q_j = the share of months since 2018 with x near today's (within 5, wider if too few) whose x j months later
+        # was at or above 75; the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below
+        lr_k, q = {}, []
+        if now is not None:
+            mo = [k for k in sorted({d // 100 for d in md}) if k >= BAYES_FROM]
+            X = {k: xat(k * 100 + 1)[0] for k in mo}
+            for band in (5, 8, 12, 100):
+                base = [k for k in mo if X[k] is not None and abs(X[k] - now) <= band and not in_event(k * 100 + 1)]
+                if len(base) >= 20:
+                    break
+            for j in range(1, 13):
+                fut = [X[add_months(k, j)] for k in base if X.get(add_months(k, j)) is not None]
+                q.append(sum(f >= MRI_LINE for f in fut) / len(fut) if fut else pn)
+            for k in (1, 3, 6, 12):
+                lr_k[k] = round(st.mean(qq * hi + (1 - qq) * lo_ for qq in q[:k]), 4)
+        bayes = {"mri6": None if now is None else round(now, 1), "lrK": lr_k, "q": [round(v, 2) for v in q], "sinceEnd": since_end, "lastEnd": last_end(md[-1] + 1),
                  "ongoing": ongoing, "line": MRI_LINE, "width": MRI_WIDTH, "lrHi": round(hi, 3), "lrLo": round(lo_, 3),
                  "lr": None if lr is None else round(lr, 4), "from": BAYES_FROM, "events": len(x1),
                  "eventsAbove": sum(x >= MRI_LINE for x in x1), "months": len(x0), "monthsAbove": round(pn, 3)}
