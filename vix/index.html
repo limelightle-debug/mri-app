@@ -422,7 +422,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v65";
+const APP_VER="vix-v66";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",nCentre:"中心",lgMonth:"今月",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -551,7 +551,7 @@ function renderLatest(){
 // the monthly-low thresholds (−1σ, −2σ) and the monthly-high thresholds (+1σ, +2σ) in the same colours, labelled below, the normal range as a
 // band with its centre, and this month's range from low to high
 function renderGaugeBar(r){
-  const box=$("vg"),W=Math.max(300,box.clientWidth||340),H=68,ML=14,MR=14,PW=W-ML-MR,Y=16;
+  const box=$("vg"),W=Math.max(300,box.clientWidth||340),H=82,ML=14,MR=14,PW=W-ML-MR,Y=30,YM=8;
   const c=Math.log10(Math.sqrt(r.nL*r.nH)),l1=10**(r.muL-r.sdL),l2=10**(r.muL-2*r.sdL),h1=r.th[1],h2=r.th[2];
   const d=Math.max(Math.log10(h2)-c,c-Math.log10(l2),Math.log10(r.h)-c,c-Math.log10(r.l))*1.08;
   const x=v=>ML+PW*(Math.log10(v)-(c-d))/(2*d),f=v=>v.toFixed(2);
@@ -562,9 +562,9 @@ function renderGaugeBar(r){
     (up?`<text x="${xx}" y="${Y-30}" text-anchor="middle" style="fill:${col};font:700 11px var(--f-tick)">${lab}</text><text x="${xx}" y="${Y-17}" text-anchor="middle" class="vgv">${f(v)}</text>`
        :`<text x="${xx}" y="${Y+26}" text-anchor="middle" class="vgv">${f(v)}</text><text x="${xx}" y="${Y+39}" text-anchor="middle" style="fill:${col};font:700 11px var(--f-tick)">${lab}</text>`)};
   g+=tick(h1,COL.s1,"+1σ",0)+tick(h2,COL.s2,"+2σ",0)+tick(l1,COL.s1,"−1σ",0)+tick(l2,COL.s2,"−2σ",0);
-  // this month: low to high
+  // this month: low to high, a bar of its own above the gauge
   const z=zoneOf(r.h,r.th),hc=z?ZC()[z]:COL.ink;
-  g+=`<line x1="${x(r.l)}" x2="${x(r.h)}" y1="${Y}" y2="${Y}" stroke="${COL.ink}" stroke-width="3" stroke-linecap="round"/><circle cx="${x(r.l)}" cy="${Y}" r="4.5" fill="${COL.ink}" stroke="var(--panel)" stroke-width="1.5"/><circle cx="${x(r.h)}" cy="${Y}" r="5" fill="${hc}" stroke="var(--panel)" stroke-width="1.5" filter="url(#neon)"/>`;
+  g+=`<line x1="${x(r.l)}" x2="${x(r.h)}" y1="${YM}" y2="${YM}" stroke="${COL.ink}" stroke-width="3" stroke-linecap="round"/><circle cx="${x(r.l)}" cy="${YM}" r="4.5" fill="${COL.ink}" stroke="var(--panel)" stroke-width="1.5"/><circle cx="${x(r.h)}" cy="${YM}" r="5" fill="${hc}" stroke="var(--panel)" stroke-width="1.5" filter="url(#neon)"/>`;
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cBand")}">${GLOW}<style>.vgv{fill:var(--ink);font:600 11px var(--f-tick);font-stretch:85%}</style>${g}</svg>`;
   $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")} ${f(r.nL)}–${f(r.nH)}</span><span><i class="d" style="--c:${COL.mean}"></i>${t("nCentre")} ${f(10**c)}</span><span><i style="--c:${COL.ink}"></i>${t("lgMonth")} ${f(r.l)}–${f(r.h)}</span>`;
 }
