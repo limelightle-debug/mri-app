@@ -62,7 +62,9 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .gauge .pv small{font-size:16px;margin-left:1px}
 .gauge .bl{font-family:var(--f-tick);font-stretch:85%;font-size:11px;color:var(--muted);margin-top:4px}
 /* epicentre map */
-.mapbox{position:relative}
+.mapbox{position:relative;touch-action:pan-y}
+.mapbox svg .land{vector-effect:non-scaling-stroke}.mapbox svg .grat{vector-effect:non-scaling-stroke}
+.mapbox .zreset{position:absolute;right:6px;top:6px;display:none;appearance:none;border:1px solid var(--line);background:rgba(17,17,39,.85);color:var(--ink2);font:600 11.5px/1 var(--f-body);padding:6px 9px;border-radius:7px;cursor:pointer}.mapbox.zoomed .zreset{display:block}
 .mapbox svg{display:block;width:100%;height:auto}
 .mapbox .land{fill:#23234a;stroke:#3a3a6e;stroke-width:.5}
 .mapbox .grat{fill:none;stroke:#1c1c40;stroke-width:.6}
@@ -196,7 +198,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v12";
+const APP_VER="vix-v13";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
@@ -204,7 +206,7 @@ const T={
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",
-  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>n===1?"今後1か月":`今後${n}か月`,since:n=>`前回から${n}か月`,base:v=>`平常時 ${v}%`,ongoing:"発生中",
+  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>n===1?"今後1か月":`今後${n}か月`,since:n=>`前回から${n}か月`,base:v=>`平常時 ${v}%`,ongoing:"発生中",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX monthly high",logScale:"log scale",
@@ -212,7 +214,7 @@ const T={
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",
-  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"Next month":`Next ${n} months`,since:n=>`${n} months since the last`,base:v=>`baseline ${v}%`,ongoing:"Ongoing",
+  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"Next month":`Next ${n} months`,since:n=>`${n} months since the last`,base:v=>`baseline ${v}%`,ongoing:"Ongoing",
   note:"Thresholds: mean + kσ of the log of monthly highs. Fixed at 1990–2019 values until 2019, then the latest 30 years.",
   loadFail:"Could not load the data. Please reopen in a while."}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
@@ -373,16 +375,29 @@ function renderMap(){
   const EP=episodes(),places=new Map();
   EP.forEach(({m,mag},k)=>{const e=epiOf(m);if(!e)return;const key=e[2]+","+e[3];if(!places.has(key))places.set(key,{e,items:[]});places.get(key).items.push({m,k,mag})});
   const sel=D.events.includes(state.pick)?state.pick:D.events[D.events.length-1];let mk="",lb="";
+  // markers and labels are drawn at (0,0) inside groups placed at their projected point, so a pinch zoom moves
+  // them without enlarging them
   [...places.entries()].forEach(([key,{e,items}])=>{
     const [x,y]=pr([e[3],e[2]]),mmax=d3.max(items,i=>i.mag),s=4+Math.max(0,mmax-7)*3,on=items.some(i=>i.m===sel);
-    const X=(w,c)=>`<path d="M${x-s} ${y-s}L${x+s} ${y+s}M${x+s} ${y-s}L${x-s} ${y+s}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
-    mk+=`<g class="mk" data-ms="${items.map(i=>i.m).join(",")}"><circle cx="${x}" cy="${y}" r="${s+10}" fill="transparent"/>${on?`<circle cx="${x}" cy="${y}" r="${s+5}" fill="none" stroke="#fff" stroke-width="1.4" opacity=".9"/>`:""}${X(s>6?5.5:4.6,"#fff")}${X(s>6?3.2:2.6,"#e60012")}</g>`;
+    const X=(w,c)=>`<path d="M${-s} ${-s}L${s} ${s}M${s} ${-s}L${-s} ${s}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
     const [ox,oy,an]=LBL[key]||[s+4,-(s-2),"start"];
-    lb+=`<text class="lb" x="${(x+ox).toFixed(1)}" y="${(y+oy).toFixed(1)}" text-anchor="${an}">${items.map(i=>i.k+1).join("·")}</text>`;
+    mk+=`<g class="mk pt" data-x="${x.toFixed(2)}" data-y="${y.toFixed(2)}" transform="translate(${x.toFixed(2)},${y.toFixed(2)})" data-ms="${items.map(i=>i.m).join(",")}"><circle r="${s+10}" fill="transparent"/>${on?`<circle r="${s+5}" fill="none" stroke="#fff" stroke-width="1.4" opacity=".9"/>`:""}${X(s>6?5.5:4.6,"#fff")}${X(s>6?3.2:2.6,"#e60012")}</g>`;
+    lb+=`<g class="pt" data-x="${x.toFixed(2)}" data-y="${y.toFixed(2)}" transform="translate(${x.toFixed(2)},${y.toFixed(2)})"><text class="lb" x="${ox}" y="${oy}" text-anchor="${an}">${items.map(i=>i.k+1).join("·")}</text></g>`;
   });
-  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("mapTitle")}">${g}${mk}${lb}</svg>`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("mapTitle")}"><g class="zm">${g}</g>${mk}${lb}</svg><button type="button" class="zreset">${t("zReset")}</button>`;
   box.querySelectorAll(".mk").forEach(el=>el.addEventListener("click",()=>{const ms=el.dataset.ms.split(",").map(Number);
     const i=ms.indexOf(state.pick);state.pick=ms[(i+1)%ms.length];renderMap();renderChart();markRow()}));
+  // pinch to zoom (two fingers); once zoomed in, one finger pans the map. At full size one finger scrolls the page
+  const svg=d3.select(box).select("svg"),zg=svg.select(".zm"),pts=svg.selectAll(".pt");
+  const apply=tr=>{zg.attr("transform",tr);pts.attr("transform",function(){return `translate(${tr.applyX(+this.dataset.x)},${tr.applyY(+this.dataset.y)})`});
+    box.style.touchAction=tr.k>1.01?"none":"pan-y";box.classList.toggle("zoomed",tr.k>1.01)};
+  const zoom=d3.zoom().scaleExtent([1,8]).translateExtent([[0,0],[W,H]]).extent([[0,0],[W,H]])
+    .filter(ev=>ev.type==="wheel"?ev.ctrlKey:ev.type.startsWith("touch")?(ev.touches.length>=2||(state.zt&&state.zt.k>1.01)):!ev.button&&state.zt&&state.zt.k>1.01)
+    .on("zoom",ev=>{state.zt=ev.transform;apply(ev.transform)});
+  svg.call(zoom).on("dblclick.zoom",null);
+  if(state.zt&&state.zt.k>1.01&&state.zW===W)svg.call(zoom.transform,state.zt);else{state.zt=d3.zoomIdentity;apply(state.zt)}
+  state.zW=W;
+  box.querySelector(".zreset").addEventListener("click",()=>svg.transition().duration(300).call(zoom.transform,d3.zoomIdentity));
   // the bulletin for the chosen event (the latest by default), as in an earthquake report
   const ep=EP.find(x=>x.m===sel),e=epiOf(sel),I=(D.eventInfo||{})[sel]||{},k=D.events.indexOf(sel)+1;
   $("mapread").innerHTML=`<div class="bul"><div class="bh"><b>#${k}</b><b>${esc(nameOf(sel))}</b><small>${e?t("typeName")[e[4]]:""}</small></div>
