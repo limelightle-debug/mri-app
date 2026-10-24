@@ -412,7 +412,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v76";
+const APP_VER="vix-v77";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -546,8 +546,10 @@ function renderGaugeBar(r){
   const s3=r.h>r.th[2]||(lp&&lp>r.th[2]);
   const box=$("vg"),W=Math.max(300,box.clientWidth||340),H=128,ML=14,MR=14,PW=W-ML-MR,Y=76,YM=30;
   const c=Math.log10(Math.sqrt(r.nL*r.nH)),l1=10**(r.muL-r.sdL),l2=10**(r.muL-2*r.sdL),h1=r.th[1],h2=r.th[2],h3=r.th[3];
-  const d=Math.max(Math.log10(s3?h3:h2)-c,c-Math.log10(l2),Math.log10(r.h)-c,c-Math.log10(r.l),lp?Math.abs(Math.log10(lp)-c):0)*1.08;
-  const x=v=>ML+PW*(Math.log10(v)-(c-d))/(2*d),f=v=>v.toFixed(2);
+  // ends equally far from the centre in logs; once +3σ is in, the left end only goes as far as it needs
+  const dl=Math.max(c-Math.log10(l2),c-Math.log10(r.l),lp?c-Math.log10(lp):0),dr=Math.max(Math.log10(s3?h3:h2)-c,Math.log10(r.h)-c,lp?Math.log10(lp)-c:0);
+  const a0=c-(s3?dl:Math.max(dl,dr))*1.08,a1=c+(s3?dr:Math.max(dl,dr))*1.08;
+  const x=v=>ML+PW*(Math.log10(v)-a0)/(a1-a0),f=v=>v.toFixed(2);
   let g=`<rect x="${ML}" y="${Y-3}" width="${PW}" height="6" rx="3" fill="#1f1f44"/>`;
   g+=`<rect x="${x(r.nL)}" y="${Y-8}" width="${x(r.nH)-x(r.nL)}" height="16" rx="3" fill="rgba(127,168,255,.28)"/>`;
   g+=`<line x1="${x(10**c)}" x2="${x(10**c)}" y1="${Y-12}" y2="${Y+12}" stroke="${COL.mean}" stroke-width="1.5" stroke-dasharray="3 2"/><text x="${x(10**c)}" y="${Y+26}" text-anchor="middle" class="vgv" style="fill:${COL.mean}">${f(10**c)}</text><text x="${x(10**c)}" y="${Y+39}" text-anchor="middle" style="fill:${COL.mean};font:700 11px var(--f-body)">${t("nCentre")}</text>`;
