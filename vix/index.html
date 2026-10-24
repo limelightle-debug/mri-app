@@ -422,7 +422,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v67";
+const APP_VER="vix-v68";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",nCentre:"中心",lgMonth:"今月",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -567,8 +567,11 @@ function renderGaugeBar(r){
   // this month: low to high, a bar of its own above the gauge
   const z=zoneOf(r.h,r.th),hc=z?ZC()[z]:COL.ink;
   g+=`<line x1="${x(r.l)}" x2="${x(r.h)}" y1="${YM}" y2="${YM}" stroke="${COL.ink}" stroke-width="3" stroke-linecap="round"/><circle cx="${x(r.l)}" cy="${YM}" r="4.5" fill="${COL.ink}" stroke="var(--panel)" stroke-width="1.5"/><circle cx="${x(r.h)}" cy="${YM}" r="5" fill="${hc}" stroke="var(--panel)" stroke-width="1.5" filter="url(#neon)"/>`;
+  // the month's low to the left of its dot and high to the right, so they never collide (early in the month the two are close)
+  const lx=x(r.l)-9,hx=x(r.h)+9,hfit=hx+34<W,lfit=lx-34>0;
+  g+=`<text x="${lfit?lx:x(r.l)}" y="${lfit?YM+4:YM+17}" text-anchor="${lfit?"end":"middle"}" class="vgv">${f(r.l)}</text><text x="${hfit?hx:x(r.h)}" y="${hfit?YM+4:YM+17}" text-anchor="${hfit?"start":"middle"}" class="vgv" style="fill:${hc}">${f(r.h)}</text>`;
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cBand")}">${GLOW}<style>.vgv{fill:var(--ink);font:600 11px var(--f-tick);font-stretch:85%}</style>${g}</svg>`;
-  $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.mean}"></i>${t("nCentre")} ${f(10**c)}</span><span><i style="--c:${COL.ink}"></i>${t("lgMonth")} ${f(r.l)}–${f(r.h)}</span>`;
+  $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.mean}"></i>${t("nCentre")} ${f(10**c)}</span><span><i style="--c:${COL.ink}"></i>${t("lgMonth")}</span>`;
 }
 
 function renderTop(){
