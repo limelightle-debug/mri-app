@@ -154,6 +154,12 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .ax{font-family:var(--f-tick);font-stretch:82%;font-size:11px;fill:var(--muted)}
 .grid{stroke:var(--line);stroke-width:1}
 .pnote{font-size:11px;color:var(--muted);margin:6px 0 0}
+/* backtest scores */
+table.bts{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+table.bts th{font-weight:700;color:var(--muted);font-size:11px;text-align:right;padding:3px 6px;border-bottom:1px solid var(--line)}
+table.bts th:first-child,table.bts td:first-child{text-align:left}
+table.bts td{padding:5px 6px;text-align:right;font-family:var(--f-tick);font-stretch:85%;font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink)}
+table.bts td:first-child{font-family:var(--f-body);font-size:12px;color:var(--ink2)}
 /* events */
 table.ev{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
 table.ev th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px}
@@ -256,6 +262,16 @@ table.ev tr.on td{background:var(--chip)}
       <div class="readout" id="readout"></div>
       <div class="chart" id="chart"></div>
       <p class="pnote" data-i18n="note">閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。</p>
+    </section>
+
+    <section class="panel" id="btp">
+      <h2><b data-i18n="btTitle">発生確率のバックテスト</b><span class="scseg" id="btmode" role="group"><button type="button" data-bm="in" data-i18n="btIn">全データ</button><button type="button" data-bm="out" data-i18n="btOut">当時のデータ</button></span></h2>
+      <div class="seg" id="bthz" role="group"></div>
+      <div class="legend" id="btlegend"></div>
+      <div class="readout" id="btread"></div>
+      <div class="chart" id="btchart"></div>
+      <table class="bts" id="btscore"></table>
+      <p class="pnote" data-i18n="btNote"></p>
     </section>
 
     <section class="panel">
@@ -403,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v45";
+const APP_VER="vix-v46";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -411,7 +427,7 @@ const T={
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
-  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>`${n}か月`,rnd:"ランダム",vInt:"インターバル",vMon:"か月",vIntSub:"前回イベントから",vMriSub:"直近6か月の最高",vMriEnd:"イベント終了からの最高",since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(fi,m,fm)=>`ベイズ確率：ランダム（毎月同じ確率で起きるサイコロ）を出発点に、2つの変数の倍率を掛けて更新。インターバル＝前回イベントからの経過（地震の長期評価と同じ BPT モデル）、MRI＝直近6か月（前回イベントの終了から6か月未満なら終了から）の MRI の最高（いま ${m}）。イベント中は0%。▼ はランダムの場合。`,ongoing:"発生中",
+  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>`${n}か月`,rnd:"ランダム",vInt:"インターバル",vMon:"か月",vIntSub:"前回イベントから",vMriSub:"直近6か月の最高",vMriEnd:"イベント終了からの最高",since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(fi,m,fm)=>`ベイズ確率：ランダム（毎月同じ確率で起きるサイコロ）を出発点に、2つの変数の倍率を掛けて更新。インターバル＝前回イベントからの経過（地震の長期評価と同じ BPT モデル）、MRI＝直近6か月（前回イベントの終了から6か月未満なら終了から）の MRI の最高（いま ${m}）。イベント中は0%。▼ はランダムの場合。`,ongoing:"発生中",btTitle:"発生確率のバックテスト",btIn:"全データ",btOut:"当時のデータ",lgBay:"ベイズ",lgInt:"インターバルのみ",lgRnd:"ランダム",lgWin:"イベント前の期間",btEv:"イベント前",btNo:"それ以外",btScore:"スコア",btHit:(k,n)=>`${k}か月以内にイベント #${n}`,btMiss:k=>`${k}か月以内のイベントなし`,btOpen:"結果待ち",btNote:"各月の初めに出ていた確率。全データ＝今のパラメータで過去を計算（後知恵あり）。当時のデータ＝その時点までのイベントだけで計算。網掛けはイベントの前の期間（そこで確率が高ければ当たり）。イベント前／それ以外＝その期間内にイベントが起きた月と起きなかった月の平均確率。スコア＝ブライアスコアのランダムに対する改善（0＝ランダムと同じ、プラスなら上回る）。MRI は2018年以降。",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
@@ -419,7 +435,7 @@ const T={
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
-  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"1 month":`${n} months`,rnd:"random",vInt:"Interval",vMon:" months",vIntSub:"since the last event",vMriSub:"6-month high",vMriEnd:"high since the event ended",since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(fi,m,fm)=>`Bayes probability: starts from random (the same chance every month, like dice), multiplied by the factors of two variables: the interval since the last event (the BPT model of long-term earthquake forecasts) and the MRI’s highest in the last 6 months, or since the last event ended if more recent (now ${m}); 0% during an event. ▼ is the random case.`,ongoing:"Ongoing",
+  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"1 month":`${n} months`,rnd:"random",vInt:"Interval",vMon:" months",vIntSub:"since the last event",vMriSub:"6-month high",vMriEnd:"high since the event ended",since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(fi,m,fm)=>`Bayes probability: starts from random (the same chance every month, like dice), multiplied by the factors of two variables: the interval since the last event (the BPT model of long-term earthquake forecasts) and the MRI’s highest in the last 6 months, or since the last event ended if more recent (now ${m}); 0% during an event. ▼ is the random case.`,ongoing:"Ongoing",btTitle:"Probability backtest",btIn:"All data",btOut:"Data then",lgBay:"Bayes",lgInt:"Interval only",lgRnd:"Random",lgWin:"Before an event",btEv:"Before events",btNo:"Other",btScore:"Score",btHit:(k,n)=>`event #${n} within ${k} months`,btMiss:k=>`no event within ${k} months`,btOpen:"pending",btNote:"The probability as it read at the start of each month. All data: today’s parameters applied to the past (with hindsight). Data then: only the events known by then. Shading is the period before each event (a high probability there is a hit). Before events / other: the mean probability in months with and without an event within the period. Score: improvement in the Brier score over random (0 = same as random, plus = better). MRI counts from 2018.",
   note:"Thresholds: mean + kσ of the log of monthly highs. Fixed at 1990–2019 values until 2019, then the latest 30 years.",
   loadFail:"Could not load the data. Please reopen in a while."}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
@@ -432,7 +448,7 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const COL={ink:css("--ink"),s1:css("--s1"),s2:css("--s2"),s3:css("--s3"),mean:css("--mean"),ev:css("--ev"),line:css("--line")};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 
-let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null};
+let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null,bh:+store.get("vixBH","3"),bm:store.get("vixBM","in"),bpick:null};
 // month rows: {m, h, l, c, th:[mean,+1σ,+2σ,+3σ]}
 // neon glow for lines and dots
 const GLOW=`<defs><filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
@@ -693,13 +709,55 @@ function renderMap(){
 
 function renderTabs(){$("t-vix").hidden=state.tab!=="vix";$("t-ev").hidden=state.tab!=="ev";$("t-method").hidden=state.tab!=="method";
   document.querySelectorAll("#tabs [data-tab]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab))}
+// backtest: the probability at the start of each month against when events came
+const HZ=[1,3,6,12];
+function renderBacktest(){
+  const B=D.backtest;$("btp").hidden=!B||!B.length;if(!B||!B.length)return;
+  const hi=Math.max(0,HZ.indexOf(state.bh)),k=HZ[hi],off=state.bm==="out"?14:2,col={bay:off+hi,int:off+4+hi,rnd:off+8+hi};
+  $("bthz").innerHTML=HZ.map(h=>`<button type="button" data-h="${h}" aria-pressed="${h===k}">${t("hz",h)}</button>`).join("");
+  document.querySelectorAll("#btmode [data-bm]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.bm===state.bm));
+  const CB=COL.mean,CI="#7fa8ff",CR="#8a8aa6";
+  $("btlegend").innerHTML=[[CB,t("lgBay"),""],[CI,t("lgInt"),"d"],[CR,t("lgRnd"),"d"],["rgba(255,176,32,.35)",t("lgWin"),"sq"]]
+    .map(([c,l,c2])=>`<span><i class="${c2}" style="--c:${c}"></i>${l}</span>`).join("");
+  const box=$("btchart"),W=Math.max(300,box.clientWidth),H=Math.round(W*.62),ML=4,MR=32,MT=14,MB=22,PW=W-ML-MR,PH=H-MT-MB;
+  const n=B.length,x=i=>ML+PW*i/(n-1),top=Math.min(100,Math.ceil(d3.max(B,r=>Math.max(r[col.bay],r[col.int]))/10)*10||10);
+  const y=d3.scaleLinear().domain([0,top]).range([MT+PH,MT]);
+  const mi=new Map(B.map((r,i)=>[r[0],i])),EP=episodes(),cur=M[M.length-1].m;
+  let g="";
+  // the k months before each event: where a forecast for k months is a hit
+  EP.forEach(e=>{const i1=mi.get(e.m);if(i1==null)return;const i0=Math.max(0,i1-k+1),c=evColor(e.peak);
+    g+=`<rect x="${x(i0)-PW/(n-1)/2}" y="${MT}" width="${x(i1)-x(i0)+PW/(n-1)}" height="${PH}" fill="${c}" opacity=".16"/>`});
+  y.ticks(5).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}%</text>`});
+  const step=n/12>24?5:n/12>12?2:1;
+  B.forEach((r,i)=>{const yr=Math.floor(r[0]/100);if(r[0]%100===1&&yr%step===0)g+=`<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${yr}</text>`});
+  const line=(c,ci,w,dash,op,gl)=>`<path d="${B.map((r,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(r[c]).toFixed(1)).join("")}" fill="none" stroke="${ci}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""} opacity="${op}"${gl?' filter="url(#neon)"':""}/>`;
+  g+=line(col.rnd,CR,1.2,"4 3",.9)+line(col.int,CI,1.1,"3 2",.8)+line(col.bay,CB,1.7,"",1,1);
+  // event starts: a line and the event number
+  EP.forEach((e,j)=>{const i=mi.get(e.m);if(i==null)return;const c=evColor(e.peak);
+    g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" stroke="${c}" stroke-width="1.4" filter="url(#neon)"/><text class="ax" x="${x(i)}" y="${MT-3}" text-anchor="middle" style="fill:${c};font-size:10px">${j+1}</text>`});
+  const pi=state.bpick!=null&&mi.has(state.bpick)?mi.get(state.bpick):n-1,pr=B[pi];
+  if(state.bpick!=null)g+=`<line x1="${x(pi)}" x2="${x(pi)}" y1="${MT}" y2="${MT+PH}" stroke="${COL.ink}" stroke-dasharray="3 3" opacity=".7"/><circle cx="${x(pi)}" cy="${y(pr[col.bay])}" r="3.5" fill="none" stroke="${COL.ink}" stroke-width="1.5"/>`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("btTitle")}">${GLOW}${g}</svg>`;
+  // did an event come within k months of the picked month?
+  const hit=EP.findIndex(e=>mIdx(e.m)>=mIdx(pr[0])&&mIdx(e.m)<mIdx(pr[0])+k),open=mIdx(pr[0])+k-1>=mIdx(cur);
+  const f=v=>v<10?v.toFixed(1):v.toFixed(0);
+  $("btread").innerHTML=`<div><b>${t("ym",pr[0])}</b>${pr[1]?`<b style="color:${COL.s3}">${t("ongoing")}</b>`:hit>=0?`<b style="color:${evColor(EP[hit].peak)}">${t("btHit",k,hit+1)}</b>`:`<span>${open?t("btOpen"):t("btMiss",k)}</span>`}</div><div><small>${t("lgBay")}</small> <b style="color:${CB}">${f(pr[col.bay])}%</b><small>${t("lgInt")}</small> <b>${f(pr[col.int])}%</b><small>${t("lgRnd")}</small> <b>${f(pr[col.rnd])}%</b></div>`;
+  // scores over months whose k-month window has passed, outside events
+  const S=B.filter(r=>!r[1]&&mIdx(r[0])+k-1<mIdx(cur)),ys=S.map(r=>EP.some(e=>mIdx(e.m)>=mIdx(r[0])&&mIdx(e.m)<mIdx(r[0])+k));
+  const brier=c=>d3.mean(S,(r,i)=>(r[c]/100-ys[i])**2),bR=brier(col.rnd);
+  const mean=(c,want)=>d3.mean(S.filter((r,i)=>ys[i]===want),r=>r[c]);
+  const row=(lab,c,cl)=>{const sc=(1-brier(c)/bR)*100;return `<tr><td><span style="color:${cl}">●</span> ${lab}</td><td>${f(mean(c,true))}%</td><td>${f(mean(c,false))}%</td><td style="color:${c===col.rnd?COL.ink:sc>0?COL.s1:COL.s3}">${c===col.rnd?"0":(sc>0?"+":"−")+Math.abs(sc).toFixed(1)}</td></tr>`};
+  $("btscore").innerHTML=`<tr><th></th><th>${t("btEv")}</th><th>${t("btNo")}</th><th>${t("btScore")}</th></tr>`+row(t("lgBay"),col.bay,CB)+row(t("lgInt"),col.int,CI)+row(t("lgRnd"),col.rnd,CR);
+  box._geo={W,idx:cx=>Math.max(0,Math.min(n-1,Math.round((cx-ML)/PW*(n-1)))),set:i=>{const m=B[i][0];if(state.bpick!==m){state.bpick=m;renderBacktest()}}};
+}
+
 function renderAll(){
-  applyLang();renderTabs();markScale();renderLatest();renderProb();renderTop();renderLegend();renderChart();renderCandle();renderMap();renderEvents();
+  applyLang();renderTabs();markScale();renderLatest();renderProb();renderTop();renderLegend();renderChart();renderBacktest();renderCandle();renderMap();renderEvents();
   document.querySelectorAll("#range [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.r));
 }
 
 // charts: a tap picks a month, sliding sideways moves it, a vertical swipe scrolls and keeps it (as in the MRI app)
-["chart","cchart"].forEach(id=>{const el=$(id);let t=null;
+["chart","cchart","btchart"].forEach(id=>{const el=$(id);let t=null;
   const at=e=>{const g=el._geo,svg=el.querySelector("svg");if(!g||!svg)return;const r=svg.getBoundingClientRect();g.set(g.idx((e.clientX-r.left)*g.W/r.width))};
   el.addEventListener("pointerdown",e=>{t={x:e.clientX,y:e.clientY,id:e.pointerId,slide:false}});
   el.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"&&!t){at(e);return}if(!t||e.pointerId!==t.id)return;
@@ -711,19 +769,21 @@ let tapOut=null;
 document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.mapbox,.chips,table.ev,.bul,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
 document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
-  if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.pick==null&&state.cpick==null))return;
-  state.pick=null;state.cpick=null;if(D){renderChart();renderCandle();renderMap();markRow()}},true);
+  if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.pick==null&&state.cpick==null&&state.bpick==null))return;
+  state.pick=null;state.cpick=null;state.bpick=null;if(D){renderChart();renderBacktest();renderCandle();renderMap();markRow()}},true);
 $("range").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.r=b.dataset.r;store.set("vixRange",state.r);renderAll()});
 document.querySelectorAll(".scseg").forEach(el=>el.addEventListener("click",e=>{const b=e.target.closest("[data-sc]");if(!b)return;state.sc=b.dataset.sc;store.set("vixScale",state.sc);markScale();renderChart();renderCandle()}));
 function markScale(){document.querySelectorAll(".scseg [data-sc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sc===state.sc))}
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b||b.dataset.tab===state.tab)return;state.tab=b.dataset.tab;store.set("vixTab",state.tab);
-  renderTabs();window.scrollTo(0,0);if(D){if(state.tab==="vix"){renderCandle();renderProb()}else{renderChart();renderMap();renderEvents()}}});
+  renderTabs();window.scrollTo(0,0);if(D){if(state.tab==="vix"){renderCandle();renderProb()}else{renderChart();renderBacktest();renderMap();renderEvents()}}});
+$("bthz").addEventListener("click",e=>{const b=e.target.closest("[data-h]");if(!b)return;state.bh=+b.dataset.h;store.set("vixBH",state.bh);renderBacktest()});
+$("btmode").addEventListener("click",e=>{const b=e.target.closest("[data-bm]");if(!b)return;state.bm=b.dataset.bm;store.set("vixBM",state.bm);renderBacktest()});
 $("crange").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.cr=b.dataset.r;store.set("vixCRange",state.cr);renderCandle()});
 $("evchips").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;state.pick=+b.dataset.m;renderMap();renderChart();markRow()});
 $("evbody").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const m=+tr.dataset.m;state.pick=m;
   if(!rangeRows().some(r=>r.m===m)){state.r="all";store.set("vixRange","all")}renderAll();$("map").scrollIntoView({behavior:"smooth",block:"start"})});
 $("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;store.set("lang",LANG);D?renderAll():applyLang()});
-let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(D){renderChart();renderCandle();renderMap()}},150)});
+let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(D){renderChart();renderBacktest();renderCandle();renderMap()}},150)});
 
 async function load(){
   try{
