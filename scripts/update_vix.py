@@ -33,8 +33,9 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM, MRI_LINE, MRI_WIDTH, QUIET = 201801, 70, 3, 6
-MRI_W = 3  # weight on MRI: its likelihood ratios are cubed (backtest skill stays positive; for preparing, not hitting)
+BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
+MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
+MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
 EVEN_N, SHAPE = 5, 1.5  # the interval's chance passes its average at the mean of the last 5 intervals, rising with time
 
 
@@ -93,11 +94,11 @@ def model(spans, mri, months, today):
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
-    the same for below, the event share smoothed by Laplace's rule (+1 / +2). Both ratios are raised to the power 3 (MRI_W), a deliberate overweight on MRI. What counts is x when an event starts,
-    not now: q_j = the share of months with x near today's (within 5, wider if too few) whose x j months later was
-    at or above 70, and the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below.
+    the same for below, the event share smoothed by Laplace's rule (+1 / +2), both squared (MRI_W), a deliberate
+    overweight on MRI. Today's x alone sets the factor, the same for every horizon (the probability is for an event
+    within k months, so today's level counts from the first month), across the line over a logistic of width 1.
     Bayes: posterior odds = interval odds x MRI factor.
-    Backtest rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
+    Backtest (from 2018, the MRI period) rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
     was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""
     import bisect
     md = sorted(mri)
@@ -146,16 +147,12 @@ def model(spans, mri, months, today):
         return {"hi": (pe / pn) ** MRI_W, "lo": ((1 - pe) / (1 - pn)) ** MRI_W, "pn": pn, "events": len(xe),
                 "eventsAbove": sum(x >= MRI_LINE for x in xe), "months": len(xn)}
     def factors(x, par, upto):
-        known = lambda k: upto is None or k < upto
-        for band in (5, 8, 12, 100):
-            base = [k for k in mm if X[k] is not None and abs(X[k] - x) <= band and not in_event(k * 100 + 1) and known(k)]
-            if len(base) >= 20:
-                break
-        q = []
-        for j in range(1, 13):
-            fut = [X[add_months(k, j)] for k in base if X.get(add_months(k, j)) is not None and known(add_months(k, j))]
-            q.append(sum(f >= MRI_LINE for f in fut) / len(fut) if len(fut) >= 3 else par["pn"])
-        return q, {k: st.mean(qq * par["hi"] + (1 - qq) * par["lo"] for qq in q[:k]) for k in (1, 3, 6, 12)}
+        # today's MRI only: the probability is for an event within k months, so today's level counts from the first
+        # month on, and no guess is made at MRI's path (it falls when VIX jumps, which would read events into their own
+        # forecast). The same factor for every horizon, switching across the line over a logistic in the log odds
+        w = 1 / (1 + math.exp(-(x - MRI_LINE) / MRI_WIDTH))
+        f = math.exp(math.log(par["lo"]) + w * (math.log(par["hi"]) - math.log(par["lo"])))
+        return [], {k: f for k in (1, 3, 6, 12)}
     def probs(m, ongoing, qu, lam, fk):
         lam_r, even, lam_q = lam
         e0 = idx(m) - idx(max(s_ for s_ in smon if s_ < m))  # months since the last event started
@@ -193,7 +190,7 @@ def model(spans, mri, months, today):
     # backtest
     rows = []
     for m in months:
-        if m <= smon[0]:
+        if m < BAYES_FROM:  # the backtest covers the MRI period only, where the model is whole
             continue
         d = m * 100 + 1
         row = [m, int(ONG[m])]
