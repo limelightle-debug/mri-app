@@ -59,12 +59,13 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .since b{font-family:var(--f-tick);font-stretch:85%;font-size:15px;color:var(--ink)}
 /* probability gauges */
 .gauges{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.gauge{position:relative;background:radial-gradient(120% 90% at 50% 100%,#17173a 0%,#0c0c22 70%);border:1px solid var(--line);border-radius:12px;padding:8px 6px 8px;text-align:center;overflow:hidden}
+.gauge{position:relative;background:radial-gradient(110% 80% at 50% 95%,#1a1a44 0%,#0b0b20 75%);border:1px solid #23234a;border-radius:14px;padding:4px 6px 9px;text-align:center;overflow:hidden}
 .gauge svg{display:block;width:100%;height:auto}
-.gauge .hz{position:absolute;left:10px;top:7px;font-size:12px;font-weight:700;color:var(--ink2);letter-spacing:.04em}
-.gauge .pv{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:32px;line-height:1;margin-top:-42px;font-variant-numeric:tabular-nums;text-shadow:0 0 14px var(--gc)}
+.gauge .hz{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-top:3px}
+.gauge .pv{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:34px;line-height:1;margin-top:-44px;font-variant-numeric:tabular-nums;text-shadow:0 0 16px var(--gc)}
 .gauge .pv small{font-size:16px;margin-left:1px}
-.gauge .bl.bp{color:var(--mean);font-weight:700;margin-top:4px}
+.gauge .gx{display:flex;justify-content:center;gap:10px;margin-top:7px;padding-top:6px;border-top:1px solid #20204a;font-family:var(--f-tick);font-stretch:85%;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.gauge .gm{color:var(--mean);font-weight:700}.gauge .gm i{display:inline-block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid var(--mean);margin-right:4px;vertical-align:1px;filter:drop-shadow(0 0 3px var(--mean))}
 .gauge .bl{font-family:var(--f-tick);font-stretch:85%;font-size:11px;color:var(--muted);margin-top:4px}
 /* epicentre map */
 .mapbox{position:relative;touch-action:pan-y}
@@ -241,7 +242,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v30";
+const APP_VER="vix-v31";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -249,7 +250,7 @@ const T={
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
-  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>n===1?"今後1か月":`今後${n}か月`,since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(m,l,ten)=>`白い針：MRI で補正したベイズ確率。直近6か月の MRI の最高（いま ${m}）が10上がるごとにオッズが ${ten} 倍になる直線の係数で補正（いまは ×${l}）。係数は2019年7月以降の、イベント前と普段の MRI の差から推定。`,ongoing:"発生中",
+  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>`${n}か月`,rnd:"ランダム",since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(m,l,ten)=>`▼ MRI：MRI で補正したベイズ確率。直近6か月の MRI の最高（いま ${m}）が10上がるごとにオッズが ${ten} 倍になる直線の係数で補正（いまは ×${l}）。係数は2019年7月以降の、イベント前と普段の MRI の差から推定。`,ongoing:"発生中",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
@@ -257,7 +258,7 @@ const T={
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
-  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"Next month":`Next ${n} months`,since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(m,l,ten)=>`White needle: updated with the MRI by Bayes. Each 10 points of the MRI’s 6-month high (now ${m}) multiply the odds by ${ten} (now ×${l}); the coefficient comes from the gap between the MRI before events and in other months since July 2019.`,ongoing:"Ongoing",
+  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"1 month":`${n} months`,rnd:"random",since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(m,l,ten)=>`▼ MRI: updated with the MRI by Bayes. Each 10 points of the MRI’s 6-month high (now ${m}) multiply the odds by ${ten} (now ×${l}); the coefficient comes from the gap between the MRI before events and in other months since July 2019.`,ongoing:"Ongoing",
   note:"Thresholds: mean + kσ of the log of monthly highs. Fixed at 1990–2019 values until 2019, then the latest 30 years.",
   loadFail:"Could not load the data. Please reopen in a while."}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
@@ -319,29 +320,29 @@ function eventProb(){
   const span=cur-mIdx(M[0].m)+1,lam=ev.length/span,S=1-bptF(e,mu,a);
   return {e,mu,a,ongoing:e===0,rows:[1,3,6,12].map(k=>{const p=e===0?1:(bptF(e+k,mu,a)-bptF(e,mu,a))/S,lr=D.bayes&&D.bayes.lr,o=p/(1-p);return {k,p,base:1-Math.exp(-lam*k),post:lr&&p<1?o*lr/(1+o*lr):null}})};
 }
-const pColor=p=>d3.interpolateRgbBasis(["#26c05a","#c6d33a","#FFC107","#FF5722","#ff3030"])(Math.min(1,p/.6));
+const pColor=p=>d3.interpolateRgbBasis(["#3DFF6E","#C8F03A","#FFB020","#FF6B3A","#FF3B5C"])(Math.min(1,p/.6));
 function gaugeSVG(p,id,post){
-  const W=160,H=96,cx=80,cy=84,R=64,sw=11,a0=Math.PI,ang=v=>a0-Math.PI*Math.min(1,Math.max(0,v));
+  const W=160,H=92,cx=80,cy=82,R=66,sw=9,ang=v=>Math.PI-Math.PI*Math.min(1,Math.max(0,v));
   const pt=(v,r)=>[cx+r*Math.cos(ang(v)),cy-r*Math.sin(ang(v))];
   const arc=(v0,v1,r)=>{const [x0,y0]=pt(v0,r),[x1,y1]=pt(v1,r);return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`};
-  let g=`<defs><linearGradient id="gg${id}" gradientUnits="userSpaceOnUse" x1="${cx-R}" x2="${cx+R}" y1="0" y2="0"><stop offset="0" stop-color="#26c05a"/><stop offset=".35" stop-color="#FFC107"/><stop offset=".65" stop-color="#FF5722"/><stop offset="1" stop-color="#ff3030"/></linearGradient>
-    <filter id="gl${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.2"/></filter></defs>`;
-  g+=`<path d="${arc(0,1,R)}" fill="none" stroke="#24244a" stroke-width="${sw}" stroke-linecap="round"/>`;
-  for(let i=0;i<=10;i++){const [x0,y0]=pt(i/10,R-sw/2-3),[x1,y1]=pt(i/10,R-sw/2-(i%5?7:11));g+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${i%5?"#3a3a66":"#6a6a96"}" stroke-width="${i%5?1:1.6}"/>`}
-  if(p>.002){g+=`<path d="${arc(0,p,R)}" fill="none" stroke="url(#gg${id})" stroke-width="${sw}" stroke-linecap="round" opacity=".55" filter="url(#gl${id})"/>`;
-    g+=`<path d="${arc(0,p,R)}" fill="none" stroke="url(#gg${id})" stroke-width="${sw}" stroke-linecap="round"/>`}
-  const [ex,ey]=pt(p,R);g+=`<circle cx="${ex.toFixed(2)}" cy="${ey.toFixed(2)}" r="8" fill="${pColor(p)}" opacity=".45" filter="url(#gl${id})"/><circle cx="${ex.toFixed(2)}" cy="${ey.toFixed(2)}" r="3.4" fill="#fff"/>`;
-  if(post!=null){const [ax,ay]=pt(post,R-sw/2-9),[bx,by]=pt(post,R+sw/2+5);
-    g+=`<line x1="${ax.toFixed(2)}" y1="${ay.toFixed(2)}" x2="${bx.toFixed(2)}" y2="${by.toFixed(2)}" stroke="#fff" stroke-width="2.6" stroke-linecap="round" style="filter:drop-shadow(0 0 4px #00E5FF)"/>`}
-  g+=`<text class="ax" x="${cx-R}" y="${cy+10}" text-anchor="middle" style="font-size:9px">0</text><text class="ax" x="${cx+R}" y="${cy+10}" text-anchor="middle" style="font-size:9px">100%</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">${g}</svg>`;
+  let g=`<defs><linearGradient id="gg${id}" gradientUnits="userSpaceOnUse" x1="${cx-R}" x2="${cx+R}" y1="0" y2="0"><stop offset="0" stop-color="#3DFF6E"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF3B5C"/></linearGradient>
+    <filter id="gl${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter></defs>`;
+  g+=`<path d="${arc(0,1,R)}" fill="none" stroke="#1f1f44" stroke-width="${sw}" stroke-linecap="round"/>`;
+  [.25,.5,.75].forEach(v=>{const [x0,y0]=pt(v,R-sw/2-4),[x1,y1]=pt(v,R-sw/2-9);g+=`<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" stroke="#3a3a6a" stroke-width="1.4" stroke-linecap="round"/>`});
+  if(p>.002){g+=`<path d="${arc(0,p,R)}" fill="none" stroke="url(#gg${id})" stroke-width="${sw}" stroke-linecap="round" opacity=".6" filter="url(#gl${id})"/><path d="${arc(0,p,R)}" fill="none" stroke="url(#gg${id})" stroke-width="${sw}" stroke-linecap="round"/>`}
+  const [ex,ey]=pt(p,R);g+=`<circle cx="${ex.toFixed(2)}" cy="${ey.toFixed(2)}" r="3.2" fill="#fff"/>`;
+  // the MRI-adjusted probability: a cyan pointer just outside the arc
+  if(post!=null){const a=ang(post),[tx,ty]=pt(post,R+sw/2+2),[l1x,l1y]=pt(post,R+sw/2+10),ox=7*Math.sin(a)/2,oy=7*Math.cos(a)/2;
+    g+=`<path d="M${tx.toFixed(2)} ${ty.toFixed(2)}L${(l1x+ox).toFixed(2)} ${(l1y+oy).toFixed(2)}L${(l1x-ox).toFixed(2)} ${(l1y-oy).toFixed(2)}Z" fill="#00E5FF" style="filter:drop-shadow(0 0 4px #00E5FF)"/>`}
+  return `<svg viewBox="-6 -10 ${W+12} ${H+10}" aria-hidden="true">${g}</svg>`;
 }
 function renderProb(){
   const P=eventProb();$("probp").hidden=!P;if(!P)return;
   $("probsub").textContent=P.ongoing?t("ongoing"):t("since",P.e);
   $("bayesnote").textContent=D.bayes?t("bayesNote",D.bayes.mri6.toFixed(1),D.bayes.lr.toFixed(2),Math.exp(10*(D.bayes.beta||0)).toFixed(2)):"";
-  $("gauges").innerHTML=P.rows.map((r,i)=>{const c=pColor(r.p),v=r.p*100;
-    return `<div class="gauge" style="--gc:${c}66"><span class="hz">${t("hz",r.k)}</span>${gaugeSVG(r.p,i,r.post)}<div class="pv" style="color:${c}">${v<10?v.toFixed(1):v.toFixed(0)}<small>%</small></div>${r.post!=null?`<div class="bl bp">${t("post",(r.post*100).toFixed(1))}</div>`:""}<div class="bl">${t("base",r.base<.001?"<0.1":(r.base*100).toFixed(1))}</div></div>`}).join("");
+  $("gauges").innerHTML=P.rows.map((r,i)=>{const c=pColor(r.p),v=r.p*100,f=x=>x<.001?"<0.1":x*100<10?(x*100).toFixed(1):(x*100).toFixed(0);
+    return `<div class="gauge" style="--gc:${c}">${gaugeSVG(r.p,i,r.post)}<div class="pv" style="color:${c}">${v<10?v.toFixed(1):v.toFixed(0)}<small>%</small></div><div class="hz">${t("hz",r.k)}</div>
+      <div class="gx">${r.post!=null?`<span class="gm"><i></i>MRI ${f(r.post)}%</span>`:""}<span>${t("rnd")} ${f(r.base)}%</span></div></div>`}).join("");
 }
 
 // the latest VIX: Cboe's delayed quote, with the regular session (9:30–16:15 ET) and the extended one (from 3:15 ET);
