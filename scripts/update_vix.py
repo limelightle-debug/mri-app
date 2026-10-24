@@ -37,7 +37,8 @@ BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
 MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
 MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
 MRI_SLOPE = 5  # above the line, every 5 MRI points add one more step: 30 months on with MRI 80 gives about 90% in 12 months
-EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2  # the interval's chance is twice random at the mean of the last 5 intervals, rising with time
+EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
+MULT_CAP = 0  # no ceiling: past the mean interval the multiplier keeps rising in the same line
 
 
 def get(url):
@@ -87,11 +88,10 @@ def model(spans, mri, months, today):
     """The event probability, now and at the start of each past month (the backtest).
 
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
-    Interval: no event has come within 6 months of the previous one ending (0 in 60 such months, against about 1 in
-    30 otherwise), so the hazard is 0 during an event and for 6 months after it ends. After that it rises with the
-    months e since the last event started, through twice random (2 lam_r) at the mean m of the last 5 intervals:
-    h(e) = 2 lam_r * (e / m)^0.5, cumulative H(e) = 2 lam_r * m / 1.5 * (e / m)^1.5, P = 1 - exp(-sum over the
-    months past the quiet period).
+    Interval: random times a multiplier that is 0 when the last event ended and rises in a straight line to 2 at the
+    mean m of the last 5 intervals (counted from the event's start), and on in the same line after it:
+    mult(e) = 2 (e - d) / (m - d), e months since the start, d the event's length in months; P = 1 - exp(-sum of
+    lam_r * mult over the months).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
@@ -156,14 +156,22 @@ def model(spans, mri, months, today):
         # above the line the factor grows with the distance: its log is multiplied by 1 + (x - line) / MRI_SLOPE
         f = math.exp((1 - w) * math.log(par["lo"]) + w * math.log(par["hi"]) * (1 + max(0, x - MRI_LINE) / MRI_SLOPE))
         return [], {k: f for k in (1, 3, 6, 12)}
-    def probs(m, ongoing, qu, lam, fk):
+    def probs(m, ongoing, d, lam, fk):
+        # the interval multiplies random: 0 when the last event ended, rising in a straight line to EVEN_X times at
+        # the mean of the last 5 intervals (counted from the event's start), and on in the same line after it
         lam_r, even, lam_q = lam
-        e0 = idx(m) - idx(max(s_ for s_ in smon if s_ < m))  # months since the last event started
-        cum = lambda e: EVEN_X * lam_r * even / SHAPE * (e / even) ** SHAPE
+        last = max((sp for sp in spans if sp[0] < d), key=lambda sp: sp[0])
+        s0 = idx(last[0] // 100)
+        ee = idx(last[1] // 100) - s0 if last[1] and last[1] < d else None
+        def mult(e):
+            if ee is None or e <= ee:
+                return 0.0
+            v = EVEN_X * (e - ee) / max(1.0, even - ee)
+            return min(v, MULT_CAP) if MULT_CAP else v
         out = []
         for k in (1, 3, 6, 12):
             b = 1 - math.exp(-lam_r * k)
-            h = sum(cum(e0 + j + 1) - cum(e0 + j) for j in range(k) if idx(m) + j >= qu)
+            h = sum(lam_r * mult(idx(m) + j + .5 - s0) for j in range(k))
             pi = 0 if ongoing or h <= 0 else 1 - math.exp(-h)
             o = odds(pi) * fk.get(k, 1) if 0 < pi < 1 else 0
             out.append((k, o / (1 + o), pi, b))
@@ -181,12 +189,12 @@ def model(spans, mri, months, today):
         w = 1 / (1 + math.exp(-(now - MRI_LINE) / MRI_WIDTH))
         lr = math.exp(math.log(par_in["lo"]) + w * (math.log(par_in["hi"]) - math.log(par_in["lo"])))
     bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
-             "ongoing": ongoing, "quiet": QUIET, "quietLeft": max(0, qu - idx(cur)), "lamR": round(lam_in[0], 5),
+             "ongoing": ongoing, "lamR": round(lam_in[0], 5),
              "even": round(lam_in[1], 1), "evenN": EVEN_N, "shape": SHAPE, "lamQ": round(lam_in[2], 5), "line": MRI_LINE, "width": MRI_WIDTH, "from": BAYES_FROM,
              "lr": None if lr is None else round(lr, 4), "lrK": {k: round(v, 4) for k, v in fk.items()},
              "q": [round(v, 2) for v in q],
              "prob": [{"k": k, "post": round(p, 5), "int": round(pi, 5), "base": round(b, 5)}
-                      for k, p, pi, b in probs(cur, ongoing, qu, lam_in, fk)]}
+                      for k, p, pi, b in probs(cur, ongoing, today + 1, lam_in, fk)]}
     if par_in:
         bayes.update({"lrHi": round(par_in["hi"], 3), "lrLo": round(par_in["lo"], 3), "events": par_in["events"],
                       "eventsAbove": par_in["eventsAbove"], "months": par_in["months"], "monthsAbove": round(par_in["pn"], 3)})
@@ -202,7 +210,7 @@ def model(spans, mri, months, today):
             par = par_in if mode == "in" else mri_params(m)
             x = X.get(m)
             fkm = factors(x, par, upto)[1] if x is not None and par else {}
-            pr = probs(m, ONG[m], quiet_until(d), lam_in if mode == "in" else rates(m), fkm)
+            pr = probs(m, ONG[m], d, lam_in if mode == "in" else rates(m), fkm)
             row += [round(v[c] * 100, 2) for c in (1, 2, 3) for v in pr]
         rows.append(row)
     return bayes, rows
