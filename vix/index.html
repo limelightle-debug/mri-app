@@ -241,7 +241,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v28";
+const APP_VER="vix-v29";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -249,7 +249,7 @@ const T={
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
-  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>n===1?"今後1か月":`今後${n}か月`,since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(m,l)=>`白い針：MRI（直近6か月の最高 ${m}）で補正したベイズ確率。2019年7月以降で、イベント前に MRI が75以上だった割合と普段の割合の比（${l}倍）を掛けている。`,ongoing:"発生中",
+  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>n===1?"今後1か月":`今後${n}か月`,since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(m,l,ab)=>`白い針：MRI で補正したベイズ確率。直近6か月の MRI の最高は ${m}（${ab?"75以上":"75未満"}）。2019年7月以降、MRI がこの側にあった割合を、イベントの前と普段で比べた比（${l}倍）をオッズに掛けている。`,ongoing:"発生中",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
@@ -257,7 +257,7 @@ const T={
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
-  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"Next month":`Next ${n} months`,since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(m,l)=>`White needle: updated with the MRI (its 6-month high is ${m}) by Bayes: the odds times how much likelier that MRI level was before events than in other months since July 2019 (×${l}).`,ongoing:"Ongoing",
+  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"Next month":`Next ${n} months`,since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(m,l,ab)=>`White needle: updated with the MRI by Bayes. The MRI’s 6-month high is ${m} (${ab?"75 or above":"below 75"}); the odds are multiplied by how much likelier that side was before events than in other months since July 2019 (×${l}).`,ongoing:"Ongoing",
   note:"Thresholds: mean + kσ of the log of monthly highs. Fixed at 1990–2019 values until 2019, then the latest 30 years.",
   loadFail:"Could not load the data. Please reopen in a while."}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
@@ -339,7 +339,7 @@ function gaugeSVG(p,id,post){
 function renderProb(){
   const P=eventProb();$("probp").hidden=!P;if(!P)return;
   $("probsub").textContent=P.ongoing?t("ongoing"):t("since",P.e);
-  $("bayesnote").textContent=D.bayes?t("bayesNote",D.bayes.mri6.toFixed(1),D.bayes.lr.toFixed(2)):"";
+  $("bayesnote").textContent=D.bayes?t("bayesNote",D.bayes.mri6.toFixed(1),D.bayes.lr.toFixed(2),D.bayes.mri6>=D.bayes.line):"";
   $("gauges").innerHTML=P.rows.map((r,i)=>{const c=pColor(r.p),v=r.p*100;
     return `<div class="gauge" style="--gc:${c}66"><span class="hz">${t("hz",r.k)}</span>${gaugeSVG(r.p,i,r.post)}<div class="pv" style="color:${c}">${v<10?v.toFixed(1):v.toFixed(0)}<small>%</small></div>${r.post!=null?`<div class="bl bp">${t("post",(r.post*100).toFixed(1))}</div>`:""}<div class="bl">${t("base",r.base<.001?"<0.1":(r.base*100).toFixed(1))}</div></div>`}).join("");
 }
