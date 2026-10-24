@@ -239,7 +239,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v24";
+const APP_VER="vix-v25";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -400,8 +400,7 @@ function renderChart(){
   const sn=D.events.includes(sel.m)?nameOf(sel.m):"";
   $("readout").innerHTML=`<div><b>${t("ym",sel.m)}</b>${sn?`<b style="color:${evColor(sel)}">${esc(sn)}</b>`:""}</div><div><small>${t("high")}</small> <b>${sel.h.toFixed(2)}</b><small style="color:${COL.s2}">+2σ</small> <b>${sel.th[2].toFixed(2)}</b><small style="color:${COL.s1}">+1σ</small> <b>${sel.th[1].toFixed(2)}</b><small>M</small><b>${magOf(sel).toFixed(1)}</b></div>`;
   const svg=box.querySelector("svg");
-  const pick=e=>{const p=svg.getBoundingClientRect(),cx=((e.touches?e.touches[0].clientX:e.clientX)-p.left)*W/p.width;const i=Math.max(0,Math.min(R.length-1,Math.round((cx-ML)/PW*(R.length-1))));state.pick=R[i].m;renderChart();renderMap();markRow()};
-  svg.addEventListener("click",pick);
+  box._geo={W,idx:cx=>R[Math.max(0,Math.min(R.length-1,Math.round((cx-ML)/PW*(R.length-1))))].m,set:m=>{if(state.pick!==m){state.pick=m;renderChart();renderMap();markRow()}}};
 }
 
 // y scale: log centred on the mean (in logs) of the shown period, or linear from zero
@@ -438,7 +437,7 @@ const bl=r=>r.nL,bh=r=>r.nH,mid=r=>Math.sqrt(r.nL*r.nH);
   const L=t("ohlc"),cc=sel.c>=sel.o?CUP:CDN;
   $("cread").innerHTML=`<div><b>${t("ym",sel.m)}</b><small>${t("cBand")}</small> <b>${bl(sel).toFixed(2)}–${bh(sel).toFixed(2)}</b><small>${t("cCentre")}</small> <b>${mid(sel).toFixed(2)}</b></div><div>${[sel.o,sel.h,sel.l,sel.c].map((v,k)=>`<small>${L[k]}</small> <b${k===3?` style="color:${cc}"`:""}>${v.toFixed(2)}</b>`).join("")}</div>`;
   const svg=box.querySelector("svg");
-  svg.addEventListener("click",e=>{const p=svg.getBoundingClientRect(),cx=(e.clientX-p.left)*W/p.width,i=Math.max(0,Math.min(R.length-1,Math.floor((cx-ML)/bw)));state.cpick=R[i].m;renderCandle()});
+  box._geo={W,idx:cx=>R[Math.max(0,Math.min(R.length-1,Math.floor((cx-ML)/bw)))].m,set:m=>{if(state.cpick!==m){state.cpick=m;renderCandle()}}};
   $("clegend").innerHTML=`<span><i class="sq" style="--c:${CUP}"></i>${t("cUp")}</span><span><i class="sq" style="--c:${CDN}"></i>${t("cDown")}</span><span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.s2}"></i>+2σ</span><span><i class="d" style="--c:${COL.mean}"></i>${t("cMid")}</span>`;
   document.querySelectorAll("#crange [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.cr));
 }
@@ -519,6 +518,21 @@ function renderAll(){
   document.querySelectorAll("#range [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.r));
 }
 
+// charts: a tap picks a month, sliding sideways moves it, a vertical swipe scrolls and keeps it (as in the MRI app)
+["chart","cchart"].forEach(id=>{const el=$(id);let t=null;
+  const at=e=>{const g=el._geo,svg=el.querySelector("svg");if(!g||!svg)return;const r=svg.getBoundingClientRect();g.set(g.idx((e.clientX-r.left)*g.W/r.width))};
+  el.addEventListener("pointerdown",e=>{t={x:e.clientX,y:e.clientY,id:e.pointerId,slide:false}});
+  el.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"&&!t){at(e);return}if(!t||e.pointerId!==t.id)return;
+    const dx=e.clientX-t.x,dy=e.clientY-t.y;if(!t.slide&&Math.abs(dx)>6&&Math.abs(dx)>Math.abs(dy))t.slide=true;if(t.slide)at(e)});
+  el.addEventListener("pointerup",e=>{if(t&&e.pointerId===t.id&&(t.slide||Math.hypot(e.clientX-t.x,e.clientY-t.y)<10))at(e);t=null});
+  el.addEventListener("pointercancel",()=>{t=null});});
+// a tap outside the charts, the map and the lists clears the selection (a swipe to scroll does not)
+let tapOut=null;
+document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.mapbox,.chips,table.ev,.bul,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
+document.addEventListener("pointercancel",()=>{tapOut=null},true);
+document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
+  if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.pick==null&&state.cpick==null))return;
+  state.pick=null;state.cpick=null;if(D){renderChart();renderCandle();renderMap();markRow()}},true);
 $("range").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.r=b.dataset.r;store.set("vixRange",state.r);renderAll()});
 document.querySelectorAll(".scseg").forEach(el=>el.addEventListener("click",e=>{const b=e.target.closest("[data-sc]");if(!b)return;state.sc=b.dataset.sc;store.set("vixScale",state.sc);markScale();renderChart();renderCandle()}));
 function markScale(){document.querySelectorAll(".scseg [data-sc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sc===state.sc))}
