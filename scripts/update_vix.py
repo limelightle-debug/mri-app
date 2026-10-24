@@ -32,7 +32,7 @@ HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
 SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.csv"
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
-WINDOW, FIXED_UNTIL, K_EVENT, GAP = 360, 201912, 2, 3
+WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM = 201907
 
 
@@ -167,10 +167,26 @@ def main():
         med_h, med_l = st.median(hs), st.median(ls)
         h, lo, c, lastday, o = months[m]
         rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o, round(mc, 6), round(med_l, 4), round(med_h, 4)])
-        if h > 10 ** (mh + K_EVENT * sh):
-            if i - last > GAP:
-                events.append(m)
-            last = i
+    # events, daily: an event starts on the first day whose high passes its month's +2σ, and ends on the 10th
+    # trading day in a row whose high stays below its month's +1σ (it could not pass +1σ for 10 days)
+    t1 = {r[0]: 10 ** (r[4] + r[5]) for r in rows}
+    t2 = {r[0]: 10 ** (r[4] + K_EVENT * r[5]) for r in rows}
+    dl = sorted(days)
+    spans, k = [], 0
+    while k < len(dl):
+        d = dl[k]
+        if days[d][1] > t2[d // 100]:
+            run, end = 0, None
+            for q in range(k + 1, len(dl)):
+                run = run + 1 if days[dl[q]][1] < t1[dl[q] // 100] else 0
+                if run == END_DAYS:
+                    end = dl[q]
+                    break
+            spans.append((d, end))
+            k = dl.index(end) + 1 if end else len(dl)
+        else:
+            k += 1
+    events = [st_ // 100 for st_, _ in spans]
     # details per event: the first day above +2 sigma, the peak of the episode, the S&P 500's fall
     info = {}
     try:
@@ -179,21 +195,14 @@ def main():
         print(f"warning: spx: {e}", file=sys.stderr)
         spx = {}
     thr = {r[0]: 10 ** (r[4] + K_EVENT * r[5]) for r in rows}
-    for m in events:
-        i0 = keys.index(m)
-        last_i, pk = i0, m
-        for i in range(i0 + 1, len(keys)):
-            if i - last_i > GAP:
-                break
-            if months[keys[i]][0] > thr[keys[i]]:
-                last_i = i
-                if months[keys[i]][0] > months[pk][0]:
-                    pk = keys[i]
-        first = next(d for d in sorted(days) if d // 100 == m and days[d][1] > thr[m])
-        peak_day = max((d for d in days if d // 100 == pk), key=lambda d: days[d][1])
-        e = {"day": first, "peakDay": peak_day, "peak": days[peak_day][1], "last": keys[last_i]}
+    for (first, end) in spans:
+        m = first // 100
+        span_days = [d for d in dl if first <= d <= (end or dl[-1])]
+        peak_day = max(span_days, key=lambda d: days[d][1])
+        last_m = (end or dl[-1]) // 100
+        e = {"day": first, "end": end, "peakDay": peak_day, "peak": days[peak_day][1], "last": last_m}
         if spx:
-            lo_from, lo_to = add_months(m, -1) * 100, add_months(keys[last_i], 3) * 100 + 31
+            lo_from, lo_to = add_months(m, -1) * 100, add_months(last_m, 1) * 100 + 31
             win = [d for d in spx if lo_from <= d <= lo_to]
             if win:
                 trough = min(win, key=lambda d: spx[d])
@@ -210,29 +219,34 @@ def main():
         before = [d for d in days if d < lv[0]]
         if before:
             quote["prevClose"] = days[max(before)][3]
-    # MRI as evidence (Bayes), linear in the log odds: the MRI's highest in the last 6 months (x) is taken as normal
-    # with the same spread before events and in other months (months since July 2019, when MRI works; earlier its
-    # window still held the Lehman years). Then log LR = beta * (x - centre), beta = (mean before events - mean of
-    # all months) / sd^2, centre = the midpoint of the two means: each MRI point multiplies the odds by e^beta
+    # MRI as evidence (Bayes), linear in the log odds. x = the highest daily MRI over the last 6 months, or since the
+    # last event ended if that is more recent (during an event there is no next event to forecast). x before events
+    # and x at the start of other months (since July 2019, when MRI works; months within events left out) are taken
+    # as normal with the same spread: log LR = beta * (x - centre), beta = (mean before events - mean of the other
+    # months) / sd^2, centre = the midpoint of the two means
     bayes = None
     try:
-        mri = json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]
-        mx = {}
-        for r in mri:
-            mx[r[0] // 100] = max(mx.get(r[0] // 100, 0), r[7] * 100)
-        def pre6(m):
-            vals = [mx.get(add_months(m, -k)) for k in range(1, 7)]
-            vals = [v for v in vals if v is not None]
-            return max(vals) if vals else None
-        cur = keys[-1]
-        x0 = [pre6(m) for m in sorted(mx) if BAYES_FROM <= m < cur and pre6(m) is not None]
-        x1 = [pre6(m) for m in events if m >= BAYES_FROM and pre6(m) is not None]
+        mri = {r[0]: r[7] * 100 for r in json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]}
+        md = sorted(mri)
+        def last_end(d):
+            ends = [e for s_, e in spans if e and e < d]
+            return max(ends) if ends else 0
+        def xat(d, inclusive=False):
+            lo = max(last_end(d), add_months(d // 100, -6) * 100 + d % 100)
+            vals = [mri[k] for k in md if lo < k and (k <= d if inclusive else k < d)]
+            return (max(vals), lo == last_end(d)) if vals else (None, False)
+        in_event = lambda d: any(s_ <= d <= (e or 99999999) for s_, e in spans)
+        firsts = [k * 100 + 1 for k in sorted({d // 100 for d in md}) if k >= BAYES_FROM]
+        x0 = [x for x, _ in (xat(d) for d in firsts if not in_event(d)) if x is not None]
+        x1 = [x for x, _ in (xat(s_) for s_, _ in spans if s_ >= BAYES_FROM * 100) if x is not None]
         mu0, mu1, sd = st.mean(x0), st.mean(x1), st.stdev(x0)
         beta, centre = (mu1 - mu0) / sd ** 2, (mu0 + mu1) / 2
-        now = max(v for k, v in mx.items() if k >= add_months(cur, -5))
-        bayes = {"mri6": round(now, 1), "beta": round(beta, 5), "centre": round(centre, 2),
-                 "lr": round(math.exp(beta * (now - centre)), 4), "from": BAYES_FROM, "events": len(x1),
-                 "meanEvents": round(mu1, 1), "meanAll": round(mu0, 1), "sd": round(sd, 1)}
+        ongoing = bool(spans) and spans[-1][1] is None
+        now, since_end = xat(md[-1], inclusive=True)
+        bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(md[-1] + 1),
+                 "ongoing": ongoing, "beta": round(beta, 5), "centre": round(centre, 2),
+                 "lr": None if now is None else round(math.exp(beta * (now - centre)), 4), "from": BAYES_FROM,
+                 "events": len(x1), "meanEvents": round(mu1, 1), "meanAll": round(mu0, 1), "sd": round(sd, 1)}
     except (OSError, ValueError, KeyError, st.StatisticsError) as e:
         print(f"warning: bayes: {e}", file=sys.stderr)
     lastday = max(days)
