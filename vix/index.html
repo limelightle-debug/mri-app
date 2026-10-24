@@ -299,7 +299,7 @@ table.ev tr.on td{background:var(--chip)}
         <li><b>対数</b>：月足高値の常用対数（log<sub>10</sub>）をとる。VIX は対数正規分布に近いため。</li>
         <li><b>平均と標準偏差</b>：その月を含む直近360か月（30年）の対数の平均 μ と標準偏差 σ（n−1）。データが1990年1月からなので、2019年11月以前の月は、1990年1月〜2019年12月の値で固定する。</li>
         <li><b>閾値</b>：<div class="eq">+kσ ＝ 10<sup>μ＋kσ</sup>　（k＝1, 2, 3）</div></li>
-        <li><b>イベント</b>：日足高値がその月の +2σ を最初に超えた日に発生。日足高値が +1σ を10日連続で上回れなかった日に終了。終了までの再突破は同じイベント。</li>
+        <li><b>イベント</b>：日足高値が +2σ を最初に超えた日に発生。日足高値が +1σ を10日連続で上回れなかった日に終了。閾値はイベント前月の値。終了までの再突破は同じイベント。</li>
         <li><b>規模</b>：イベント中のピークの月足高値が +3σ を超えたら「+3σイベント」、そうでなければ「+2σイベント」。</li>
       </ol>
 
@@ -356,7 +356,7 @@ table.ev tr.on td{background:var(--chip)}
         <li><b>Logs</b>: take log<sub>10</sub> of the monthly high; VIX is close to log-normal.</li>
         <li><b>Mean and standard deviation</b>: μ and σ (n−1) of the logs over the latest 360 months (30 years) including that month. Data starts in January 1990, so months up to November 2019 use the January 1990–December 2019 values.</li>
         <li><b>Thresholds</b>: <div class="eq">+kσ = 10<sup>μ + kσ</sup>　(k = 1, 2, 3)</div></li>
-        <li><b>Event</b>: starts on the first day whose high passes that month's +2σ, and ends when the daily high fails to pass +1σ for 10 days in a row. Passing +2σ again before the end is the same event.</li>
+        <li><b>Event</b>: starts on the first day whose high passes +2σ, and ends when the daily high fails to pass +1σ for 10 days in a row, on the thresholds of the month before. Passing +2σ again before the end is the same event.</li>
         <li><b>Scale</b>: a "+3σ event" if the peak monthly high of the event passed +3σ, otherwise a "+2σ event".</li>
       </ol>
 
@@ -419,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v47";
+const APP_VER="vix-v48";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",

@@ -6,8 +6,8 @@ Method (as in 恐怖指数研究所's workbook, VIX sheet):
   month, the mean and standard deviation (STDEV, n-1) cover the latest 360 months including that
   month; months before December 2019 (the first with 360 months of data) use the statistics of
   January 1990 to December 2019. Thresholds are 10^(mean + k * sd).
-  A VIX event starts on the first day whose high exceeds that month's +2 sigma and ends when the daily
-  high fails to pass +1 sigma for 10 days in a row.
+  A VIX event starts on the first day whose high exceeds +2 sigma as of the previous month and ends when
+  the daily high fails to pass that +1 sigma (of the month before the start) for 10 days in a row.
 
 The current month uses Cboe's delayed quote for today (regular session) on top of the history file.
 Sources: Cboe (VIX daily history, delayed quote). Runs in GitHub Actions with the MRI update.
@@ -285,18 +285,21 @@ def main():
         med_h, med_l = st.median(hs), st.median(ls)
         h, lo, c, lastday, o = months[m]
         rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o, round(mc, 6), round(med_l, 4), round(med_h, 4)])
-    # events, daily: an event starts on the first day whose high passes its month's +2σ, and ends on the 10th
-    # trading day in a row whose high stays below its month's +1σ (it could not pass +1σ for 10 days)
-    t1 = {r[0]: 10 ** (r[4] + r[5]) for r in rows}
-    t2 = {r[0]: 10 ** (r[4] + K_EVENT * r[5]) for r in rows}
+    # events, daily, on the thresholds as of the previous month (as in the workbook's VIX Eve sheet, known when the
+    # month begins): an event starts on the first day whose high passes +2σ, and ends on the 10th trading day in a
+    # row whose high stays below the +1σ of the month before it started (it could not pass +1σ for 10 days)
+    by_m = {r[0]: r for r in rows}
+    pm = lambda m: by_m.get(add_months(m, -1), by_m[m])
+    t1 = {m: 10 ** (pm(m)[4] + pm(m)[5]) for m in by_m}
+    t2 = {m: 10 ** (pm(m)[4] + K_EVENT * pm(m)[5]) for m in by_m}
     dl = sorted(days)
     spans, k = [], 0
     while k < len(dl):
         d = dl[k]
         if days[d][1] > t2[d // 100]:
-            run, end = 0, None
+            run, end, lim = 0, None, t1[d // 100]
             for q in range(k + 1, len(dl)):
-                run = run + 1 if days[dl[q]][1] < t1[dl[q] // 100] else 0
+                run = run + 1 if days[dl[q]][1] < lim else 0
                 if run == END_DAYS:
                     end = dl[q]
                     break
