@@ -1,0 +1,26 @@
+name: History dump
+
+# Saves Cboe's raw VIX history (open/high/low/close) to the "hist" branch, for offline analysis.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and push to the hist branch
+        run: |
+          mkdir -p /tmp/out
+          curl -fsSL -A "Mozilla/5.0" -o /tmp/out/VIX_History.csv https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan hist
+          git rm -rq --cached . && git clean -fdqx
+          cp /tmp/out/* .
+          git add -A && git commit -qm "history dump"
+          git push -qf origin hist
