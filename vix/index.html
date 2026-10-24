@@ -62,7 +62,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .gauge .pv small{font-size:16px;margin-left:1px}
 .gauge .bl{font-family:var(--f-tick);font-stretch:85%;font-size:11px;color:var(--muted);margin-top:4px}
 /* epicentre map */
-.mapbox{position:relative;border-radius:10px;overflow:hidden;background:radial-gradient(120% 100% at 50% 40%,#121238 0%,#0a0a1e 75%);border:1px solid var(--line)}
+.mapbox{position:relative}
 .mapbox svg{display:block;width:100%;height:auto}
 .mapbox .land{fill:#23234a;stroke:#3a3a6e;stroke-width:.5}
 .mapbox .grat{fill:none;stroke:#1c1c40;stroke-width:.6}
@@ -196,7 +196,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v8";
+const APP_VER="vix-v9";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
@@ -367,12 +367,11 @@ const ymd=d=>LANG==="ja"?`${Math.floor(d/10000)}年${Math.floor(d/100)%100}月${
 const ymdS=d=>`${Math.floor(d/10000)}/${String(Math.floor(d/100)%100).padStart(2,"0")}/${String(d%100).padStart(2,"0")}`;
 function renderMap(){
   const box=$("map");if(!LAND){loadLand();return}
-  // the region of the events (the Americas to Japan), like an earthquake map
-  const W=Math.max(300,box.clientWidth);
-  const pr=d3.geoNaturalEarth1().rotate([-15,0]).fitWidth(W,{type:"MultiPoint",coordinates:[[-132,62],[162,62],[-132,8],[162,8],[15,64],[15,6]]});
-  const top=pr([15,72])[1],H=Math.round(pr([15,-6])[1]-top),[tx,ty]=pr.translate();pr.translate([tx,ty-top]);
+  // the whole world (Natural Earth), centred on 15°E so the Americas are left and Japan right
+  const W=Math.max(300,box.clientWidth),pr=d3.geoNaturalEarth1().rotate([-15,0]).fitWidth(W-4,{type:"Sphere"}),H=Math.ceil(d3.geoPath(pr).bounds({type:"Sphere"})[1][1])+2;
+  pr.translate([pr.translate()[0]+2,pr.translate()[1]+1]);
   const path=d3.geoPath(pr);
-  let g=`<path class="grat" d="${path(d3.geoGraticule10())}"/>`+LAND.features.map(f=>`<path class="land" d="${path(f)}"/>`).join("");
+  let g=`<path d="${path({type:"Sphere"})}" fill="#0f0f2c" stroke="#2a2a55" stroke-width="1"/><path class="grat" d="${path(d3.geoGraticule10())}"/>`+LAND.features.map(f=>`<path class="land" d="${path(f)}"/>`).join("");
   const EP=episodes(),places=new Map();
   EP.forEach(({m,mag},k)=>{const e=epiOf(m);if(!e)return;const key=e[2]+","+e[3];if(!places.has(key))places.set(key,{e,items:[]});places.get(key).items.push({m,k,mag})});
   const sel=D.events.includes(state.pick)?state.pick:D.events[D.events.length-1];let mk="",lb="";
