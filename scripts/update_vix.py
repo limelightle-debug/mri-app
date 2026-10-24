@@ -94,16 +94,37 @@ def history():
 
 
 def live():
-    """Today's regular-session values from Cboe's delayed quote: (yyyymmdd, [o, h, l, price], time)."""
-    q = get(QUOTE).json().get("data") or {}
+    """Cboe's delayed quote: (yyyymmdd, [o, h, l, c] of the regular session, its time, latest quote).
+
+    Outside the regular session the quote keeps the last regular trade's time while its price follows
+    the extended session (from 3:15 ET): then the latest price is stamped with the fetch time and
+    compared with the regular close."""
+    j = get(QUOTE).json()
+    q = j.get("data") or {}
     try:
         t = datetime.fromisoformat(str(q["last_trade_time"])).replace(tzinfo=NY)
-        vals = [float(q[k]) for k in ("open", "high", "low")] + [float(q.get("current_price") or q["close"])]
+        o, h, lo = (float(q[k]) for k in ("open", "high", "low"))
+        price = float(q.get("current_price") or q["close"])
+        close = float(q.get("close") or price)
+        prev = float(q.get("prev_day_close") or close)
+        fetched = datetime.strptime(str(j.get("timestamp"))[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).astimezone(NY)
     except (KeyError, TypeError, ValueError):
         return None
-    if min(vals) <= 0:
+    if min(o, h, lo, price) <= 0:
         return None
-    return t.year * 10000 + t.month * 100 + t.day, vals, t.strftime("%Y-%m-%d %H:%M")
+    after_close = t.hour * 60 + t.minute >= 16 * 60
+    fm = fetched.hour * 60 + fetched.minute
+    extended = fetched.weekday() < 5 and 3 * 60 + 15 <= fm < 9 * 60 + 30
+    if after_close and (abs(price - close) > 1e-9 or (extended and fetched.date() > t.date())):
+        # the extended session: the regular day is over, the price is the overnight one
+        quote = {"price": price, "prevClose": close, "time": fetched.strftime("%Y-%m-%d %H:%M"), "session": "extended"}
+        reg = [o, h, lo, close]
+    else:
+        session = "regular" if not after_close else "closed"
+        base = prev if session == "regular" else (prev if fetched.date() == t.date() else close)
+        quote = {"price": price, "prevClose": base, "time": t.strftime("%Y-%m-%d %H:%M"), "session": session}
+        reg = [o, h, lo, price]
+    return t.year * 10000 + t.month * 100 + t.day, reg, t.strftime("%Y-%m-%d %H:%M"), quote
 
 
 def main():
@@ -114,7 +135,7 @@ def main():
     except (requests.RequestException, ValueError) as e:
         print(f"warning: live: {e}", file=sys.stderr)
     if lv:
-        d, vals, _ = lv
+        d, vals, _, _q = lv
         if d not in days:
             days[d] = vals
         else:  # the history may already have the day; keep the wider range
@@ -181,12 +202,20 @@ def main():
                 e.update({"spxTop": top, "spxTrough": trough, "fall": round(fall, 4),
                           "shindo": next(lv for th, lv in SHINDO if fall >= th)})
         info[str(m)] = e
+    # the latest quote's change: from the previous day's close in the regular session (and after it), from the
+    # regular close in the extended session
+    quote = lv[3] if lv else None
+    if quote and quote["session"] != "extended":
+        before = [d for d in days if d < lv[0]]
+        if before:
+            quote["prevClose"] = days[max(before)][3]
     lastday = max(days)
     data = {
         "source": "Cboe",
         "method": {"window": WINDOW, "fixedUntil": FIXED_UNTIL, "event": K_EVENT, "gap": GAP, "log10": True},
         "lastDay": lastday,
         "live": {"date": lv[0], "time": lv[2], "price": lv[1][3], "high": lv[1][1], "low": lv[1][2]} if lv else None,
+        "quote": quote,
         "months": rows,
         "events": events,
         "eventInfo": info,

@@ -43,12 +43,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # open: the regular session until the official SKEW is in (every 5 minutes); night: VIX's overnight session from 20:15 ET
+          # open: the regular session until the official SKEW is in (every 5 minutes); pre: VIX's extended session from 3:00 ET
+          # (every 5 minutes, for the VIX app's latest value); night: VIX's overnight session from 20:15 ET
           # (every 15 minutes); closed: one update, then stop
           session() {
             python -c 'from datetime import datetime; from zoneinfo import ZoneInfo
           n = datetime.now(ZoneInfo("America/New_York")); m = n.hour * 60 + n.minute; wd = n.weekday()
           if wd < 5 and 9 * 60 + 15 <= m < 17 * 60 + 20: print("open")
+          elif wd < 5 and 3 * 60 <= m < 9 * 60 + 15: print("pre")
           elif (wd < 5 and m < 9 * 60 + 15) or (wd in (0, 1, 2, 3, 6) and m >= 20 * 60 + 15): print("night")
           else: print("closed")'
           }
@@ -70,5 +72,5 @@ jobs:
               gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
               break
             fi
-            if [ "$s" = open ]; then sleep 300; else sleep 900; fi
+            if [ "$s" = open ] || [ "$s" = pre ]; then sleep 300; else sleep 900; fi
           done
