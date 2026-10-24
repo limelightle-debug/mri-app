@@ -412,7 +412,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v77";
+const APP_VER="vix-v78";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -537,18 +537,17 @@ function renderLatest(){
   $("lnext").textContent=ns?`${t("lNext",fmtTime(ns,{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"}))}　${t("lHours",fmtTime(nyDate(td+" 03:30"),hm),fmtTime(nyDate(td+" 16:30"),hm))}`:"";
 }
 
-// a horizontal gauge on a log scale centred on the centre of the normal range, its ends equally far in logs:
+// a horizontal gauge on a log scale, its ends at −2σ and +2σ unless a value goes beyond them:
 // the monthly-low thresholds (−1σ, −2σ) and the monthly-high thresholds (+1σ, +2σ) in the same colours, labelled below, the normal range as a
 // band with its centre, and this month's range from low to high
 function renderGaugeBar(r){
   const q=D.quote||D.live,lp=q&&q.price;
   // +3σ joins the gauge once the month's high or the latest value has passed +2σ
   const s3=r.h>r.th[2]||(lp&&lp>r.th[2]);
-  const box=$("vg"),W=Math.max(300,box.clientWidth||340),H=128,ML=14,MR=14,PW=W-ML-MR,Y=76,YM=30;
+  const box=$("vg"),W=Math.max(300,box.clientWidth||340),H=128,ML=20,MR=20,PW=W-ML-MR,Y=76,YM=30;
   const c=Math.log10(Math.sqrt(r.nL*r.nH)),l1=10**(r.muL-r.sdL),l2=10**(r.muL-2*r.sdL),h1=r.th[1],h2=r.th[2],h3=r.th[3];
-  // ends equally far from the centre in logs; once +3σ is in, the left end only goes as far as it needs
-  const dl=Math.max(c-Math.log10(l2),c-Math.log10(r.l),lp?c-Math.log10(lp):0),dr=Math.max(Math.log10(s3?h3:h2)-c,Math.log10(r.h)-c,lp?Math.log10(lp)-c:0);
-  const a0=c-(s3?dl:Math.max(dl,dr))*1.08,a1=c+(s3?dr:Math.max(dl,dr))*1.08;
+  // the ends sit at −2σ and +2σ; only a value beyond them (or +3σ once it shows) moves an end out
+  const a0=Math.log10(Math.min(l2,r.l,lp||l2)),a1=Math.log10(Math.max(s3?h3:h2,r.h,lp||h2));
   const x=v=>ML+PW*(Math.log10(v)-a0)/(a1-a0),f=v=>v.toFixed(2);
   let g=`<rect x="${ML}" y="${Y-3}" width="${PW}" height="6" rx="3" fill="#1f1f44"/>`;
   g+=`<rect x="${x(r.nL)}" y="${Y-8}" width="${x(r.nH)-x(r.nL)}" height="16" rx="3" fill="rgba(127,168,255,.28)"/>`;
