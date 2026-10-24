@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VIX Events</title>
+<meta name="description" content="VIX月足高値と+2σの閾値、VIXイベントの一覧">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VIX">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a1a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=LINE+Seed+JP:wght@400;700;800&display=swap">
+<style>
+:root{
+  --bg:#0a0a1a; --panel:#111127; --ink:#f2f2f7; --ink2:#c4c4d4; --muted:#8a8aa6; --line:#2a2a4a; --chip:#1a1a36; --accent:#7fa8ff;
+  --s1:#FFC107; --s2:#ff3030; --s3:#B71C1C; --mean:#8a8aa6; --lo:#26c05a;
+  --f-tick:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"LINE Seed JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+[hidden]{display:none!important}
+.bar{position:relative;padding-block:12px 4px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;padding-right:96px}
+.avatar{width:42px;height:42px;border-radius:10px;flex:none;box-shadow:0 0 0 1px var(--line)}
+h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1.1}
+.status{font-size:12px;color:var(--muted)}
+.langseg{position:absolute;right:0;top:12px;display:flex;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px}
+.langseg button{appearance:none;border:0;background:transparent;color:var(--muted);font:700 12px/1 inherit;letter-spacing:.04em;padding:7px 9px;border-radius:6px;cursor:pointer}
+.langseg button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.4)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:10px;min-width:0}
+.panel h2{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--ink2);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel h2 span{font-weight:400;color:var(--muted);letter-spacing:0;font-family:var(--f-tick);font-stretch:85%;font-size:12px}
+.num{font-family:var(--f-tick);font-stretch:82%;font-variant-numeric:tabular-nums}
+/* this month */
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.hero .lab{font-size:12px;color:var(--muted)}
+.big{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:52px;line-height:.95;font-variant-numeric:tabular-nums}
+.zone{display:inline-block;padding:4px 12px;border-radius:20px;font-size:14px;font-weight:700;margin-top:6px}
+.thr{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.thr div{background:#0c0c22;border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center}
+.thr small{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.thr b{font-family:var(--f-tick);font-stretch:82%;font-size:18px}
+.since{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+.since b{font-family:var(--f-tick);font-stretch:85%;font-size:15px;color:var(--ink)}
+/* chart */
+.seg{display:flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px;margin-bottom:8px}
+.seg button{flex:1;appearance:none;border:0;background:transparent;color:var(--ink2);font:500 13px/1 var(--f-body);padding:8px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--ink2);margin:2px 0 6px}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid var(--c);vertical-align:middle;margin-right:5px}
+.legend i.d{border-top-style:dashed}
+.legend i.dot{width:9px;height:9px;border:0;border-radius:50%;background:var(--c)}
+.readout{font-size:12px;color:var(--ink2);height:22px;overflow:hidden;margin:2px 2px 4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.readout b{font-family:var(--f-tick);font-stretch:82%;color:var(--ink);font-size:13.5px;margin-right:10px}
+.readout small{font-family:var(--f-tick);font-stretch:82%;font-size:12px;margin-right:2px;opacity:.8}
+.chart{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{font-family:var(--f-tick);font-stretch:82%;font-size:11px;fill:var(--muted)}
+.grid{stroke:var(--line);stroke-width:1}
+.pnote{font-size:11px;color:var(--muted);margin:6px 0 0}
+/* events */
+table.ev{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.ev th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px}
+table.ev td{text-align:right;padding:7px 6px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--ink2);cursor:pointer}
+table.ev th:nth-child(-n+2),table.ev td:nth-child(-n+2){text-align:left}
+table.ev td:first-child{color:var(--muted);width:2em}
+table.ev td.h{color:var(--s2);font-weight:700}
+table.ev tr.on td{background:var(--chip)}
+.empty{padding:50px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:22px;padding-top:14px;border-top:1px solid var(--line);font-size:12px}
+.foot a{color:var(--accent);margin-left:12px}
+.labname{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;letter-spacing:.06em}
+.labname img{width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
+@media (max-width:400px){.big{font-size:46px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="brand">
+      <img class="avatar" src="icons/app.png" alt="" width="42" height="42">
+      <div style="min-width:0">
+        <h1>VIX Events</h1>
+        <div class="status" id="status" data-i18n="loading">読み込み中…</div>
+      </div>
+    </div>
+    <div class="langseg" id="lang" role="group" aria-label="Language"><button type="button" data-lang="ja">JP</button><button type="button" data-lang="en">EN</button></div>
+  </header>
+
+  <div id="app" hidden>
+    <section class="panel">
+      <h2><b data-i18n="thisMonth">今月の高値</b><span id="asof"></span></h2>
+      <div class="hero">
+        <div>
+          <div class="big" id="hi">–</div>
+          <div class="zone" id="zone"></div>
+        </div>
+        <div style="text-align:right">
+          <div class="lab" data-i18n="price">現在値</div>
+          <div class="num" id="px" style="font-size:22px;font-weight:700">–</div>
+        </div>
+      </div>
+      <div class="thr" id="thr"></div>
+      <div class="since" id="since"></div>
+    </section>
+
+    <section class="panel">
+      <h2><b data-i18n="chartTitle">VIX 月足高値</b><span data-i18n="logScale">対数目盛</span></h2>
+      <div class="seg" id="range" role="group" aria-label="期間">
+        <button type="button" data-r="all" data-i18n="rALL">全期間</button>
+        <button type="button" data-r="20" data-i18n="r20">20年</button>
+        <button type="button" data-r="10" data-i18n="r10">10年</button>
+        <button type="button" data-r="5" data-i18n="r5">5年</button>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="readout" id="readout"></div>
+      <div class="chart" id="chart"></div>
+      <p class="pnote" data-i18n="note">閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。</p>
+    </section>
+
+    <section class="panel">
+      <h2><b data-i18n="events">VIXイベント</b><span id="evcount"></span></h2>
+      <table class="ev"><thead><tr><th>#</th><th data-i18n="month">年月</th><th data-i18n="high">高値</th><th data-i18n="th2">+2σ</th></tr></thead><tbody id="evbody"></tbody></table>
+    </section>
+
+    <div class="foot">
+      <span class="labname"><img src="icons/lab.jpg" alt="" width="36" height="36"><span data-i18n="lab">恐怖指数研究所</span></span>
+      <span><a href="../">MRI</a><a href="https://limelightle-debug.github.io/tqqq/">TQQQ</a><a href="https://limelightle-debug.github.io/ndx-heatmap/">Nasdaq 100</a></span>
+    </div>
+  </div>
+  <div class="empty" id="empty" data-i18n="loadingData">データを読み込んでいます…</div>
+</div>
+
+<script src="../d3.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const APP_VER="vix-v1";
+let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
+const T={
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
+  rALL:"全期間",r20:"20年",r10:"10年",r5:"5年",events:"VIXイベント",month:"年月",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+  updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
+  zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
+  lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",
+  note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
+  loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
+ en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX monthly high",logScale:"log scale",
+  rALL:"All",r20:"20Y",r10:"10Y",r5:"5Y",events:"VIX events",month:"Month",high:"High",th2:"+2σ",count:n=>`${n} events`,
+  updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
+  zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
+  lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",
+  note:"Thresholds: mean + kσ of the log of monthly highs. Fixed at 1990–2019 values until 2019, then the latest 30 years.",
+  loadFail:"Could not load the data. Please reopen in a while."}};
+const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
+const fmtTime=(d,o)=>LANG==="ja"?new Intl.DateTimeFormat("ja-JP",{timeZone:"Asia/Tokyo",...o}).format(d):new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",...o}).format(d)+" ET";
+function nyDate(s){const m=/^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d)/.exec(s||"");if(!m)return null;const u=Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5]);
+  const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(new Date(u)).forEach(x=>p[x.type]=x.value);
+  return new Date(u+(u-Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)))}
+const store={get:(k,d)=>{try{return localStorage.getItem(k)??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COL={ink:css("--ink"),s1:css("--s1"),s2:css("--s2"),s3:css("--s3"),mean:css("--mean"),line:css("--line")};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+
+let D=null,M=[],state={r:store.get("vixRange","all"),pick:null};
+// month rows: {m, h, l, c, th:[mean,+1σ,+2σ,+3σ]}
+const thOf=r=>[0,1,2,3].map(k=>10**(r[4]+k*r[5]));
+const zoneOf=(h,th)=>h>th[3]?3:h>th[2]?2:h>th[1]?1:0;
+const ZC=()=>[COL.mean,COL.s1,COL.s2,COL.s3];
+const mIdx=m=>Math.floor(m/100)*12+m%100-1;
+
+function applyLang(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll("[data-i18n]").forEach(e=>{e.innerHTML=t(e.dataset.i18n)});
+  document.querySelectorAll("#lang [data-lang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===LANG));
+}
+
+function renderTop(){
+  const r=M[M.length-1],z=zoneOf(r.h,r.th),zc=ZC()[z];
+  $("hi").textContent=r.h.toFixed(2);$("hi").style.color=z?zc:COL.ink;
+  $("zone").textContent=t("zone")[z];$("zone").style.background=z?zc:"var(--chip)";$("zone").style.color=z?"#0a0a1a":"var(--ink2)";
+  const lv=D.live,lt=lv&&nyDate(lv.time);
+  $("px").textContent=lv?lv.price.toFixed(2):"–";
+  $("asof").textContent=lt?t("asof",fmtTime(lt,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})):"";
+  $("thr").innerHTML=[1,2,3].map(k=>`<div><small style="color:${ZC()[k]}">+${k}σ</small><b>${r.th[k].toFixed(2)}</b></div>`).join("");
+  const ev=D.events,last=ev[ev.length-1];
+  $("since").innerHTML=last?`<span>${t("last")}</span><span><b>${t("ym",last)}</b>　${t("elapsed",mIdx(r.m)-mIdx(last))}</span>`:"";
+  const u=D.updatedAt?new Date(D.updatedAt):null;
+  $("status").textContent=u?t("updated",fmtTime(u,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})):"";
+}
+
+function rangeRows(){
+  if(state.r==="all")return M;
+  const n=+state.r*12;return M.slice(-n);
+}
+
+function renderChart(){
+  const box=$("chart"),R=rangeRows();
+  const W=Math.max(300,box.clientWidth),H=Math.round(W*.8),ML=4,MR=32,MT=10,MB=24,PW=W-ML-MR,PH=H-MT-MB;
+  const lo=d3.min(R,r=>r.h)*.92,hi=d3.max(R,r=>Math.max(r.h,r.th[3]))*1.06;
+  const y=d3.scaleLog().domain([lo,hi]).range([MT+PH,MT]);
+  const x=i=>ML+PW*(R.length<2?.5:i/(R.length-1));
+  let g="";
+  const ticks=[10,15,20,30,40,50,60,80,100].filter(v=>v>=lo&&v<=hi);
+  ticks.forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}</text>`});
+  // years on the x axis
+  const yrs=R.filter(r=>r.m%100===1).map(r=>Math.floor(r.m/100));const step=yrs.length>24?5:yrs.length>12?2:1;
+  R.forEach((r,i)=>{if(r.m%100===1&&Math.floor(r.m/100)%step===0)g+=`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" opacity=".35"/><text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${Math.floor(r.m/100)}</text>`});
+  const line=(f,c,w,dash,op)=>`<path d="${R.map((r,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(f(r)).toFixed(1)).join("")}" fill="none" stroke="${c}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""} opacity="${op||1}"/>`;
+  g+=line(r=>r.th[0],COL.mean,1.2,"4 3",.9)+line(r=>r.th[1],COL.s1,1.2,"4 3",.9)+line(r=>r.th[2],COL.s2,1.6)+line(r=>r.th[3],COL.s3,1.4,"",.9);
+  g+=line(r=>r.h,COL.ink,1.6);
+  const evs=new Set(D.events);
+  R.forEach((r,i)=>{if(r.h>r.th[2]&&!evs.has(r.m))g+=`<circle cx="${x(i)}" cy="${y(r.h)}" r="2.6" fill="${COL.s2}" opacity=".85"/>`});
+  let n=0;D.events.forEach((m,k)=>{const i=R.findIndex(r=>r.m===m);if(i<0)return;g+=`<circle cx="${x(i)}" cy="${y(R[i].h)}" r="4.5" fill="${COL.s2}" stroke="var(--panel)" stroke-width="1.5"/>`;
+    if(R.length<=150||true)g+=`<text class="ax" x="${x(i)}" y="${y(R[i].h)-8}" text-anchor="middle" style="fill:var(--ink2);font-size:10px">${k+1}</text>`});
+  let pk="";const pi=state.pick==null?-1:R.findIndex(r=>r.m===state.pick);
+  if(pi>=0)pk=`<line x1="${x(pi)}" x2="${x(pi)}" y1="${MT}" y2="${MT+PH}" stroke="${COL.ink}" stroke-dasharray="3 3" opacity=".7"/><circle cx="${x(pi)}" cy="${y(R[pi].h)}" r="4" fill="none" stroke="${COL.ink}" stroke-width="1.5"/>`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("chartTitle")}">${g}${pk}</svg>`;
+  const sel=pi>=0?R[pi]:R[R.length-1];
+  $("readout").innerHTML=`<b>${t("ym",sel.m)}</b><small>${t("high")}</small> <b>${sel.h.toFixed(2)}</b><small style="color:${COL.s2}">+2σ</small> <b>${sel.th[2].toFixed(2)}</b><small style="color:${COL.s1}">+1σ</small> <b>${sel.th[1].toFixed(2)}</b>`;
+  const svg=box.querySelector("svg");
+  const pick=e=>{const p=svg.getBoundingClientRect(),cx=((e.touches?e.touches[0].clientX:e.clientX)-p.left)*W/p.width;const i=Math.max(0,Math.min(R.length-1,Math.round((cx-ML)/PW*(R.length-1))));state.pick=R[i].m;renderChart();markRow()};
+  svg.addEventListener("click",pick);
+}
+
+function renderLegend(){
+  $("legend").innerHTML=[[COL.ink,t("lgHigh"),""],[COL.s3,"+3σ",""],[COL.s2,"+2σ",""],[COL.s1,"+1σ","d"],[COL.mean,t("lgMean"),"d"],[COL.s2,t("lgEvent"),"dot"]]
+    .map(([c,l,k])=>`<span><i class="${k}" style="--c:${c}"></i>${l}</span>`).join("");
+}
+
+function renderEvents(){
+  const by=new Map(M.map(r=>[r.m,r]));
+  $("evcount").textContent=t("count",D.events.length);
+  $("evbody").innerHTML=D.events.map((m,k)=>{const r=by.get(m);return `<tr data-m="${m}"><td>${k+1}</td><td>${t("ymS",m)}</td><td class="h">${r.h.toFixed(2)}</td><td>${r.th[2].toFixed(2)}</td></tr>`}).reverse().join("");
+  markRow();
+}
+function markRow(){document.querySelectorAll("#evbody tr").forEach(tr=>tr.classList.toggle("on",+tr.dataset.m===state.pick))}
+
+function renderAll(){
+  applyLang();renderTop();renderLegend();renderChart();renderEvents();
+  document.querySelectorAll("#range [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.r));
+}
+
+$("range").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.r=b.dataset.r;store.set("vixRange",state.r);renderAll()});
+$("evbody").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const m=+tr.dataset.m;state.pick=m;
+  if(!rangeRows().some(r=>r.m===m)){state.r="all";store.set("vixRange","all")}renderAll();$("chart").scrollIntoView({behavior:"smooth",block:"center"})});
+$("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;store.set("lang",LANG);D?renderAll():applyLang()});
+let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>D&&renderChart(),150)});
+
+async function load(){
+  try{
+    const res=await fetch("../data/vix.json?ts="+Date.now(),{cache:"no-store"});
+    if(!res.ok)throw new Error(res.status);
+    D=await res.json();
+    M=D.months.map(r=>({m:r[0],h:r[1],l:r[2],c:r[3],th:thOf(r)}));
+    $("app").hidden=false;$("empty").hidden=true;renderAll();
+  }catch(e){if(!D){$("empty").textContent=t("loadFail")}}
+}
+applyLang();load();setInterval(load,5*60*1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>

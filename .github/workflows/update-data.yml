@@ -58,6 +58,7 @@ jobs:
             # SKEW recomputed from the option quotes (used for today's SKEW during the session)
             python scripts/skew_calc.py > /dev/null || echo "SKEW estimate failed"
             python scripts/update_mri.py || echo "update failed; trying again next time"
+            python scripts/update_vix.py || echo "VIX app update failed"
             git add data/
             if ! git diff --cached --quiet; then
               git commit -q -m "data: update MRI"
