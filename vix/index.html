@@ -325,7 +325,7 @@ table.ev tr.on td{background:var(--chip)}
       <div class="eq">事後オッズ ＝ インターバルのオッズ × MRI の倍率</div>
       <p><b>ランダム</b>：イベント中以外の毎月、同じ確率で起きると考えた場合（ポアソン）。月あたり λ ＝ イベント数 ÷ イベント中以外の月数で、k か月では 1 − e<sup>−λk</sup>。</p>
       <p><b>インターバル</b>：イベントの終了から6か月以内に次のイベントが起きたことは一度もない。そこでイベント中と終了後6か月を「静穏期間」として確率0とする。静穏期間を過ぎると、前回イベントからの経過月数 e とともに確率が上がる。直近5回の平均インターバル m の時点で、静穏期間を除いた平均の確率 λ′ になる。それより前は低く、後は高い。</p>
-      <div class="eq">月あたり h(e) ＝ λ′ × (e ÷ m)<sup>0.5</sup><br><small style="margin:0">λ′ ＝ イベント数 ÷ イベント中と静穏期間以外の月数　m ＝ 直近5回の間隔の平均</small></div>
+      <div class="eq">月あたり h(e) ＝ λ′ × (e ÷ m)<sup>0.5</sup><br><small style="margin:0">λ′ ＝ イベント数 ÷ 最初のイベント以降で、イベント中と静穏期間以外の月数　m ＝ 直近5回の間隔の平均</small></div>
       <p class="note">地震の長期評価の BPT モデル（間隔がたつほど確率が上がる）も試したが、バックテストではランダムに負けた。VIX イベントの間隔は8〜74か月とばらつきが大きく、周期性がないため。</p>
       <p><b>MRI</b>：証拠は MRI の最高値 x。直近6か月の最高値、ただし前回イベントの終了から6か月に満たないときは終了からの最高値。イベントはどれも x が75以上で起きているが、75以上の月はイベントがなくても多い。MRI は傾きではなく段差として効くので、75の上と下で倍率を分ける。2018年以降（MRI が機能する期間）のイベント直前と普段の月（イベント中を除く）から出す。</p>
       <div class="eq">75以上の倍率 ＝ P(x≧75｜イベント前) ÷ P(x≧75｜普段)<br>75未満の倍率 ＝ P(x＜75｜イベント前) ÷ P(x＜75｜普段)<br><small style="margin:0">イベント前の割合は (回数＋1) ÷ (イベント数＋2)（ラプラスの継起の法則）</small></div>
@@ -382,7 +382,7 @@ table.ev tr.on td{background:var(--chip)}
       <div class="eq">posterior odds = interval odds × MRI factor</div>
       <p><b>Random</b>: if events came with the same chance every month outside events (Poisson): λ = events ÷ months outside events, and 1 − e<sup>−λk</sup> over k months.</p>
       <p><b>Interval</b>: no event has ever come within 6 months of the previous one ending. So an event and the 6 months after it are a quiet period with probability 0. After it, the chance rises with the months e since the last event, passing its average λ′ (outside quiet periods) at the mean m of the last 5 intervals: lower before, higher after.</p>
-      <div class="eq">monthly h(e) = λ′ × (e ÷ m)<sup>0.5</sup><br><small style="margin:0">λ′ = events ÷ months outside events and quiet periods　m = mean of the last 5 intervals</small></div>
+      <div class="eq">monthly h(e) = λ′ × (e ÷ m)<sup>0.5</sup><br><small style="margin:0">λ′ = events ÷ months since the first event outside events and quiet periods　m = mean of the last 5 intervals</small></div>
       <p class="note">The BPT model of long-term earthquake forecasts (the chance rising as time passes) was tried too, but lost to random in the backtest: intervals between VIX events range from 8 to 74 months, with no period to them.</p>
       <p><b>MRI</b>: the evidence is the MRI's highest, x: over the last 6 months, or since the last event ended if that was less than 6 months ago. Every event came with x at 75 or above, but so did many quiet months: MRI works as a step, not a slope, so the factor differs above and below 75. It is taken from x before events and in other months (outside events) since 2018, when MRI works.</p>
       <div class="eq">factor above 75 = P(x ≥ 75 | before an event) ÷ P(x ≥ 75 | other months)<br>factor below 75 = P(x &lt; 75 | before an event) ÷ P(x &lt; 75 | other months)<br><small style="margin:0">the event share is (count + 1) ÷ (events + 2) (Laplace's rule of succession)</small></div>
@@ -419,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v54";
+const APP_VER="vix-v55";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",

@@ -86,8 +86,8 @@ def model(spans, mri, months, today):
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
     Interval: no event has come within 6 months of the previous one ending (0 in 60 such months, against about 1 in
     30 otherwise), so the hazard is 0 during an event and for 6 months after it ends. After that it rises with the
-    months e since the last event started, through its average lam_q (events / months outside events and quiet
-    periods) at the mean m of the last 5 intervals: h(e) = lam_q * (e / m)^0.5, cumulative
+    months e since the last event started, through its average lam_q (events / months since the first event outside events
+    and quiet periods) at the mean m of the last 5 intervals: h(e) = lam_q * (e / m)^0.5, cumulative
     H(e) = lam_q * m / 1.5 * (e / m)^1.5, P = 1 - exp(-sum over the months past the quiet period).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 75, but so did many quiet months: the line works
@@ -124,7 +124,11 @@ def model(spans, mri, months, today):
         free = [m for m in ms if not ONG[m]]
         st_ = [idx(s_) for s_ in smon if upto is None or s_ < upto]
         iv = [b - a for a, b in zip(st_, st_[1:])][-EVEN_N:]
-        act = [m for m in free if not QM[m]]
+        # the interval clock runs from the first event; until 10 years of such months are known, the months before
+        # it count too (otherwise a single early event makes the rate explode)
+        act = [m for m in free if not QM[m] and m > smon[0]]
+        if len(act) < 120:
+            act = [m for m in free if not QM[m]]
         return n / len(free), st.mean(iv) if iv else 30.0, n / len(act)
     mm = [m for m in months if m >= BAYES_FROM]
     X = {m: xat(m * 100 + 1)[0] for m in mm}
