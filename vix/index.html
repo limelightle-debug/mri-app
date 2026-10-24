@@ -106,7 +106,8 @@ table.ev small.enm .evt{margin-left:6px;vertical-align:1px}
 .lsub{font-family:var(--f-tick);font-stretch:85%;font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
 .lnext{font-size:12px;color:var(--muted);margin-top:8px}
 .lnext:empty{display:none}
-.stick{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:6px 8px;border-bottom:1px solid var(--line)}
+.topfix{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.stick{background:var(--bg);padding-block:6px 8px}
 .tabs{margin:0}.tabs button{flex:1;padding:9px 6px;font-size:14px}
 /* chart */
 .seg{display:flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px;margin-bottom:8px}
@@ -147,6 +148,7 @@ table.ev tr.on td{background:var(--chip)}
 </head>
 <body>
 <div class="wrap">
+  <div class="topfix">
   <header class="bar">
     <div class="brand">
       <img class="avatar" src="icons/app.png" alt="" width="42" height="42">
@@ -162,6 +164,7 @@ table.ev tr.on td{background:var(--chip)}
       <button type="button" data-tab="vix">VIX</button>
       <button type="button" data-tab="ev" data-i18n="tabEv">イベント</button>
     </div>
+  </div>
   </div>
 
   <div id="app" hidden>
@@ -254,7 +257,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v33";
+const APP_VER="vix-v34";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",

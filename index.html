@@ -34,7 +34,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 [hidden]{display:none!important}
 .num{font-family:var(--f-tick);font-stretch:82%;font-variant-numeric:tabular-nums}
 .bar{position:relative;background:var(--bg);padding-block:12px 0}
-.stick{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:6px 8px;border-bottom:1px solid var(--line)}
+.topfix{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.stick{background:var(--bg);padding-block:6px 8px}
 .stick .views{margin-top:6px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .avatar{width:42px;height:42px;border-radius:10px;flex:none;box-shadow:0 0 0 1px var(--line)}
@@ -173,6 +174,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 </head>
 <body>
 <div class="wrap">
+  <div class="topfix">
   <header class="bar">
     <div class="brand">
       <img class="avatar" src="icons/app-v3.png" alt="" width="42" height="42">
@@ -189,6 +191,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <button type="button" data-tab="method" data-i18n="tabMethod">算出方法</button>
     </div>
     <div class="seg views" id="views" role="group" aria-label="確定値とリアルタイム" hidden></div>
+  </div>
   </div>
 
   <div id="app" hidden>
@@ -761,7 +764,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v69";
+const APP_VER="mri-v70";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
