@@ -36,7 +36,7 @@ WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
 MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
 MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
-MRI_SLOPE = 12  # above the line, every 12 MRI points add one more step (2022 had no event, but TQQQ fell 80%)
+MRI_SLOPE = 5  # above the line, every 5 MRI points add one more step: 30 months on with MRI 80 gives about 90% in 12 months
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2  # the interval's chance is twice random at the mean of the last 5 intervals, rising with time
 
 
@@ -98,7 +98,7 @@ def model(spans, mri, months, today):
     the same for below, the event share smoothed by Laplace's rule (+1 / +2), both squared (MRI_W), a deliberate
     overweight on MRI. Today's x alone sets the factor, the same for every horizon (the probability is for an event
     within k months, so today's level counts from the first month), across the line over a logistic of width 1.
-    Above the line the factor keeps growing: log factor x (1 + (x - 70) / 12), so 82 doubles it in logs.
+    Above the line the factor keeps growing: log factor x (1 + (x - 70) / 5), so 75 squares it and 80 cubes it.
     Bayes: posterior odds = interval odds x MRI factor.
     Backtest (from 2018, the MRI period) rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
     was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""
