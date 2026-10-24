@@ -29,6 +29,8 @@ DATA = Path(__file__).resolve().parent.parent / "data"
 OUT = DATA / "vix.json"
 CACHE = DATA / "vix_history.csv"  # not committed; refreshed hourly
 HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
+SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.csv"
+SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP = 360, 201912, 2, 3
 
@@ -39,17 +41,45 @@ def get(url):
     return r
 
 
-def history():
-    fresh = CACHE.exists() and (datetime.now().timestamp() - CACHE.stat().st_mtime) < 3600
+def cached(url, path):
+    fresh = path.exists() and (datetime.now().timestamp() - path.stat().st_mtime) < 3600
     if not fresh:
         try:
-            CACHE.write_text(get(HIST).text, encoding="utf-8")
+            path.write_text(get(url).text, encoding="utf-8")
         except requests.RequestException as e:
-            if not CACHE.exists():
+            if not path.exists():
                 raise
-            print(f"warning: history: {e}", file=sys.stderr)
+            print(f"warning: {url}: {e}", file=sys.stderr)
+    return path.read_text(encoding="utf-8")
+
+
+def spx_closes():
+    out = {}
+    for row in csv.DictReader(io.StringIO(cached(SPX_HIST, SPX_CACHE))):
+        try:
+            m, d, y = row["DATE"].split("/")
+            c = float(row["CLOSE"])
+        except (KeyError, ValueError):
+            continue
+        if c > 0:
+            out[int(y) * 10000 + int(m) * 100 + int(d)] = c
+    return out
+
+
+# the S&P 500's fall around an event, as the earthquake's intensity (shindo, JMA scale):
+# trough = lowest close from a month before the event to 3 months after its last month above +2 sigma;
+# peak = highest close in the 6 months before the trough
+SHINDO = [(0.40, "7"), (0.30, "6+"), (0.20, "6-"), (0.15, "5+"), (0.10, "5-"), (0.05, "4"), (0.0, "3")]
+
+
+def add_months(m, k):
+    y, mo = divmod(m // 100 * 12 + m % 100 - 1 + k, 12)
+    return y * 100 + mo + 1
+
+
+def history():
     days = {}
-    for row in csv.DictReader(io.StringIO(CACHE.read_text(encoding="utf-8"))):
+    for row in csv.DictReader(io.StringIO(cached(HIST, CACHE))):
         try:
             m, d, y = row["DATE"].split("/")
             o, h, lo, c = (float(row[k]) for k in ("OPEN", "HIGH", "LOW", "CLOSE"))
@@ -113,6 +143,38 @@ def main():
             if i - last > GAP:
                 events.append(m)
             last = i
+    # details per event: the first day above +2 sigma, the peak of the episode, the S&P 500's fall
+    info = {}
+    try:
+        spx = spx_closes()
+    except Exception as e:  # noqa: BLE001
+        print(f"warning: spx: {e}", file=sys.stderr)
+        spx = {}
+    thr = {r[0]: 10 ** (r[4] + K_EVENT * r[5]) for r in rows}
+    for m in events:
+        i0 = keys.index(m)
+        last_i, pk = i0, m
+        for i in range(i0 + 1, len(keys)):
+            if i - last_i > GAP:
+                break
+            if months[keys[i]][0] > thr[keys[i]]:
+                last_i = i
+                if months[keys[i]][0] > months[pk][0]:
+                    pk = keys[i]
+        first = next(d for d in sorted(days) if d // 100 == m and days[d][1] > thr[m])
+        peak_day = max((d for d in days if d // 100 == pk), key=lambda d: days[d][1])
+        e = {"day": first, "peakDay": peak_day, "peak": days[peak_day][1], "last": keys[last_i]}
+        if spx:
+            lo_from, lo_to = add_months(m, -1) * 100, add_months(keys[last_i], 3) * 100 + 31
+            win = [d for d in spx if lo_from <= d <= lo_to]
+            if win:
+                trough = min(win, key=lambda d: spx[d])
+                pk_from = add_months(trough // 100, -6) * 100 + trough % 100
+                top = max((d for d in spx if pk_from <= d <= trough), key=lambda d: spx[d])
+                fall = 1 - spx[trough] / spx[top]
+                e.update({"spxTop": top, "spxTrough": trough, "fall": round(fall, 4),
+                          "shindo": next(lv for th, lv in SHINDO if fall >= th)})
+        info[str(m)] = e
     lastday = max(days)
     data = {
         "source": "Cboe",
@@ -121,6 +183,7 @@ def main():
         "live": {"date": lv[0], "time": lv[2], "price": lv[1][3], "high": lv[1][1], "low": lv[1][2]} if lv else None,
         "months": rows,
         "events": events,
+        "eventInfo": info,
     }
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     old.pop("updatedAt", None)
