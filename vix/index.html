@@ -218,7 +218,6 @@ table.ev tr.on td{background:var(--chip)}
       <h2><b data-i18n="thisMonth">今月の高値・安値</b><span id="asof"></span></h2>
       <div class="vg" id="vg"></div>
       <div class="legend" id="vgl"></div>
-      <div class="since" id="since"></div>
     </section>
 
     <section class="panel">
@@ -413,7 +412,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v70";
+const APP_VER="vix-v71";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -574,8 +573,6 @@ function renderTop(){
   const lv=D.live,lt=lv&&nyDate(lv.time);
   renderGaugeBar(r);
   $("asof").textContent=lt?t("asof",fmtTime(lt,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})):"";
-  const ev=D.events,last=ev[ev.length-1];
-  $("since").innerHTML=last?`<span>${t("last")}</span><span><b>${t("ym",last)}</b>　${t("elapsed",mIdx(r.m)-mIdx(last))}</span>`:"";
   const u=D.updatedAt?new Date(D.updatedAt):null;
   $("status").textContent=u?t("updated",fmtTime(u,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})):"";
 }
