@@ -422,7 +422,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v66";
+const APP_VER="vix-v67";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",nCentre:"中心",lgMonth:"今月",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -562,11 +562,13 @@ function renderGaugeBar(r){
     (up?`<text x="${xx}" y="${Y-30}" text-anchor="middle" style="fill:${col};font:700 11px var(--f-tick)">${lab}</text><text x="${xx}" y="${Y-17}" text-anchor="middle" class="vgv">${f(v)}</text>`
        :`<text x="${xx}" y="${Y+26}" text-anchor="middle" class="vgv">${f(v)}</text><text x="${xx}" y="${Y+39}" text-anchor="middle" style="fill:${col};font:700 11px var(--f-tick)">${lab}</text>`)};
   g+=tick(h1,COL.s1,"+1σ",0)+tick(h2,COL.s2,"+2σ",0)+tick(l1,COL.s1,"−1σ",0)+tick(l2,COL.s2,"−2σ",0);
+  // the edges of the normal range, values below
+  [r.nL,r.nH].forEach(v=>{const xx=x(v);g+=`<line x1="${xx}" x2="${xx}" y1="${Y-9}" y2="${Y+9}" stroke="#9db8ff" stroke-width="1.5"/><text x="${xx}" y="${Y+26}" text-anchor="middle" class="vgv" style="fill:#9db8ff">${f(v)}</text>`});
   // this month: low to high, a bar of its own above the gauge
   const z=zoneOf(r.h,r.th),hc=z?ZC()[z]:COL.ink;
   g+=`<line x1="${x(r.l)}" x2="${x(r.h)}" y1="${YM}" y2="${YM}" stroke="${COL.ink}" stroke-width="3" stroke-linecap="round"/><circle cx="${x(r.l)}" cy="${YM}" r="4.5" fill="${COL.ink}" stroke="var(--panel)" stroke-width="1.5"/><circle cx="${x(r.h)}" cy="${YM}" r="5" fill="${hc}" stroke="var(--panel)" stroke-width="1.5" filter="url(#neon)"/>`;
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cBand")}">${GLOW}<style>.vgv{fill:var(--ink);font:600 11px var(--f-tick);font-stretch:85%}</style>${g}</svg>`;
-  $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")} ${f(r.nL)}–${f(r.nH)}</span><span><i class="d" style="--c:${COL.mean}"></i>${t("nCentre")} ${f(10**c)}</span><span><i style="--c:${COL.ink}"></i>${t("lgMonth")} ${f(r.l)}–${f(r.h)}</span>`;
+  $("vgl").innerHTML=`<span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.mean}"></i>${t("nCentre")} ${f(10**c)}</span><span><i style="--c:${COL.ink}"></i>${t("lgMonth")} ${f(r.l)}–${f(r.h)}</span>`;
 }
 
 function renderTop(){
