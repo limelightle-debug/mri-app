@@ -153,7 +153,7 @@ table.ev tr.on td{background:var(--chip)}
       <div class="legend" id="clegend"></div>
       <div class="readout" id="cread"></div>
       <div class="chart" id="cchart"></div>
-      <p class="pnote" data-i18n="cNote">平常範囲は月足安値の−1σから月足高値の+1σまで（どちらも対数、閾値と同じ窓）。</p>
+      <p class="pnote" data-i18n="cNote"></p>
     </section>
 
     <section class="panel" id="probp">
@@ -217,11 +217,11 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v17";
+const APP_VER="vix-v18";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
-  rALL:"全期間",r2:"2年",scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は月足安値の−1σから月足高値の+1σまで。平均は月足終値の対数の平均（どちらも閾値と同じ窓）。対数表示では平均が中央。",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+  rALL:"全期間",r2:"2年",scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線はその中間で、対数表示では中央。",cMid:"中間",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",
@@ -229,7 +229,7 @@ const T={
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
-  rALL:"All",r2:"2Y",scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the monthly low’s −1σ to the monthly high’s +1σ. Mean: the mean of the log of monthly closes (same window as the thresholds). On the log scale the mean is in the middle.",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
+  rALL:"All",r2:"2Y",scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is its midpoint, in the middle on the log scale.",cMid:"Mid",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",
@@ -367,9 +367,9 @@ const CUP="#ff5a5a",CDN="#26c05a";
 function renderCandle(){
   const box=$("cchart"),R=state.cr==="all"?M:M.slice(-(+state.cr*12));
   const W=Math.max(300,box.clientWidth),H=Math.round(W*.72),ML=4,MR=32,MT=8,MB=22,PW=W-ML-MR,PH=H-MT-MB;
-  const bl=r=>10**(r.muL-r.sdL),bh=r=>r.th[1];
+  const bl=r=>r.nL,bh=r=>r.nH,mid=r=>(r.nL+r.nH)/2;
   const lo=d3.min(R,r=>Math.min(r.l,bl(r))),hi=d3.max(R,r=>Math.max(r.h,r.th[2]))*1.02;
-  const y=yScale(lo,hi,d3.mean(R,r=>r.muC),MT,MT+PH),bw=PW/R.length,x=i=>ML+bw*(i+.5);
+  const y=yScale(lo,hi,d3.mean(R,r=>Math.log10(mid(r))),MT,MT+PH),bw=PW/R.length,x=i=>ML+bw*(i+.5);
   let g="";
   y.tk.forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}</text>`});
   const yrs=R.length/12,step=yrs>24?5:yrs>12?2:1;
@@ -379,7 +379,7 @@ function renderCandle(){
   const dn=R.map((r,i)=>`${(x(i)+bw/2).toFixed(1)} ${y(bl(r)).toFixed(1)}L${(x(i)-bw/2).toFixed(1)} ${y(bl(r)).toFixed(1)}`).reverse().join("L");
   g+=`<path d="M${up}L${dn}Z" fill="#7fa8ff" opacity=".13"/>`;
   g+=`<path d="${R.map((r,i)=>(i?"L":"M")+(x(i)-bw/2).toFixed(1)+" "+y(r.th[2]).toFixed(1)+"L"+(x(i)+bw/2).toFixed(1)+" "+y(r.th[2]).toFixed(1)).join("")}" fill="none" stroke="${COL.s2}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".9"/>`;
-  g+=`<path d="${R.map((r,i)=>(i?"L":"M")+(x(i)-bw/2).toFixed(1)+" "+y(10**r.muC).toFixed(1)+"L"+(x(i)+bw/2).toFixed(1)+" "+y(10**r.muC).toFixed(1)).join("")}" fill="none" stroke="${COL.mean}" stroke-width="1.1" stroke-dasharray="4 3" opacity=".9"/>`;
+  g+=`<path d="${R.map((r,i)=>(i?"L":"M")+(x(i)-bw/2).toFixed(1)+" "+y(mid(r)).toFixed(1)+"L"+(x(i)+bw/2).toFixed(1)+" "+y(mid(r)).toFixed(1)).join("")}" fill="none" stroke="${COL.mean}" stroke-width="1.1" stroke-dasharray="4 3" opacity=".9"/>`;
   const cw=Math.max(1,Math.min(9,bw*.7));
   R.forEach((r,i)=>{const c=r.c>=r.o?CUP:CDN,yt=y(Math.max(r.o,r.c)),yb=y(Math.min(r.o,r.c));
     g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${y(r.h)}" y2="${y(r.l)}" stroke="${c}" stroke-width="${bw>3?1.2:.8}"/>`;
@@ -388,10 +388,10 @@ function renderCandle(){
   if(state.cpick!=null)g+=`<line x1="${x(pi)}" x2="${x(pi)}" y1="${MT}" y2="${MT+PH}" stroke="${COL.ink}" stroke-dasharray="3 3" opacity=".6"/>`;
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cTitle")}">${g}</svg>`;
   const L=t("ohlc"),cc=sel.c>=sel.o?CUP:CDN;
-  $("cread").innerHTML=`<div><b>${t("ym",sel.m)}</b><small>${t("cBand")}</small> <b>${bl(sel).toFixed(1)}–${bh(sel).toFixed(1)}</b></div><div>${[sel.o,sel.h,sel.l,sel.c].map((v,k)=>`<small>${L[k]}</small> <b${k===3?` style="color:${cc}"`:""}>${v.toFixed(2)}</b>`).join("")}</div>`;
+  $("cread").innerHTML=`<div><b>${t("ym",sel.m)}</b><small>${t("cBand")}</small> <b>${bl(sel).toFixed(2)}–${bh(sel).toFixed(2)}</b></div><div>${[sel.o,sel.h,sel.l,sel.c].map((v,k)=>`<small>${L[k]}</small> <b${k===3?` style="color:${cc}"`:""}>${v.toFixed(2)}</b>`).join("")}</div>`;
   const svg=box.querySelector("svg");
   svg.addEventListener("click",e=>{const p=svg.getBoundingClientRect(),cx=(e.clientX-p.left)*W/p.width,i=Math.max(0,Math.min(R.length-1,Math.floor((cx-ML)/bw)));state.cpick=R[i].m;renderCandle()});
-  $("clegend").innerHTML=`<span><i class="sq" style="--c:${CUP}"></i>${t("cUp")}</span><span><i class="sq" style="--c:${CDN}"></i>${t("cDown")}</span><span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.s2}"></i>+2σ</span><span><i class="d" style="--c:${COL.mean}"></i>${t("lgMean")}</span>`;
+  $("clegend").innerHTML=`<span><i class="sq" style="--c:${CUP}"></i>${t("cUp")}</span><span><i class="sq" style="--c:${CDN}"></i>${t("cDown")}</span><span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.s2}"></i>+2σ</span><span><i class="d" style="--c:${COL.mean}"></i>${t("cMid")}</span>`;
   document.querySelectorAll("#crange [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.cr));
 }
 
@@ -486,7 +486,7 @@ async function load(){
     const res=await fetch("../data/vix.json?ts="+Date.now(),{cache:"no-store"});
     if(!res.ok)throw new Error(res.status);
     D=await res.json();
-    M=D.months.map(r=>({m:r[0],h:r[1],l:r[2],c:r[3],mu:r[4],sd:r[5],muL:r[6],sdL:r[7],o:r[8]??r[3],muC:r[9]??(r[4]+r[6])/2,th:thOf(r)}));
+    M=D.months.map(r=>({m:r[0],h:r[1],l:r[2],c:r[3],mu:r[4],sd:r[5],muL:r[6],sdL:r[7],o:r[8]??r[3],muC:r[9]??(r[4]+r[6])/2,nL:r[10]??10**(r[6]-r[7]),nH:r[11]??10**(r[4]+r[5]),th:thOf(r)}));
     $("app").hidden=false;$("empty").hidden=true;renderAll();
   }catch(e){if(!D){$("empty").textContent=t("loadFail")}}
 }

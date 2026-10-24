@@ -140,8 +140,11 @@ def main():
         wh, wl = lh[j - WINDOW + 1:j + 1], ll[j - WINDOW + 1:j + 1]
         mh, sh, ml, sl = st.mean(wh), st.stdev(wh), st.mean(wl), st.stdev(wl)
         mc = st.mean(lc[j - WINDOW + 1:j + 1])  # the mean of the log of monthly closes (the candle chart's centre)
+        # normal range (workbook AP41:AR41): the medians of the monthly lows and highs over the same window
+        hs, ls = [months[k][0] for k in keys[j - WINDOW + 1:j + 1]], [months[k][1] for k in keys[j - WINDOW + 1:j + 1]]
+        med_h, med_l = st.median(hs), st.median(ls)
         h, lo, c, lastday, o = months[m]
-        rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o, round(mc, 6)])
+        rows.append([m, h, lo, c, round(mh, 6), round(sh, 6), round(ml, 6), round(sl, 6), o, round(mc, 6), round(med_l, 4), round(med_h, 4)])
         if h > 10 ** (mh + K_EVENT * sh):
             if i - last > GAP:
                 events.append(m)
