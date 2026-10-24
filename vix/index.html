@@ -79,6 +79,13 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .shb{display:inline-block;min-width:28px;padding:2px 5px;border-radius:4px;font-family:var(--f-body);font-size:11px;font-weight:800;text-align:center;line-height:1.3;margin-left:4px}
 .shb.big{font-size:15px;min-width:44px;padding:3px 8px;margin-left:0}
 #mapread{height:auto;overflow:visible;white-space:normal}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:8px -14px 0;padding:2px 14px 4px;scrollbar-width:none;scroll-snap-type:x proximity}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;scroll-snap-align:start;appearance:none;border:1px solid var(--line);background:var(--chip);color:var(--ink2);border-radius:9px;padding:6px 10px 5px;text-align:left;cursor:pointer;font-family:var(--f-body)}
+.chips button b{display:block;font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--ink)}
+.chips button small{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
+.chips button[aria-pressed="true"]{background:var(--panel);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9);border-color:transparent}
+.chips button[aria-pressed="true"] small{color:var(--ink2)}
 /* chart */
 .seg{display:flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px;margin-bottom:8px}
 .seg button{flex:1;appearance:none;border:0;background:transparent;color:var(--ink2);font:500 13px/1 var(--f-body);padding:8px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
@@ -167,6 +174,7 @@ table.ev tr.on td{background:var(--chip)}
     <section class="panel">
       <h2><b data-i18n="mapTitle">VIXイベントの震源地</b><span data-i18n="mapSub">針が刺さった場所</span></h2>
       <div class="mapbox" id="map"></div>
+      <div class="chips" id="evchips" role="group"></div>
       <div class="readout" id="mapread"></div>
       <div class="legend" id="maplegend"></div>
     </section>
@@ -188,7 +196,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v7";
+const APP_VER="vix-v8";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
@@ -384,6 +392,9 @@ function renderMap(){
     <dl><div><dt>${t("bDay")}</dt><dd>${I.day?ymd(I.day):t("ymS",sel)}</dd></div><div><dt>${t("bEpi")}</dt><dd>${e?esc(LANG==="ja"?e[0]:e[1]):"–"}</dd></div>
     <div><dt>${t("bMag")}</dt><dd class="mg">${ep.mag.toFixed(1)}</dd></div><div><dt>${t("bSh")}</dt><dd>${I.shindo?shBadge(I.shindo,1):"–"}</dd></div></dl>
     <div class="bf">${t("bPeak")} <b>${(I.peak||ep.peak.h).toFixed(2)}</b>${I.peakDay?`（${ymdS(I.peakDay).slice(5)}）`:""}${I.fall!=null?`　S&amp;P500 <b>−${(I.fall*100).toFixed(1)}%</b>`:""}</div></div>`;
+  const cz=$("evchips"),keep=cz.scrollLeft,first=!cz.childElementCount;
+  cz.innerHTML=EP.map((x,k)=>`<button type="button" data-m="${x.m}" aria-pressed="${x.m===sel}"><b>#${k+1}　${t("ymS",x.m)}</b><small>${esc(nameOf(x.m))}</small></button>`).reverse().join("");
+  if(first)cz.scrollLeft=0;else cz.scrollLeft=keep;
   $("maplegend").innerHTML=`<span style="color:var(--muted)">${t("bSh")}</span>`+["4","5-","5+","6-","6+","7"].map(v=>shBadge(v)).join("");
 }
 
@@ -393,8 +404,9 @@ function renderAll(){
 }
 
 $("range").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.r=b.dataset.r;store.set("vixRange",state.r);renderAll()});
+$("evchips").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;state.pick=+b.dataset.m;renderMap();renderChart();markRow()});
 $("evbody").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const m=+tr.dataset.m;state.pick=m;
-  if(!rangeRows().some(r=>r.m===m)){state.r="all";store.set("vixRange","all")}renderAll();$("chart").scrollIntoView({behavior:"smooth",block:"center"})});
+  if(!rangeRows().some(r=>r.m===m)){state.r="all";store.set("vixRange","all")}renderAll();$("map").scrollIntoView({behavior:"smooth",block:"start"})});
 $("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;store.set("lang",LANG);D?renderAll():applyLang()});
 let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(D){renderChart();renderMap()}},150)});
 
