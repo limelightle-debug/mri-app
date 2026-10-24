@@ -212,6 +212,22 @@ table.ev tr.on td{background:var(--chip)}
     </section>
 
     <section class="panel">
+      <h2><b data-i18n="thisMonth">今月の高値</b><span id="asof"></span></h2>
+      <div class="hero">
+        <div>
+          <div class="big" id="hi">–</div>
+          <div class="zone" id="zone"></div>
+        </div>
+        <div style="text-align:right">
+          <div class="lab" data-i18n="price">現在値</div>
+          <div class="num" id="px" style="font-size:22px;font-weight:700">–</div>
+        </div>
+      </div>
+      <div class="thr" id="thr"></div>
+      <div class="since" id="since"></div>
+    </section>
+
+    <section class="panel">
       <h2><b data-i18n="cTitle">VIX 月足ローソク</b><span class="scseg" role="group"><button type="button" data-sc="lin" data-i18n="scLin">通常</button><button type="button" data-sc="log" data-i18n="scLog">対数</button></span></h2>
       <div class="seg" id="crange" role="group">
         <button type="button" data-r="2" data-i18n="r2">2年</button>
@@ -230,22 +246,6 @@ table.ev tr.on td{background:var(--chip)}
       <div class="gauges" id="gauges"></div>
       <div class="pvars" id="pvars"></div>
       <p class="pnote" id="bayesnote"></p>
-    </section>
-
-    <section class="panel">
-      <h2><b data-i18n="thisMonth">今月の高値</b><span id="asof"></span></h2>
-      <div class="hero">
-        <div>
-          <div class="big" id="hi">–</div>
-          <div class="zone" id="zone"></div>
-        </div>
-        <div style="text-align:right">
-          <div class="lab" data-i18n="price">現在値</div>
-          <div class="num" id="px" style="font-size:22px;font-weight:700">–</div>
-        </div>
-      </div>
-      <div class="thr" id="thr"></div>
-      <div class="since" id="since"></div>
     </section>
 
    </div>
@@ -419,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v57";
+const APP_VER="vix-v58";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
