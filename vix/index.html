@@ -142,6 +142,20 @@ table.ev tr.on td{background:var(--chip)}
   </header>
 
   <div id="app" hidden>
+    <section class="panel">
+      <h2><b data-i18n="cTitle">VIX 月足ローソク</b><span class="scseg" role="group"><button type="button" data-sc="lin" data-i18n="scLin">通常</button><button type="button" data-sc="log" data-i18n="scLog">対数</button></span></h2>
+      <div class="seg" id="crange" role="group">
+        <button type="button" data-r="2" data-i18n="r2">2年</button>
+        <button type="button" data-r="5" data-i18n="r5">5年</button>
+        <button type="button" data-r="10" data-i18n="r10">10年</button>
+        <button type="button" data-r="all" data-i18n="rALL">全期間</button>
+      </div>
+      <div class="legend" id="clegend"></div>
+      <div class="readout" id="cread"></div>
+      <div class="chart" id="cchart"></div>
+      <p class="pnote" data-i18n="cNote">平常範囲は月足安値の−1σから月足高値の+1σまで（どちらも対数、閾値と同じ窓）。</p>
+    </section>
+
     <section class="panel" id="probp">
       <h2><b data-i18n="probTitle">VIXイベント発生確率</b><span id="probsub"></span></h2>
       <div class="gauges" id="gauges"></div>
@@ -179,20 +193,6 @@ table.ev tr.on td{background:var(--chip)}
     </section>
 
     <section class="panel">
-      <h2><b data-i18n="cTitle">VIX 月足ローソク</b><span class="scseg" role="group"><button type="button" data-sc="lin" data-i18n="scLin">通常</button><button type="button" data-sc="log" data-i18n="scLog">対数</button></span></h2>
-      <div class="seg" id="crange" role="group">
-        <button type="button" data-r="2" data-i18n="r2">2年</button>
-        <button type="button" data-r="5" data-i18n="r5">5年</button>
-        <button type="button" data-r="10" data-i18n="r10">10年</button>
-        <button type="button" data-r="all" data-i18n="rALL">全期間</button>
-      </div>
-      <div class="legend" id="clegend"></div>
-      <div class="readout" id="cread"></div>
-      <div class="chart" id="cchart"></div>
-      <p class="pnote" data-i18n="cNote">平常範囲は月足安値の−1σから月足高値の+1σまで（どちらも対数、閾値と同じ窓）。</p>
-    </section>
-
-    <section class="panel">
       <h2><b data-i18n="mapTitle">VIXイベントの震源地</b><span data-i18n="mapSub">針が刺さった場所</span></h2>
       <div class="mapbox" id="map"></div>
       <div class="chips" id="evchips" role="group"></div>
@@ -217,7 +217,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v15";
+const APP_VER="vix-v16";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
