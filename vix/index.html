@@ -220,11 +220,11 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v22";
+const APP_VER="vix-v23";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
-  rALL:"全期間",r2:"2年",scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の中心で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+  rALL:"全期間",r2:"2年",scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
@@ -232,7 +232,7 @@ const T={
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
-  rALL:"All",r2:"2Y",scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range, in the middle of the chart on the log scale.",cMid:"Centre of the normal range",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
+  rALL:"All",r2:"2Y",scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
@@ -376,7 +376,8 @@ const CUP="#FF3B5C",CDN="#3DFF6E";
 function renderCandle(){
   const box=$("cchart"),R=state.cr==="all"?M:M.slice(-(+state.cr*12));
   const W=Math.max(300,box.clientWidth),H=Math.round(W*.72),ML=4,MR=32,MT=8,MB=22,PW=W-ML-MR,PH=H-MT-MB;
-  const bl=r=>r.nL,bh=r=>r.nH,mid=r=>(r.nL+r.nH)/2;
+  // the centre of the normal range on the log scale: the geometric mean of its edges
+const bl=r=>r.nL,bh=r=>r.nH,mid=r=>Math.sqrt(r.nL*r.nH);
   const lo=d3.min(R,r=>Math.min(r.l,bl(r))),hi=d3.max(R,r=>Math.max(r.h,r.th[2]))*1.02;
   const y=yScale(lo,hi,d3.mean(R,r=>Math.log10(mid(r))),MT,MT+PH),bw=PW/R.length,x=i=>ML+bw*(i+.5);
   let g="";
@@ -397,7 +398,7 @@ function renderCandle(){
   if(state.cpick!=null)g+=`<line x1="${x(pi)}" x2="${x(pi)}" y1="${MT}" y2="${MT+PH}" stroke="${COL.ink}" stroke-dasharray="3 3" opacity=".6"/>`;
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cTitle")}">${GLOW}${g}</svg>`;
   const L=t("ohlc"),cc=sel.c>=sel.o?CUP:CDN;
-  $("cread").innerHTML=`<div><b>${t("ym",sel.m)}</b><small>${t("cBand")}</small> <b>${bl(sel).toFixed(2)}–${bh(sel).toFixed(2)}</b></div><div>${[sel.o,sel.h,sel.l,sel.c].map((v,k)=>`<small>${L[k]}</small> <b${k===3?` style="color:${cc}"`:""}>${v.toFixed(2)}</b>`).join("")}</div>`;
+  $("cread").innerHTML=`<div><b>${t("ym",sel.m)}</b><small>${t("cBand")}</small> <b>${bl(sel).toFixed(2)}–${bh(sel).toFixed(2)}</b><small>${t("cCentre")}</small> <b>${mid(sel).toFixed(2)}</b></div><div>${[sel.o,sel.h,sel.l,sel.c].map((v,k)=>`<small>${L[k]}</small> <b${k===3?` style="color:${cc}"`:""}>${v.toFixed(2)}</b>`).join("")}</div>`;
   const svg=box.querySelector("svg");
   svg.addEventListener("click",e=>{const p=svg.getBoundingClientRect(),cx=(e.clientX-p.left)*W/p.width,i=Math.max(0,Math.min(R.length-1,Math.floor((cx-ML)/bw)));state.cpick=R[i].m;renderCandle()});
   $("clegend").innerHTML=`<span><i class="sq" style="--c:${CUP}"></i>${t("cUp")}</span><span><i class="sq" style="--c:${CDN}"></i>${t("cDown")}</span><span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.s2}"></i>+2σ</span><span><i class="d" style="--c:${COL.mean}"></i>${t("cMid")}</span>`;
