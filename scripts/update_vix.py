@@ -34,6 +34,7 @@ SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, MRI_WIDTH, QUIET = 201801, 70, 3, 6
+MRI_W = 3  # weight on MRI: its likelihood ratios are cubed (backtest skill stays positive; for preparing, not hitting)
 EVEN_N, SHAPE = 5, 1.5  # the interval's chance passes its average at the mean of the last 5 intervals, rising with time
 
 
@@ -92,7 +93,7 @@ def model(spans, mri, months, today):
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
-    the same for below, the event share smoothed by Laplace's rule (+1 / +2). What counts is x when an event starts,
+    the same for below, the event share smoothed by Laplace's rule (+1 / +2). Both ratios are raised to the power 3 (MRI_W), a deliberate overweight on MRI. What counts is x when an event starts,
     not now: q_j = the share of months with x near today's (within 5, wider if too few) whose x j months later was
     at or above 70, and the factor for k months is the mean over j = 1..k of q_j * above + (1 - q_j) * below.
     Bayes: posterior odds = interval odds x MRI factor.
@@ -142,7 +143,7 @@ def model(spans, mri, months, today):
         pn = sum(x >= MRI_LINE for x in xn) / len(xn)
         if pn in (0, 1):
             return None
-        return {"hi": pe / pn, "lo": (1 - pe) / (1 - pn), "pn": pn, "events": len(xe),
+        return {"hi": (pe / pn) ** MRI_W, "lo": ((1 - pe) / (1 - pn)) ** MRI_W, "pn": pn, "events": len(xe),
                 "eventsAbove": sum(x >= MRI_LINE for x in xe), "months": len(xn)}
     def factors(x, par, upto):
         known = lambda k: upto is None or k < upto
