@@ -33,7 +33,7 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM = 201907
+BAYES_FROM, MRI_LINE, MRI_WIDTH = 201801, 75, 1.5
 
 
 def get(url):
@@ -219,11 +219,12 @@ def main():
         before = [d for d in days if d < lv[0]]
         if before:
             quote["prevClose"] = days[max(before)][3]
-    # MRI as evidence (Bayes), linear in the log odds. x = the highest daily MRI over the last 6 months, or since the
-    # last event ended if that is more recent (during an event there is no next event to forecast). x before events
-    # and x at the start of other months (since July 2019, when MRI works; months within events left out) are taken
-    # as normal with the same spread: log LR = beta * (x - centre), beta = (mean before events - mean of the other
-    # months) / sd^2, centre = the midpoint of the two means
+    # MRI as evidence (Bayes). x = the highest daily MRI over the last 6 months, or since the last event ended if that
+    # is more recent (during an event there is no next event to forecast). Every event so far came with x at or above
+    # the 75 line, but so did many quiet months: the line works as a step, not a slope. The likelihood ratio is
+    # P(x >= 75 | before an event) / P(x >= 75 | other months) above the line and the same for below, the event share
+    # smoothed by +0.5 / +1 (3 of 3 is not certainty), switching over a logistic of width 1.5 in the log odds.
+    # Since 2018, when MRI works; other months are month starts outside events
     bayes = None
     try:
         mri = {r[0]: r[7] * 100 for r in json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]}
@@ -239,14 +240,19 @@ def main():
         firsts = [k * 100 + 1 for k in sorted({d // 100 for d in md}) if k >= BAYES_FROM]
         x0 = [x for x, _ in (xat(d) for d in firsts if not in_event(d)) if x is not None]
         x1 = [x for x, _ in (xat(s_) for s_, _ in spans if s_ >= BAYES_FROM * 100) if x is not None]
-        mu0, mu1, sd = st.mean(x0), st.mean(x1), st.stdev(x0)
-        beta, centre = (mu1 - mu0) / sd ** 2, (mu0 + mu1) / 2
+        pe = (sum(x >= MRI_LINE for x in x1) + .5) / (len(x1) + 1)
+        pn = sum(x >= MRI_LINE for x in x0) / len(x0)
+        hi, lo_ = pe / pn, (1 - pe) / (1 - pn)
         ongoing = bool(spans) and spans[-1][1] is None
         now, since_end = xat(md[-1], inclusive=True)
+        lr = None
+        if now is not None:
+            w = 1 / (1 + math.exp(-(now - MRI_LINE) / MRI_WIDTH))
+            lr = math.exp(math.log(lo_) + w * (math.log(hi) - math.log(lo_)))
         bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(md[-1] + 1),
-                 "ongoing": ongoing, "beta": round(beta, 5), "centre": round(centre, 2),
-                 "lr": None if now is None else round(math.exp(beta * (now - centre)), 4), "from": BAYES_FROM,
-                 "events": len(x1), "meanEvents": round(mu1, 1), "meanAll": round(mu0, 1), "sd": round(sd, 1)}
+                 "ongoing": ongoing, "line": MRI_LINE, "width": MRI_WIDTH, "lrHi": round(hi, 3), "lrLo": round(lo_, 3),
+                 "lr": None if lr is None else round(lr, 4), "from": BAYES_FROM, "events": len(x1),
+                 "eventsAbove": sum(x >= MRI_LINE for x in x1), "months": len(x0), "monthsAbove": round(pn, 3)}
     except (OSError, ValueError, KeyError, st.StatisticsError) as e:
         print(f"warning: bayes: {e}", file=sys.stderr)
     lastday = max(days)
