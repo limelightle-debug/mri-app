@@ -383,7 +383,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v36";
+const APP_VER="vix-v37";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -540,14 +540,17 @@ function renderChart(){
   g+=line(r=>r.h,COL.ink,1.6);
   // one dot per event, at its peak month, with the event number
   episodes().forEach((e,k)=>{const i=R.findIndex(r=>r.m===e.peak.m);if(i<0)return;g+=`<circle cx="${x(i)}" cy="${y(R[i].h)}" r="4.5" fill="${evColor(e.peak)}" stroke="var(--panel)" stroke-width="1.5" filter="url(#neon)"/>${(()=>{const yy=y(R[i].h),up=yy-8>=10;return `<text class="ax" x="${up?x(i):x(i)+7}" y="${up?yy-8:yy+4}" text-anchor="${up?"middle":"start"}" style="fill:var(--ink2);font-size:10px">${k+1}</text>`})()}`});
-  let pk="";const pi=state.pick==null?-1:R.findIndex(r=>r.m===state.pick);
+  // selection snaps to events: the picked event is marked at its peak month
+  const EPS=episodes(),pe=EPS.find(e=>e.m===state.pick);
+  let pk="";const pi=pe?R.findIndex(r=>r.m===pe.peak.m):-1;
   if(pi>=0)pk=`<line x1="${x(pi)}" x2="${x(pi)}" y1="${MT}" y2="${MT+PH}" stroke="${COL.ink}" stroke-dasharray="3 3" opacity=".7"/><circle cx="${x(pi)}" cy="${y(R[pi].h)}" r="4" fill="none" stroke="${COL.ink}" stroke-width="1.5"/>`;
   box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("chartTitle")}">${GLOW}${g}${pk}</svg>`;
   const sel=pi>=0?R[pi]:R[R.length-1];
-  const sn=D.events.includes(sel.m)?nameOf(sel.m):"";
+  const sn=pe&&pi>=0?nameOf(pe.m):"";
   $("readout").innerHTML=`<div><b>${t("ym",sel.m)}</b>${sn?`<b style="color:${evColor(sel)}">${esc(sn)}</b>`:""}</div><div><small>${t("high")}</small> <b>${sel.h.toFixed(2)}</b><small style="color:${COL.s2}">+2σ</small> <b>${sel.th[2].toFixed(2)}</b><small style="color:${COL.s1}">+1σ</small> <b>${sel.th[1].toFixed(2)}</b><small>M</small><b>${magOf(sel).toFixed(1)}</b></div>`;
   const svg=box.querySelector("svg");
-  box._geo={W,idx:cx=>R[Math.max(0,Math.min(R.length-1,Math.round((cx-ML)/PW*(R.length-1))))].m,set:m=>{if(state.pick!==m){state.pick=m;renderChart();renderMap();markRow()}}};
+  const vis=EPS.map(e=>({m:e.m,i:R.findIndex(r=>r.m===e.peak.m)})).filter(e=>e.i>=0);
+  box._geo={W,idx:cx=>{let b=null,d=1e9;vis.forEach(e=>{const dd=Math.abs(x(e.i)-cx);if(dd<d){d=dd;b=e.m}});return b},set:m=>{if(m!=null&&state.pick!==m){state.pick=m;renderChart();renderMap();markRow()}}};
 }
 
 // y scale: log centred on the mean (in logs) of the shown period, or linear from zero
