@@ -71,7 +71,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .legend .ring{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:var(--c)}
 .legend .ring.p{background:#0a0a1a;box-shadow:inset 0 0 0 2px var(--c)}
 .bul{margin-top:8px;background:#0c0c22;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.bul .bh{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}.bul .bh b{font-size:15px;color:var(--ink)}.bul .bh small{color:var(--muted);font-size:11.5px;margin-left:auto}
+.bul .bh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-bottom:6px}.bul .bh b{font-size:15px;color:var(--ink);white-space:nowrap}.bul .bh small{color:var(--muted);font-size:11.5px;margin-left:auto}
 .bul dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:0}.bul dl>div{min-width:0}
 .bul dt{font-size:11px;color:var(--muted);margin-bottom:1px}.bul dd{margin:0;white-space:nowrap;font-family:var(--f-tick);font-stretch:85%;font-size:15px;font-weight:700;color:var(--ink)}
 .bul dd.mg{font-size:20px}
@@ -86,6 +86,10 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .chips button small{display:block;font-size:11px;color:var(--muted);white-space:nowrap}
 .chips button[aria-pressed="true"]{background:var(--panel);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9);border-color:transparent}
 .chips button[aria-pressed="true"] small{color:var(--ink2)}
+.swt{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.swan{display:block;flex:none}
+.bul .bh .swt{margin-left:auto;font-size:12px;color:var(--ink2)}
+.chips button{position:relative;padding-right:40px}.chips button .swan{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+table.ev small.enm .swan{display:inline-block;vertical-align:-4px;margin-left:4px}
 /* chart */
 .seg{display:flex;background:var(--chip);border-radius:8px;padding:3px;gap:2px;margin-bottom:8px}
 .seg button{flex:1;appearance:none;border:0;background:transparent;color:var(--ink2);font:500 13px/1 var(--f-body);padding:8px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
@@ -177,6 +181,7 @@ table.ev tr.on td{background:var(--chip)}
       <div class="chips" id="evchips" role="group"></div>
       <div class="readout" id="mapread"></div>
       <div class="legend" id="maplegend"></div>
+      <div class="legend" id="swanlegend" style="gap:4px 14px;margin-top:6px"></div>
     </section>
 
     <section class="panel">
@@ -196,7 +201,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v9";
+const APP_VER="vix-v10";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIX 月足高値",logScale:"対数目盛",
@@ -249,6 +254,11 @@ const EPI={199710:["香港","Hong Kong",22.32,114.17,"g"],199810:["モスクワ"
  201108:["ニューヨーク","New York",40.71,-74.01,"g"],201508:["北京","Beijing",39.9,116.4,"b"],201802:["ワシントン","Washington",38.9,-77.04,"b"],
  202003:["武漢","Wuhan",30.59,114.31,"p"],202408:["東京","Tokyo",35.68,139.76,"g"],202504:["ワシントン","Washington",38.9,-77.04,"g"]};
 const epiOf=m=>{const n=NAMES.find(x=>Math.abs(mIdx(x[0])-mIdx(m))<=2);return n?EPI[n[0]]:null};
+// swan icons (an original silhouette): grey swan, black swan, pure black swan (black with a red glow)
+const SW_BODY="M13 13.5C11.6 10.2 13.4 7 16.6 7C19.6 7 21.4 9.6 20.6 12.6C19.8 15.8 17.2 19 17.8 23.2C18.4 27.4 22.6 29.6 28 29C35 28.2 43 23.6 49.6 18.4C52 16.6 55 15.6 57.6 15.4C55.6 18.6 55.2 22 53.6 25.6C50.4 33 42.4 38.4 31.6 38.8C21.6 39.2 13.8 35 12.2 28.6C11 23.6 13.6 19.8 15.6 16.6C16.4 15.2 15.6 13.6 14.4 13.6Z";
+function swanSVG(type,w){const P={g:["#a9a9c4","#e8873a","#1a1a2a","none",0],b:["#101016","#ff3030","#ff3030","#6a6a90",1.4],p:["#050508","#ff3030","#ff3030","#ff3030",2.6]}[type]||["#888","#888","#000","none",0];
+  return `<svg class="swan" width="${w}" height="${Math.round(w*.75)}" viewBox="0 0 64 48" aria-hidden="true">${P[3]!=="none"?`<path d="${SW_BODY}" fill="none" stroke="${P[3]}" stroke-width="${P[4]}"${type==="p"?' style="filter:drop-shadow(0 0 3px #ff3030)"':""}/>`:""}<path d="${SW_BODY}" fill="${P[0]}"/><path d="M25 29.6C31 26 38.4 23.4 46 23.4C42 27.6 35.6 31 29 32" fill="none" stroke="${type==="g"?"#7c7c98":"#3a3a52"}" stroke-width="1.4" stroke-linecap="round"/><path d="M13.2 9.4L7.2 12.2L13 13.6Z" fill="${P[1]}"/><circle cx="16" cy="10" r="1.1" fill="${P[2]}"/></svg>`}
+const swanTag=(type,w=26)=>type?`<span class="swt">${swanSVG(type,w)}<span>${t("typeName")[type]}</span></span>`:"";
 const TYPEC={g:"#b4b4d2",b:"#ff3b3b",p:"#ff3b3b"};
 
 function applyLang(){
@@ -349,7 +359,7 @@ function renderEvents(){
   $("evcount").textContent=t("count",D.events.length);
   const EP=episodes();
   const INF=D.eventInfo||{};
-  $("evbody").innerHTML=EP.map((e,k)=>{const I=INF[e.m]||{};return `<tr data-m="${e.m}"><td>${k+1}</td><td>${I.day?ymdS(I.day):t("ymS",e.m)}<small class="enm">${esc(nameOf(e.m))}</small></td><td class="mg">${e.mag.toFixed(1)}</td><td>${shBadge(I.shindo)}</td></tr>`}).reverse().join("");
+  $("evbody").innerHTML=EP.map((e,k)=>{const I=INF[e.m]||{};return `<tr data-m="${e.m}"><td>${k+1}</td><td>${I.day?ymdS(I.day):t("ymS",e.m)}<small class="enm">${esc(nameOf(e.m))}${(x=>x?swanSVG(x[4],24):"")(epiOf(e.m))}</small></td><td class="mg">${e.mag.toFixed(1)}</td><td>${shBadge(I.shindo)}</td></tr>`}).reverse().join("");
   markRow();
 }
 function markRow(){document.querySelectorAll("#evbody tr").forEach(tr=>tr.classList.toggle("on",+tr.dataset.m===state.pick))}
@@ -387,14 +397,15 @@ function renderMap(){
     const i=ms.indexOf(state.pick);state.pick=ms[(i+1)%ms.length];renderMap();renderChart();markRow()}));
   // the bulletin for the chosen event (the latest by default), as in an earthquake report
   const ep=EP.find(x=>x.m===sel),e=epiOf(sel),I=(D.eventInfo||{})[sel]||{},k=D.events.indexOf(sel)+1;
-  $("mapread").innerHTML=`<div class="bul"><div class="bh"><b>#${k}</b><b>${esc(nameOf(sel))}</b><small>${e?t("typeName")[e[4]]:""}</small></div>
+  $("mapread").innerHTML=`<div class="bul"><div class="bh"><b>#${k}</b><b>${esc(nameOf(sel))}</b>${e?swanTag(e[4],34):""}</div>
     <dl><div><dt>${t("bDay")}</dt><dd>${I.day?ymd(I.day):t("ymS",sel)}</dd></div><div><dt>${t("bEpi")}</dt><dd>${e?esc(LANG==="ja"?e[0]:e[1]):"–"}</dd></div>
     <div><dt>${t("bMag")}</dt><dd class="mg">${ep.mag.toFixed(1)}</dd></div><div><dt>${t("bSh")}</dt><dd>${I.shindo?shBadge(I.shindo,1):"–"}</dd></div></dl>
     <div class="bf">${t("bPeak")} <b>${(I.peak||ep.peak.h).toFixed(2)}</b>${I.peakDay?`（${ymdS(I.peakDay).slice(5)}）`:""}${I.fall!=null?`　S&amp;P500 <b>−${(I.fall*100).toFixed(1)}%</b>`:""}</div></div>`;
   const cz=$("evchips"),keep=cz.scrollLeft,first=!cz.childElementCount;
-  cz.innerHTML=EP.map((x,k)=>`<button type="button" data-m="${x.m}" aria-pressed="${x.m===sel}"><b>#${k+1}　${t("ymS",x.m)}</b><small>${esc(nameOf(x.m))}</small></button>`).reverse().join("");
+  cz.innerHTML=EP.map((x,k)=>`<button type="button" data-m="${x.m}" aria-pressed="${x.m===sel}"><b>#${k+1}　${t("ymS",x.m)}</b><small>${esc(nameOf(x.m))}</small>${(e=>e?swanSVG(e[4],30):"")(epiOf(x.m))}</button>`).reverse().join("");
   if(first)cz.scrollLeft=0;else cz.scrollLeft=keep;
   $("maplegend").innerHTML=`<span style="color:var(--muted)">${t("bSh")}</span>`+["4","5-","5+","6-","6+","7"].map(v=>shBadge(v)).join("");
+  $("swanlegend").innerHTML=["g","b","p"].map(k=>swanTag(k,30)).join("");
 }
 
 function renderAll(){
