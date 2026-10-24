@@ -33,6 +33,7 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP = 360, 201912, 2, 3
+BAYES_FROM, MRI_LINE = 201907, 75
 
 
 def get(url):
@@ -209,6 +210,33 @@ def main():
         before = [d for d in days if d < lv[0]]
         if before:
             quote["prevClose"] = days[max(before)][3]
+    # MRI as evidence (Bayes): the likelihood ratio of "the MRI's highest in the last 6 months is at or above 75"
+    # (the danger line), from months since July 2019 (MRI works from then on; earlier its window still held the
+    # Lehman years). Laplace-smoothed, since only a few events fall in that period
+    bayes = None
+    try:
+        mri = json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]
+        mx = {}
+        for r in mri:
+            mx[r[0] // 100] = max(mx.get(r[0] // 100, 0), r[7] * 100)
+        def pre6(m):
+            vals = [mx.get(add_months(m, -k)) for k in range(1, 7)]
+            vals = [v for v in vals if v is not None]
+            return max(vals) if vals else None
+        cur = keys[-1]
+        hist = [m for m in sorted(mx) if BAYES_FROM <= m < cur]
+        ev_in = [m for m in events if m >= BAYES_FROM]
+        hi_all = sum(1 for m in hist if (pre6(m) or 0) >= MRI_LINE)
+        hi_ev = sum(1 for m in ev_in if (pre6(m) or 0) >= MRI_LINE)
+        now = max(v for k, v in mx.items() if k >= add_months(cur, -5))
+        if now >= MRI_LINE:
+            lr = ((hi_ev + 1) / (len(ev_in) + 2)) / ((hi_all + 1) / (len(hist) + 2))
+        else:
+            lr = ((len(ev_in) - hi_ev + 1) / (len(ev_in) + 2)) / ((len(hist) - hi_all + 1) / (len(hist) + 2))
+        bayes = {"mri6": round(now, 1), "line": MRI_LINE, "lr": round(lr, 4), "from": BAYES_FROM,
+                 "events": len(ev_in), "eventsAbove": hi_ev, "months": len(hist), "monthsAbove": hi_all}
+    except (OSError, ValueError, KeyError) as e:
+        print(f"warning: bayes: {e}", file=sys.stderr)
     lastday = max(days)
     data = {
         "source": "Cboe",
@@ -216,6 +244,7 @@ def main():
         "lastDay": lastday,
         "live": {"date": lv[0], "time": lv[2], "price": lv[1][3], "high": lv[1][1], "low": lv[1][2]} if lv else None,
         "quote": quote,
+        "bayes": bayes,
         "months": rows,
         "events": events,
         "eventInfo": info,
