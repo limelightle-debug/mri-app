@@ -329,7 +329,7 @@ table.ev tr.on td{background:var(--chip)}
       <p class="note">地震の長期評価の BPT モデル（間隔がたつほど確率が上がる）も試したが、バックテストではランダムに負けた。VIX イベントの間隔は8〜74か月とばらつきが大きく、周期性がないため。</p>
       <p><b>MRI</b>：証拠は MRI の最高値 x。直近6か月の最高値、ただし前回イベントの終了から6か月に満たないときは終了からの最高値。イベントはどれも x が70以上で起きているが、70以上の月はイベントがなくても多い。MRI は傾きではなく段差として効くので、70の上と下で倍率を分ける。2018年以降（MRI が機能する期間）のイベント直前と普段の月（イベント中を除く）から出す。</p>
       <div class="eq">70以上の倍率 ＝ P(x≧70｜イベント前) ÷ P(x≧70｜普段)<br>70未満の倍率 ＝ P(x＜70｜イベント前) ÷ P(x＜70｜普段)<br><small style="margin:0">イベント前の割合は (回数＋1) ÷ (イベント数＋2)（ラプラスの継起の法則）。両方の倍率を2乗して MRI の重みを上げる（当てるためではなく備えるため）</small></div>
-      <p>発生確率は「k か月以内」に起きる確率なので、今の膨らみは最初の月から効く。MRI の将来の動きは予想しない（MRI は VIX が跳ねると下がるので、予想に入れるとイベントを事後に読み込むことになる）。今日の x で倍率を決め、すべての期間に同じ倍率を掛ける。70の前後（幅1）でなめらかにつなぐ。</p>
+      <p>発生確率は「k か月以内」に起きる確率なので、今の膨らみは最初の月から効く。MRI の将来の動きは予想しない（MRI は VIX が跳ねると下がるので、予想に入れるとイベントを事後に読み込むことになる）。今日の x で倍率を決め、すべての期間に同じ倍率を掛ける。70の前後（幅1）でなめらかにつなぐ。70を超えると、超えた幅に応じて倍率をさらに強める（12ポイントごとに倍率の対数が1段分増える。82で70以上の倍率の2乗）。</p>
 
       <p><b>バックテスト</b>（上）：MRI が入った2018年以降の各月の初めに出ていた確率と、実際のイベントを比べる。全データ＝今のパラメータで過去を計算、当時のデータ＝その時点までのイベントだけで計算。</p>
       <p class="note">どの確率も過去の頻度からの推定で、予測ではない。イベントは12回と少なく、とくに MRI の倍率はイベント4回からの推定。</p>
@@ -386,7 +386,7 @@ table.ev tr.on td{background:var(--chip)}
       <p class="note">The BPT model of long-term earthquake forecasts (the chance rising as time passes) was tried too, but lost to random in the backtest: intervals between VIX events range from 8 to 74 months, with no period to them.</p>
       <p><b>MRI</b>: the evidence is the MRI's highest, x: over the last 6 months, or since the last event ended if that was less than 6 months ago. Every event came with x at 70 or above, but so did many quiet months: MRI works as a step, not a slope, so the factor differs above and below 70. It is taken from x before events and in other months (outside events) since 2018, when MRI works.</p>
       <div class="eq">factor above 70 = P(x ≥ 70 | before an event) ÷ P(x ≥ 70 | other months)<br>factor below 70 = P(x &lt; 70 | before an event) ÷ P(x &lt; 70 | other months)<br><small style="margin:0">the event share is (count + 1) ÷ (events + 2) (Laplace's rule of succession); both factors are squared to weight MRI more (for preparing, not for hitting)</small></div>
-      <p>The probability is for an event within k months, so today's inflation counts from the first month. MRI's future path is not guessed (MRI falls when VIX jumps, so guessing it would read events in after the fact): today's x sets the factor, the same for every horizon, joined smoothly around 70 (width 1).</p>
+      <p>The probability is for an event within k months, so today's inflation counts from the first month. MRI's future path is not guessed (MRI falls when VIX jumps, so guessing it would read events in after the fact): today's x sets the factor, the same for every horizon, joined smoothly around 70 (width 1). Above 70 it grows with the distance: every 12 points add one more step in logs (at 82, the factor above 70 squared).</p>
 
       <p><b>Backtest</b> (above): the probability as it read at the start of each month since 2018, when MRI came in, against the events. All data: today's parameters applied to the past; data then: only the events known by then.</p>
       <p class="note">All probabilities are estimates from past frequencies, not forecasts. There are only 12 events, and the MRI factor rests on 4 of them.</p>
@@ -419,7 +419,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v61";
+const APP_VER="vix-v62";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",

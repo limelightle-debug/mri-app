@@ -36,6 +36,7 @@ WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
 MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
 MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
+MRI_SLOPE = 12  # above the line, every 12 MRI points add one more step (2022 had no event, but TQQQ fell 80%)
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2  # the interval's chance is twice random at the mean of the last 5 intervals, rising with time
 
 
@@ -97,6 +98,7 @@ def model(spans, mri, months, today):
     the same for below, the event share smoothed by Laplace's rule (+1 / +2), both squared (MRI_W), a deliberate
     overweight on MRI. Today's x alone sets the factor, the same for every horizon (the probability is for an event
     within k months, so today's level counts from the first month), across the line over a logistic of width 1.
+    Above the line the factor keeps growing: log factor x (1 + (x - 70) / 12), so 82 doubles it in logs.
     Bayes: posterior odds = interval odds x MRI factor.
     Backtest (from 2018, the MRI period) rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
     was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""
@@ -151,7 +153,8 @@ def model(spans, mri, months, today):
         # month on, and no guess is made at MRI's path (it falls when VIX jumps, which would read events into their own
         # forecast). The same factor for every horizon, switching across the line over a logistic in the log odds
         w = 1 / (1 + math.exp(-(x - MRI_LINE) / MRI_WIDTH))
-        f = math.exp(math.log(par["lo"]) + w * (math.log(par["hi"]) - math.log(par["lo"])))
+        # above the line the factor grows with the distance: its log is multiplied by 1 + (x - line) / MRI_SLOPE
+        f = math.exp((1 - w) * math.log(par["lo"]) + w * math.log(par["hi"]) * (1 + max(0, x - MRI_LINE) / MRI_SLOPE))
         return [], {k: f for k in (1, 3, 6, 12)}
     def probs(m, ongoing, qu, lam, fk):
         lam_r, even, lam_q = lam
