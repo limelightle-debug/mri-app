@@ -36,7 +36,7 @@ WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
 MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
 MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
-EVEN_N, SHAPE = 5, 1.5  # the interval's chance passes its average at the mean of the last 5 intervals, rising with time
+EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2  # the interval's chance is twice random at the mean of the last 5 intervals, rising with time
 
 
 def get(url):
@@ -88,9 +88,9 @@ def model(spans, mri, months, today):
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
     Interval: no event has come within 6 months of the previous one ending (0 in 60 such months, against about 1 in
     30 otherwise), so the hazard is 0 during an event and for 6 months after it ends. After that it rises with the
-    months e since the last event started, through its average lam_q (events / months since the first event outside events
-    and quiet periods) at the mean m of the last 5 intervals: h(e) = lam_q * (e / m)^0.5, cumulative
-    H(e) = lam_q * m / 1.5 * (e / m)^1.5, P = 1 - exp(-sum over the months past the quiet period).
+    months e since the last event started, through twice random (2 lam_r) at the mean m of the last 5 intervals:
+    h(e) = 2 lam_r * (e / m)^0.5, cumulative H(e) = 2 lam_r * m / 1.5 * (e / m)^1.5, P = 1 - exp(-sum over the
+    months past the quiet period).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
@@ -156,7 +156,7 @@ def model(spans, mri, months, today):
     def probs(m, ongoing, qu, lam, fk):
         lam_r, even, lam_q = lam
         e0 = idx(m) - idx(max(s_ for s_ in smon if s_ < m))  # months since the last event started
-        cum = lambda e: lam_q * even / SHAPE * (e / even) ** SHAPE
+        cum = lambda e: EVEN_X * lam_r * even / SHAPE * (e / even) ** SHAPE
         out = []
         for k in (1, 3, 6, 12):
             b = 1 - math.exp(-lam_r * k)
