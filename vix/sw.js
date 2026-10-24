@@ -1,8 +1,8 @@
 // Offline shell + latest data. Bump CACHE when the app files change.
-const CACHE = "vix-v3";
+const CACHE = "vix-v5";
 // Always ask the server (revalidating the browser's own cache), so a new version shows up at once.
 const fresh = req => fetch(req.url, { cache: "no-cache", credentials: "same-origin" });
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "../d3.min.js",
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "../d3.min.js", "./land.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/app.png", "./icons/lab.jpg"];
 
 self.addEventListener("install", e => {
