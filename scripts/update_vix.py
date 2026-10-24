@@ -33,7 +33,7 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM, MRI_LINE, MRI_WIDTH = 201801, 75, 1.5
+BAYES_FROM, MRI_LINE, MRI_WIDTH = 201801, 75, 3
 
 
 def get(url):
@@ -223,7 +223,7 @@ def main():
     # is more recent (during an event there is no next event to forecast). Every event so far came with x at or above
     # the 75 line, but so did many quiet months: the line works as a step, not a slope. The likelihood ratio is
     # P(x >= 75 | before an event) / P(x >= 75 | other months) above the line and the same for below, the event share
-    # smoothed by +0.5 / +1 (3 of 3 is not certainty), switching over a logistic of width 1.5 in the log odds.
+    # smoothed by Laplace's rule, +1 / +2 (4 of 4 is not certainty), switching over a logistic of width 3 in the log odds.
     # Since 2018, when MRI works; other months are month starts outside events
     bayes = None
     try:
@@ -240,7 +240,7 @@ def main():
         firsts = [k * 100 + 1 for k in sorted({d // 100 for d in md}) if k >= BAYES_FROM]
         x0 = [x for x, _ in (xat(d) for d in firsts if not in_event(d)) if x is not None]
         x1 = [x for x, _ in (xat(s_) for s_, _ in spans if s_ >= BAYES_FROM * 100) if x is not None]
-        pe = (sum(x >= MRI_LINE for x in x1) + .5) / (len(x1) + 1)
+        pe = (sum(x >= MRI_LINE for x in x1) + 1) / (len(x1) + 2)
         pn = sum(x >= MRI_LINE for x in x0) / len(x0)
         hi, lo_ = pe / pn, (1 - pe) / (1 - pn)
         ongoing = bool(spans) and spans[-1][1] is None

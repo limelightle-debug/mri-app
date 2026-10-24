@@ -312,7 +312,7 @@ table.ev tr.on td{background:var(--chip)}
       <p>インターバルの倍率は、この確率のオッズをランダムのオッズで割ったもの。</p>
       <p><b>ランダム</b>：毎月同じ確率で起きると考えた場合（ポアソン）。月あたり λ ＝ イベント数 ÷ 月数で、k か月では 1 − e<sup>−λk</sup>。</p>
       <p><b>MRI</b>：証拠は MRI の最高値 x。直近6か月の最高値、ただし前回イベントの終了から6か月に満たないときは終了からの最高値。イベントはどれも x が75以上で起きているが、75以上の月はイベントがなくても多い。MRI は傾きではなく段差として効くので、75の上と下で倍率を分ける。2018年以降（MRI が機能する期間）のイベント直前と普段の月（イベント中を除く）から出す。イベント中は確率0%。</p>
-      <div class="eq">75以上の倍率 ＝ P(x≧75｜イベント前) ÷ P(x≧75｜普段)<br>75未満の倍率 ＝ P(x＜75｜イベント前) ÷ P(x＜75｜普段)<br><small style="margin:0">イベント前の割合は (回数＋0.5) ÷ (イベント数＋1)。75の前後（幅1.5）で対数のままなめらかにつなぐ</small></div>
+      <div class="eq">75以上の倍率 ＝ P(x≧75｜イベント前) ÷ P(x≧75｜普段)<br>75未満の倍率 ＝ P(x＜75｜イベント前) ÷ P(x＜75｜普段)<br><small style="margin:0">イベント前の割合は (回数＋1) ÷ (イベント数＋2)（ラプラスの継起の法則）。75の前後（幅3）で対数のままなめらかにつなぐ</small></div>
       <p class="note">どの確率も過去の間隔と頻度からの推定で、予測ではない。イベントは12回と少なく、とくに MRI の倍率はイベント4回からの推定。</p>
 
       <h3>マグニチュード</h3>
@@ -367,7 +367,7 @@ table.ev tr.on td{background:var(--chip)}
       <p>The interval factor is this probability’s odds divided by the random odds.</p>
       <p><b>Random</b>: if events came with the same chance every month (Poisson): λ = events ÷ months per month, and 1 − e<sup>−λk</sup> over k months.</p>
       <p><b>MRI</b>: the evidence is the MRI's highest, x: over the last 6 months, or since the last event ended if that was less than 6 months ago. Every event came with x at 75 or above, but so did many quiet months: MRI works as a step, not a slope, so the factor differs above and below 75. It is taken from x before events and in other months (outside events) since 2018, when MRI works. During an event the probability is 0%.</p>
-      <div class="eq">factor above 75 = P(x ≥ 75 | before an event) ÷ P(x ≥ 75 | other months)<br>factor below 75 = P(x &lt; 75 | before an event) ÷ P(x &lt; 75 | other months)<br><small style="margin:0">the event share is (count + 0.5) ÷ (events + 1); joined smoothly in logs around 75 (width 1.5)</small></div>
+      <div class="eq">factor above 75 = P(x ≥ 75 | before an event) ÷ P(x ≥ 75 | other months)<br>factor below 75 = P(x &lt; 75 | before an event) ÷ P(x &lt; 75 | other months)<br><small style="margin:0">the event share is (count + 1) ÷ (events + 2) (Laplace's rule of succession); joined smoothly in logs around 75 (width 3)</small></div>
       <p class="note">All probabilities are estimates from past intervals and frequencies, not forecasts. There are only 12 events, and the MRI factor rests on 4 of them.</p>
 
       <h3>Magnitude</h3>
@@ -399,7 +399,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v43";
+const APP_VER="vix-v44";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
