@@ -123,8 +123,11 @@ def model(spans, mri, months, today):
     ONG = {m: ongoing_at(m * 100 + 1) for m in months}
     QM = {m: idx(m) < quiet_until(m * 100 + 1) for m in months}
     def rates(upto):
-        ms = [m for m in months if upto is None or m < upto]
+        # the rate counts the record up to the latest event's start: the wait since then is the interval's job, so
+        # quiet months piling up do not pull the rate down while time runs (it updates when an event comes)
         n = sum(1 for s_ in smon if upto is None or s_ < upto)
+        last_m = max(s_ for s_ in smon if upto is None or s_ < upto)
+        ms = [m for m in months if m <= last_m]
         free = [m for m in ms if not ONG[m]]
         st_ = [idx(s_) for s_ in smon if upto is None or s_ < upto]
         iv = [b - a for a, b in zip(st_, st_[1:])][-EVEN_N:]
