@@ -36,7 +36,7 @@ WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
 MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
 MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
-MRI_SLOPE = 5  # above the line, every 5 MRI points add one more step: 30 months on with MRI 80 gives about 90% in 12 months
+MRI_SLOPE = 15  # above the line, every 15 MRI points add one more step: 30 months on with MRI 80 gives about 90% in 12 months
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
 MULT_CAP = 2  # past the mean interval the multiplier stays at 2 (the earthquake model levels off rather than climbing)
 
@@ -98,8 +98,9 @@ def model(spans, mri, months, today):
     the same for below, the event share smoothed by Laplace's rule (+1 / +2), both squared (MRI_W), a deliberate
     overweight on MRI. Today's x alone sets the factor, the same for every horizon (the probability is for an event
     within k months, so today's level counts from the first month), across the line over a logistic of width 1.
-    Above the line the factor keeps growing: log factor x (1 + (x - 70) / 5), so 75 squares it and 80 cubes it.
-    Bayes: posterior odds = interval odds x MRI factor.
+    Above the line the factor keeps growing: log factor x (1 + (x - 70) / 15), so 85 squares it.
+    Bayes, month by month: each month's odds = the interval's odds for that month x the MRI factor; the chance
+    within k months = 1 - the product of (1 - each month's chance).
     Backtest (from 2018, the MRI period) rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
     was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""
     import bisect
@@ -168,13 +169,17 @@ def model(spans, mri, months, today):
                 return 0.0
             v = EVEN_X * (e - ee) / max(1.0, even - ee)
             return min(v, MULT_CAP) if MULT_CAP else v
+        # month by month: each month's interval chance, its odds times the MRI factor; k months = 1 - the chance that
+        # none of the months has an event
+        f = fk.get(1, 1)
+        pm = [0 if ongoing else 1 - math.exp(-lam_r * mult(idx(m) + j + .5 - s0)) for j in range(12)]
+        pb = [(odds(p) * f) / (1 + odds(p) * f) if 0 < p < 1 else 0 for p in pm]
         out = []
         for k in (1, 3, 6, 12):
             b = 1 - math.exp(-lam_r * k)
-            h = sum(lam_r * mult(idx(m) + j + .5 - s0) for j in range(k))
-            pi = 0 if ongoing or h <= 0 else 1 - math.exp(-h)
-            o = odds(pi) * fk.get(k, 1) if 0 < pi < 1 else 0
-            out.append((k, o / (1 + o), pi, b))
+            pi = 1 - math.prod(1 - p for p in pm[:k])
+            post = 1 - math.prod(1 - p for p in pb[:k])
+            out.append((k, post, pi, b))
         return out
     # now
     par_in = mri_params(None)
