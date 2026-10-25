@@ -38,7 +38,7 @@ MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in
 MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
 MRI_SLOPE = 5  # above the line, every 5 MRI points add one more step: 30 months on with MRI 80 gives about 90% in 12 months
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
-MULT_CAP = 0  # no ceiling: past the mean interval the multiplier keeps rising in the same line
+MULT_CAP = 2  # past the mean interval the multiplier stays at 2 (the earthquake model levels off rather than climbing)
 
 
 def get(url):
@@ -88,10 +88,10 @@ def model(spans, mri, months, today):
     """The event probability, now and at the start of each past month (the backtest).
 
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
-    Interval: random times a multiplier that is 0 when the last event ended and rises in a straight line to 2 at the
-    mean m of the last 5 intervals (counted from the event's start), and on in the same line after it:
-    mult(e) = 2 (e - d) / (m - d), e months since the start, d the event's length in months; P = 1 - exp(-sum of
-    lam_r * mult over the months).
+    Interval: random times a multiplier that is 0 when the last event ended, rises in a straight line to 2 at the
+    mean m of the last 5 intervals (counted from the event's start) and stays at 2 after it (like the earthquake
+    model, which levels off instead of climbing): mult(e) = min(2, 2 (e - d) / (m - d)), e months since the start,
+    d the event's length in months; P = 1 - exp(-sum of lam_r * mult over the months).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
@@ -158,7 +158,7 @@ def model(spans, mri, months, today):
         return [], {k: f for k in (1, 3, 6, 12)}
     def probs(m, ongoing, d, lam, fk):
         # the interval multiplies random: 0 when the last event ended, rising in a straight line to EVEN_X times at
-        # the mean of the last 5 intervals (counted from the event's start), and on in the same line after it
+        # the mean of the last 5 intervals (counted from the event's start), and level after it
         lam_r, even, lam_q = lam
         last = max((sp for sp in spans if sp[0] < d), key=lambda sp: sp[0])
         s0 = idx(last[0] // 100)
