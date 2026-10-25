@@ -35,8 +35,8 @@ QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
 MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
-MRI_W = 2  # weight on MRI: its likelihood ratios are squared (for preparing, not for hitting)
-MRI_SLOPE = 15  # above the line, every 15 MRI points add one more step: 30 months on with MRI 80 gives about 90% in 12 months
+MRI_W = 1  # weight on MRI (1 = the likelihood ratios as estimated)
+MRI_SLOPE = 15  # above the line, every 15 MRI points add one more step
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
 MULT_CAP = 2  # past the mean interval the multiplier stays at 2 (the earthquake model levels off rather than climbing)
 
@@ -95,8 +95,7 @@ def model(spans, mri, months, today):
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
     as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
-    the same for below, the event share smoothed by Laplace's rule (+1 / +2), both squared (MRI_W), a deliberate
-    overweight on MRI. Today's x alone sets the factor, the same for every horizon (the probability is for an event
+    the same for below, the event share smoothed by Laplace's rule (+1 / +2). Today's x alone sets the factor, the same for every horizon (the probability is for an event
     within k months, so today's level counts from the first month), across the line over a logistic of width 1.
     Above the line the factor keeps growing: log factor x (1 + (x - 70) / 15), so 85 squares it.
     Bayes, month by month: each month's odds = the interval's odds for that month x the MRI factor; the chance
