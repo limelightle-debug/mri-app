@@ -217,6 +217,11 @@ def model(spans, mri, months, today):
             pr = probs(m, ONG[m], d, lam_in if mode == "in" else rates(m), fkm)
             row += [round(v[c] * 100, 2) for c in (1, 2, 3) for v in pr]
         rows.append(row)
+    # the current month shows today's probability (the gauges), not the one from the start of the month
+    if rows and rows[-1][0] == cur:
+        now_p = probs(cur, ongoing, today + 1, lam_in, fk)
+        vals = [round(v[c] * 100, 2) for c in (1, 2, 3) for v in now_p]
+        rows[-1] = [cur, int(ongoing)] + vals + vals
     return bayes, rows
 
 
