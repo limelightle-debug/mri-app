@@ -738,9 +738,9 @@ function renderMonthly(){
     const body=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}"`;
     p+=`<line x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${y(b.h).toFixed(1)}" y2="${y(b.l).toFixed(1)}" stroke="${c}" stroke-width="${ww}"/>${body} fill="${c}"/>`;
     clip+=`${body}/><rect x="${(x(i)-ww/2).toFixed(1)}" y="${y(b.h).toFixed(1)}" width="${ww}" height="${(y(b.l)-y(b.h)).toFixed(1)}"/>`});
-  // the S&P 500 (trend-corrected, month-end) as a line on top; a white edge only where it crosses a candle
+  // the S&P 500 (trend-corrected, month-end) as a line on top; an edge in the background colour where it crosses a candle
   let sp="";B.forEach((b,i)=>{if(b.pr!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y(b.pr).toFixed(1)});
-  if(sp)p+=`<clipPath id="mcc">${clip}</clipPath><path d="${sp}" fill="none" stroke="#fff" stroke-width="4.6" stroke-linejoin="round" clip-path="url(#mcc)"/>`
+  if(sp)p+=`<clipPath id="mcc">${clip}</clipPath><path d="${sp}" fill="none" stroke="${COL.panel}" stroke-width="4.6" stroke-linejoin="round" clip-path="url(#mcc)"/>`
     +`<path d="${sp}" fill="none" stroke="${COL["c-spx"]}" stroke-width="2" stroke-linejoin="round"/>`;
   const ci=state.mci!=null&&state.mci<n?state.mci:null;
   const xh=ci!=null?`<rect x="${(x(ci)-sl/2).toFixed(1)}" y="${MT}" width="${sl.toFixed(1)}" height="${PH}" fill="#fff" opacity=".12"/>`:"";
@@ -828,7 +828,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v86";
+const APP_VER="mri-v87";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
