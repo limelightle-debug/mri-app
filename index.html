@@ -129,11 +129,12 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sigh .seg{margin-bottom:8px}
 #sigh .shs{max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 #sigh table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-#sigh th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 4px;position:sticky;top:0;background:var(--panel)}
-#sigh th:first-child,#sigh td:first-child{text-align:left}
-#sigh th:nth-child(2),#sigh td:nth-child(2){text-align:center}
-#sigh td{text-align:right;padding:7px 4px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--ink2);white-space:nowrap;vertical-align:top}
+#sigh th{font-size:11px;font-weight:800;color:var(--muted);padding:4px 2px;position:sticky;top:0;background:var(--panel)}
+#sigh th small{display:block;font-weight:600;font-size:9.5px;color:var(--muted);margin-top:2px}
+#sigh th,#sigh td{text-align:center}
+#sigh td{padding:8px 2px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--ink2);white-space:nowrap;vertical-align:top}
 #sigh td small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
+#sigh td:last-child,#sigh th:last-child{text-align:right}
 #sigh td.up{color:#4CAF50}#sigh td.dn{color:#F44336}#sigh td .lit{color:var(--ink)}#sigh td.none{text-align:center;color:var(--muted)}
 #sigh td .lv{font-family:var(--f-body);font-stretch:100%;font-weight:800;font-size:13px;letter-spacing:.02em}
 .dstats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
@@ -663,9 +664,10 @@ function renderSignals(){
   const box=$("sig"),hb=$("sigh");box.hidden=hb.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
   const last=DAYS[DAYS.length-1];if(!last)return;
   const R=(D.daily||[]).filter(r=>r[0]>=20180101&&r[0]<=last.n);
-  // each time a light comes on: the day, the highest level and the day it got there, and the reset (null while on)
+  // each time a light comes on: the day each level was first reached (a jump reaches the ones below it the same day),
+  // the highest level, and the reset (null while on)
   const latch=(lvl,reset)=>{const E=[];let cur=null;R.forEach((r,i)=>{if(cur&&reset(r)){cur.off=i;cur=null}const l=lvl(r);
-    if(l>(cur?cur.lv:0)){if(!cur){cur={on:i,lv:0,off:null};E.push(cur)}cur.lv=l;cur.top=i}});return E};
+    if(l>(cur?cur.lv:0)){if(!cur){cur={on:i,lv:0,off:null,at:[null,null,null]};E.push(cur)}for(let k=cur.lv;k<l;k++)cur.at[k]=i;cur.lv=l}});return E};
   // daily rows: [n, vix, skew, cape, vix score, skew score, cape score, MRI, S&P, S&P percentile]
   const up=(v,a)=>v>=a[2]?3:v>=a[1]?2:v>=a[0]?1:0,dn=(v,a)=>v<=a[2]?3:v<=a[1]?2:v<=a[0]?1:0;
   const SG=[["tbub",t("sigBubble"),latch(r=>r[9]==null?0:up(r[9],[.841345,.97725,.99865]),r=>r[6]<=.5),["+1σ","+2σ","+3σ"]],
@@ -678,10 +680,11 @@ function renderSignals(){
   const k=SG.some(x=>x[0]===state.sigk)?state.sigk:"tbub",[,,E,th]=SG.find(x=>x[0]===k),L=R.length-1;
   const pc=v=>`${v>=0?"+":"−"}${Math.abs(v*100).toFixed(1)}%`;
   const rows=E.slice().reverse().map(e=>{const end=e.off==null?L:e.off,ch=R[end][8]/R[e.on][8]-1;
-    return`<tr><td>${ds(R[e.on][0])}</td><td><b class="lv" style="color:${C[e.lv-1]}">Lv. ${e.lv}</b><small>${ds(R[e.top][0]).slice(2)}</small></td><td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:ds(R[e.off][0])}</td><td class="${ch>=0?"up":"dn"}">${pc(ch)}</td></tr>`}).join("");
+    const sd=i=>ds(R[i][0]).slice(2);
+    return`<tr>${e.at.map((i,k)=>`<td style="${i!=null?`color:${C[k]}`:""}">${i!=null?sd(i):"–"}</td>`).join("")}<td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:sd(e.off)}</td><td class="${ch>=0?"up":"dn"}">${pc(ch)}</td></tr>`}).join("");
   hb.innerHTML=`<h2><i class="h2t">${t("sigHist")}</i> <span>${t("since2018")}</span></h2>
     <div class="seg" id="sigk" role="group">${SG.map(([key,name])=>`<button type="button" data-sigk="${key}" aria-pressed="${key===k}">${name}</button>`).join("")}</div>
-    <div class="shs"><table><thead><tr><th>${t("sigOnAt")}</th><th>${t("sigTop")}</th><th>${t("sigReset")}</th><th>S&amp;P500</th></tr></thead><tbody>${rows||`<tr><td colspan="4" class="none">${t("sigNone")}</td></tr>`}</tbody></table></div>`;
+    <div class="shs"><table><thead><tr>${C.map((c,k)=>`<th style="color:${c}">Lv. ${k+1}<small>${th[k]}</small></th>`).join("")}<th>${t("sigReset")}</th><th>S&amp;P500</th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="none">${t("sigNone")}</td></tr>`}</tbody></table></div>`;
 }
 const md0=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
 function renderTop(){
@@ -988,7 +991,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v103";
+const APP_VER="mri-v104";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
