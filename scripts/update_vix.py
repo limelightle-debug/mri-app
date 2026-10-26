@@ -33,10 +33,10 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM, MRI_LINE, QUIET = 201801, 70, 6
-MRI_WIDTH = 1  # the step across the line: a logistic of width 1 (MRI points) in the log odds
-MRI_W = 1  # weight on MRI (1 = the likelihood ratios as estimated)
-MRI_SLOPE = 15  # above the line, every 15 MRI points add one more step
+BAYES_FROM, QUIET = 201801, 6
+# the MRI factor, a fixed curve of the highest MRI x: 1 at 50, MRI_TOP at 100, slow above 50 and steep near 100,
+# below 1 under 50: MRI_TOP ** (sign(u) |u| ** MRI_POW), u = (x - 50) / 50
+MRI_PIVOT, MRI_TOP, MRI_POW = 50, 10, 2
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
 MULT_FLOOR = 1  # right after an event ends the multiplier is 1 (random), not 0: an event can follow soon (8 months, 2024-25)
 MULT_CAP = 2  # past the mean interval the multiplier stays at 2 (the earthquake model levels off rather than climbing)
@@ -86,19 +86,18 @@ def add_months(m, k):
 
 
 def model(spans, mri, months, today):
-    """The event probability, now and at the start of each past month (the backtest).
+    """The event probability, now and on each past day (the backtest).
 
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
     Interval: random times a multiplier that is 1 (random) when the last event ended, rises in a straight line to 2 at the
     mean m of the last 5 intervals (counted from the event's start) and stays at 2 after it (like the earthquake
     model, which levels off instead of climbing): mult(e) = min(2, 1 + (e - d) / (m - d)), e months since the start (in days, from the end day),
     d the event's length in months; P = 1 - exp(-sum of lam_r * mult over the months).
-    MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
-    that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
-    as a step. The likelihood ratio is P(x >= 70 | before an event) / P(x >= 70 | other months) above the line and
-    the same for below, the event share smoothed by Laplace's rule (+1 / +2). Today's x alone sets the factor, the same for every horizon (the probability is for an event
-    within k months, so today's level counts from the first month), across the line over a logistic of width 1.
-    Above the line the factor keeps growing: log factor x (1 + (x - 70) / 15), so 85 squares it.
+    MRI (from 2018, when it works): x = the highest daily MRI over the horizon (the last 6 months for 6 months and
+    shorter, the last 12 for 12), or since the last event ended if that is more recent. Only this peak counts, on a
+    fixed curve (nothing is estimated from how often a level is passed in quiet times): factor = 10 ** (sign(u) u**2),
+    u = (x - 50) / 50, so 1 at 50, 1.45 at 70, 2.29 at 80, 4.37 at 90, 10 at 100, and below 1 under 50. Today's x
+    alone sets the factor (the probability is for an event within k months, so today's level counts from the first month).
     Bayes, month by month: each month's odds = the interval's odds for that month x the MRI factor; the chance
     within k months = 1 - the product of (1 - each month's chance).
     Backtest (from 2018, the MRI period), one row per trading day: [yyyymmdd, during an event (1/0), Bayes 6 and 12
@@ -111,8 +110,8 @@ def model(spans, mri, months, today):
     def last_end(d):
         ends = [e for s_, e in spans if e and e < d]
         return max(ends) if ends else 0
-    def xat(d, inclusive=False):
-        lo = max(last_end(d), add_months(d // 100, -6) * 100 + d % 100)
+    def xat(d, inclusive=False, back=6):
+        lo = max(last_end(d), add_months(d // 100, -back) * 100 + d % 100)
         hi_ = bisect.bisect_right(md, d) if inclusive else bisect.bisect_left(md, d)
         vals = [mri[k] for k in md[bisect.bisect_right(md, lo):hi_]]
         return (max(vals), lo == last_end(d)) if vals else (None, False)
@@ -141,27 +140,18 @@ def model(spans, mri, months, today):
             act = [m for m in free if not QM[m]]
         return n / len(free), st.mean(iv) if iv else 30.0, n / len(act)
     mm = [m for m in months if m >= BAYES_FROM]
-    X = {m: xat(m * 100 + 1)[0] for m in mm}
-    XE = {s_: xat(s_)[0] for s_, _ in spans if s_ >= BAYES_FROM * 100}
-    def mri_params(upto):
-        xe = [x for s_, x in XE.items() if x is not None and (upto is None or s_ < upto * 100 + 1)]
-        xn = [X[k] for k in mm if X[k] is not None and not in_event(k * 100 + 1) and (upto is None or k < upto)]
-        if not xe or len(xn) < 6:
-            return None
-        pe = (sum(x >= MRI_LINE for x in xe) + 1) / (len(xe) + 2)
-        pn = sum(x >= MRI_LINE for x in xn) / len(xn)
-        if pn in (0, 1):
-            return None
-        return {"hi": (pe / pn) ** MRI_W, "lo": ((1 - pe) / (1 - pn)) ** MRI_W, "pn": pn, "events": len(xe),
-                "eventsAbove": sum(x >= MRI_LINE for x in xe), "months": len(xn)}
+    # the MRI looks back as far as the horizon: 6 months for 6 months (and shorter), 12 for 12
+    BACKS = (6, 12)
+    back_of = lambda k: 12 if k == 12 else 6
+    def mri_params(upto=None, back=6):
+        # a fixed curve: the factor follows the highest MRI itself, not how often 70 is passed in quiet times
+        return {"top": MRI_TOP}
     def factors(x, par, upto):
-        # today's MRI only: the probability is for an event within k months, so today's level counts from the first
-        # month on, and no guess is made at MRI's path (it falls when VIX jumps, which would read events into their own
-        # forecast). The same factor for every horizon, switching across the line over a logistic in the log odds
-        w = 1 / (1 + math.exp(-(x - MRI_LINE) / MRI_WIDTH))
-        # above the line the factor grows with the distance: its log is multiplied by 1 + (x - line) / MRI_SLOPE
-        f = math.exp((1 - w) * math.log(par["lo"]) + w * math.log(par["hi"]) * (1 + max(0, x - MRI_LINE) / MRI_SLOPE))
-        return [], {k: f for k in (1, 3, 6, 12)}
+        # the highest MRI alone sets the factor (no guess at MRI's path: it falls when VIX jumps, which would read events
+        # into their own forecast), on a fixed curve: 1 at 50, slow above it, steep near 100, below 1 under 50
+        u = (x - MRI_PIVOT) / (100 - MRI_PIVOT)
+        f = MRI_TOP ** ((1 if u >= 0 else -1) * abs(u) ** MRI_POW)
+        return [], f
     def probs(m, ongoing, d, lam, fk):
         # the interval multiplies random: 1 on the day the last event ended, rising in a straight line to EVEN_X times at
         # the mean of the last 5 intervals (counted from the event's start), and level after it. Time runs in days
@@ -181,11 +171,11 @@ def model(spans, mri, months, today):
             return min(v, MULT_CAP) if MULT_CAP else v
         # month by month: each month's interval chance, its odds times the MRI factor; k months = 1 - the chance that
         # none of the months has an event
-        f = fk.get(1, 1)
         pm = [0 if ongoing else 1 - math.exp(-lam_r * mult(t0 + j)) for j in range(12)]
-        pb = [(odds(p) * f) / (1 + odds(p) * f) if 0 < p < 1 else 0 for p in pm]
         out = []
         for k in (1, 3, 6, 12):
+            f = fk.get(k, 1)
+            pb = [(odds(p) * f) / (1 + odds(p) * f) if 0 < p < 1 else 0 for p in pm]
             b = 1 - math.exp(-lam_r * k)
             pi = 1 - math.prod(1 - p for p in pm[:k])
             post = 1 - math.prod(1 - p for p in pb[:k])
@@ -193,26 +183,24 @@ def model(spans, mri, months, today):
         return out
     # now
     par_in = mri_params(None)
+    parB = {b: mri_params(None, b) for b in BACKS}
     lam_in = rates(None)
     ongoing = bool(spans) and spans[-1][1] is None
     now, since_end = xat(md[-1], inclusive=True)
-    q, fk = factors(now, par_in, None) if now is not None and par_in else ([], {})
+    nowB = {b: xat(md[-1], inclusive=True, back=b)[0] for b in BACKS}
+    q = []
+    fk = {k: factors(nowB[back_of(k)], parB[back_of(k)], None)[1] for k in (1, 3, 6, 12)
+          if nowB[back_of(k)] is not None and parB[back_of(k)]}
     cur = months[-1]
     qu = quiet_until(today + 1)
-    lr = None
-    if now is not None and par_in:
-        w = 1 / (1 + math.exp(-(now - MRI_LINE) / MRI_WIDTH))
-        lr = math.exp(math.log(par_in["lo"]) + w * (math.log(par_in["hi"]) - math.log(par_in["lo"])))
-    bayes = {"mri6": None if now is None else round(now, 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
+    lr = fk.get(6)
+    bayes = {"mri6": None if now is None else round(now, 1), "mri12": None if nowB[12] is None else round(nowB[12], 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
              "ongoing": ongoing, "lamR": round(lam_in[0], 5),
-             "even": round(lam_in[1], 1), "evenN": EVEN_N, "shape": SHAPE, "lamQ": round(lam_in[2], 5), "line": MRI_LINE, "width": MRI_WIDTH, "from": BAYES_FROM,
+             "even": round(lam_in[1], 1), "evenN": EVEN_N, "shape": SHAPE, "lamQ": round(lam_in[2], 5), "pivot": MRI_PIVOT, "top": MRI_TOP, "pow": MRI_POW, "from": BAYES_FROM,
              "lr": None if lr is None else round(lr, 4), "lrK": {k: round(v, 4) for k, v in fk.items()},
              "q": [round(v, 2) for v in q],
              "prob": [{"k": k, "post": round(p, 5), "int": round(pi, 5), "base": round(b, 5)}
                       for k, p, pi, b in probs(cur, ongoing, today + 1, lam_in, fk)]}
-    if par_in:
-        bayes.update({"lrHi": round(par_in["hi"], 3), "lrLo": round(par_in["lo"], 3), "events": par_in["events"],
-                      "eventsAbove": par_in["eventsAbove"], "months": par_in["months"], "monthsAbove": round(par_in["pn"], 3)})
     # backtest, day by day: the probability as the app would have shown it that day (that day's MRI, the events and
     # data known by then), so a jump in MRI in mid-month shows the day it came
     rows = []
@@ -222,11 +210,12 @@ def model(spans, mri, months, today):
             continue
         m = d // 100
         if m not in cache:
-            cache[m] = (mri_params(m), rates(m))
-        par, lam = cache[m]
+            cache[m] = ({b: mri_params(m, b) for b in BACKS}, rates(m))
+        parm, lam = cache[m]
         ong = any(s_ <= d and (e is None or e >= d) for s_, e in spans)
-        x = xat(d, inclusive=True)[0]
-        fkm = factors(x, par, m)[1] if x is not None and par else {}
+        xb = {b: xat(d, inclusive=True, back=b)[0] for b in BACKS}
+        fkm = {k: factors(xb[back_of(k)], parm[back_of(k)], m)[1] for k in (1, 3, 6, 12)
+               if xb[back_of(k)] is not None and parm[back_of(k)]}
         pr = {k: v for k, *v in probs(m, ong, d + 1, lam, fkm)}
         rows.append([d, int(ong)] + [round(pr[k][c] * 100, 2) for c in (0, 1, 2) for k in (6, 12)])
     # today shows the probability on the gauges
