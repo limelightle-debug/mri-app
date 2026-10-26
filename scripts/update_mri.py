@@ -515,6 +515,18 @@ def build():
                            and min(abs(q[1] - pts[i - 1][1]), abs(q[1] - pts[i + 1][1])) > .08)]
     if intra:
         data["intraday"] = intra
+    # signals are judged on the values as they were computed at the time ("point in time"): each confirmed day's
+    # CAPE score and MRI are frozen the first time they are written, later revisions (of CAPE) do not change them.
+    # Days before this record use today's values. Signals certified by hand (data/signals.json) count as well.
+    pit = old.get("pit") or {}
+    for r in rows[-10:]:
+        if r[0] != live_day and str(r[0]) not in pit:
+            pit[str(r[0])] = [r[6], r[7]]
+    data["pit"] = pit
+    try:
+        data["certified"] = json.loads((DATA / "signals.json").read_text(encoding="utf-8")).get("certified", [])
+    except (OSError, ValueError):
+        data["certified"] = []
     if refreshed:
         cache_out = {k: ({str(d): v for d, v in src[k].items()} if isinstance(src[k], dict) else src[k]) for k in src}
         CACHE.write_text(json.dumps(cache_out, separators=(",", ":")), encoding="utf-8")
