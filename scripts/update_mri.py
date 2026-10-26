@@ -219,7 +219,11 @@ def skew_change(prev):
     # estimate for `prev`
     if anchor is None or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev or not calc_usable(j):
         return None
-    return None if j.get("skew") is None else j["skew"] - anchor
+    if j.get("skew") is None:
+        return None
+    # against the close-time value, not just the last result (which a weekend makes stale, so broken snapshots that
+    # agree with each other got through): SKEW does not move 15 points between sessions
+    return None if abs(j["skew"] - anchor) > 15 else j["skew"] - anchor
 
 
 def vix_estimate(prev, close):
@@ -232,6 +236,10 @@ def vix_estimate(prev, close):
     except (OSError, ValueError, KeyError):
         return None
     if not cur or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev or not calc_usable(j):
+        return None
+    # VIX can jump overnight but does not lose 30% of itself: a recomputed value that far below its close-time value
+    # comes from broken quotes
+    if base and cur / base < .7:
         return None
     return close * cur / base if base else cur
 
