@@ -59,7 +59,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .big{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:52px;line-height:.95;font-variant-numeric:tabular-nums;text-align:right}
 .chg{font-family:var(--f-tick);font-stretch:82%;font-size:13px;color:var(--ink2);text-align:right;margin-top:2px}
 .ramp{position:relative;height:18px;border-radius:9px;background:linear-gradient(to right,var(--l1) 10%,var(--l2) 30%,var(--l3) 50%,var(--l4) 70%,var(--l5) 90%)}
-.rampw{position:relative;padding-top:31px;margin-top:16px}
+.rampw{position:relative;padding-top:28px;margin-top:8px}
 .flag{--p:50%;position:absolute;top:0;transform:translateX(calc(-1 * var(--p)));white-space:nowrap;display:flex;align-items:center;box-sizing:border-box;height:24px;font-weight:800;font-size:13px;line-height:1;letter-spacing:.1em;color:#fff;padding:0 10px 0 11px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.55);z-index:1}
 .flag::after{content:"";position:absolute;left:var(--p);top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--c)}
 .flag b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;line-height:1;letter-spacing:.02em;margin-left:4px;font-variant-numeric:tabular-nums}
@@ -73,19 +73,19 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ramp-l span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .ramp-l span:first-child{transform:none;left:0!important}.ramp-l span:last-child{transform:none;left:auto!important;right:0}
 /* indicators */
-.ind{margin-bottom:14px}.ind:last-child{margin-bottom:0}
-.ind+.ind{border-top:1px solid var(--line);padding-top:12px}
+.ind{margin-bottom:10px}.ind:last-child{margin-bottom:0}
+.ind+.ind{border-top:1px solid var(--line);padding-top:9px}
 .ind .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
 .ind .nm{font-size:13px;font-weight:700;color:var(--ink2)}
 .ind .nm small{font-family:var(--f-tick);font-stretch:82%;font-weight:600;color:var(--muted);font-size:13px;margin-left:8px}
 .ind .pc{font-family:var(--f-tick);font-stretch:82%;font-weight:700;font-size:16px}
-.ann{position:relative;height:13px;margin:20px 0 2px}
+.ann{position:relative;height:13px;margin:17px 0 2px}
 .ann span{position:absolute;transform:translateX(-50%);font-size:9px;color:var(--muted);font-style:italic;white-space:nowrap}
 .ann span.b{font-weight:700;color:var(--ink2);top:-22px;font-size:12.5px;letter-spacing:.02em}
 .track{position:relative;height:20px;background:#0c0c22;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
 .track .fill{position:absolute;inset:0 auto 0 0;opacity:.85}
 .track .sl{position:absolute;top:0;bottom:0;width:1px;z-index:2;opacity:.9}
-.sig{position:relative;height:24px}
+.sig{position:relative;height:22px}
 .sig div{position:absolute;transform:translateX(-50%);text-align:center;line-height:1.35;font-family:var(--f-tick);font-stretch:82%}
 .sig b{display:block;font-size:10px}.sig small{display:block;font-size:9px;opacity:.75}
 /* chart */
@@ -778,7 +778,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v80";
+const APP_VER="mri-v81";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
