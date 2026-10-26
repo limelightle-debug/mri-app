@@ -1,5 +1,5 @@
 // Offline shell + latest data. Bump CACHE when the app files change.
-const CACHE = "mri-v96";
+const CACHE = "mri-v98";
 // Always ask the server (revalidating the browser's own cache), so a new version shows up at once.
 const fresh = req => fetch(req.url, { cache: "no-cache", credentials: "same-origin" });
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./d3.min.js",
