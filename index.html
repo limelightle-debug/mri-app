@@ -660,7 +660,7 @@ function renderViews(){
 // signals as traffic lights: three levels, left to right green / orange / red, lit up to the level reached (all three
 // at the top level), all dark when off. A light stays on
 // (at the highest level reached) until its reset: technical bubble (the CAPE score alone at
-// +1σ / +2σ / +3σ; reset when the CAPE score is back to 50), BUY (MRI 7.5 / 5 / 2.5 or below; reset at MRI 50 or
+// +0.5σ / +1σ / +1.5σ; reset when the CAPE score is back to 50), BUY (MRI 7.5 / 5 / 2.5 or below; reset at MRI 50 or
 // above), SELL (MRI 75 / 80 / 85 or above; reset at MRI 50 or below). Run over the confirmed days since 2018.
 function renderSignals(){
   const box=$("sig"),hb=$("sigh");box.hidden=hb.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
@@ -672,7 +672,7 @@ function renderSignals(){
     if(l>(cur?cur.lv:0)){if(!cur){cur={on:i,lv:0,off:null,at:[null,null,null]};E.push(cur)}for(let k=cur.lv;k<l;k++)cur.at[k]=i;cur.lv=l}});return E};
   // daily rows: [n, vix, skew, cape, vix score, skew score, cape score, MRI, S&P, S&P percentile]
   const up=(v,a)=>v>=a[2]?3:v>=a[1]?2:v>=a[0]?1:0,dn=(v,a)=>v<=a[2]?3:v<=a[1]?2:v<=a[0]?1:0;
-  const SG=[["tbub",t("sigBubble"),latch(r=>up(r[6],[.841345,.97725,.99865]),r=>r[6]<=.5),["CAPE +1σ","CAPE +2σ","CAPE +3σ"]],
+  const SG=[["tbub",t("sigBubble"),latch(r=>up(r[6],[.691462,.841345,.933193]),r=>r[6]<=.5),["CAPE +0.5σ","CAPE +1σ","CAPE +1.5σ"]],
     ["buy","BUY",latch(r=>dn(r[7],[.075,.05,.025]),r=>r[7]>=.5),["7.5","5","2.5"]],
     ["sell","SELL",latch(r=>up(r[7],[.75,.8,.85]),r=>r[7]<=.5),["75","80","85"]]];
   const C=["#4CAF50","#FF9800","#F44336"],ds=n=>{const x=String(n);return`${x.slice(0,4)}/${+x.slice(4,6)}/${+x.slice(6,8)}`};
@@ -995,7 +995,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v109";
+const APP_VER="mri-v110";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
