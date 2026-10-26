@@ -29,6 +29,9 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+from mkt_calendar import is_trading_day
+from skew_calc import SANE_SKEW, SANE_VIX
+
 DATA = Path(__file__).resolve().parent.parent / "data"
 OUT = DATA / "mri.json"
 CACHE = DATA / "sources.json"  # long histories, refreshed hourly; kept only for the run (not committed)
@@ -148,11 +151,11 @@ def fred_spx_daily():
 
 def session_day(t):
     """The trading day a moment belongs to: the overnight session from 20:15 ET counts toward the
-    next weekday."""
+    next trading day (weekends and market holidays skipped)."""
     d = t.date()
     if t.hour * 60 + t.minute >= 20 * 60 + 15:
         d += timedelta(days=1)
-    while d.weekday() >= 5:
+    while not is_trading_day(d):
         d += timedelta(days=1)
     return ymd(d)
 
@@ -222,9 +225,8 @@ def skew_change(prev):
     if j.get("skew") is None:
         return None
     # against the close-time value, not just the last result (which a weekend makes stale, so broken snapshots that
-    # agree with each other got through): SKEW's largest move in a day since 1990 is 24.8 points (broken snapshots
-    # were 55 off), so 25 lets every real move through
-    return None if abs(j["skew"] - anchor) > 25 else j["skew"] - anchor
+    # agree with each other got through); the bounds are skew_calc's (SANE_SKEW)
+    return None if abs(j["skew"] - anchor) > SANE_SKEW else j["skew"] - anchor
 
 
 def vix_estimate(prev, close):
@@ -238,9 +240,9 @@ def vix_estimate(prev, close):
         return None
     if not cur or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev or not calc_usable(j):
         return None
-    # VIX can jump overnight but does not lose 30% of itself: a recomputed value that far below its close-time value
-    # comes from broken quotes
-    if base and cur / base < .7:
+    # VIX can jump overnight but does not lose half of itself (its lowest low against the previous close is 0.59,
+    # 2020-03-24): a recomputed value that far below its close-time value comes from broken quotes
+    if base and cur / base < SANE_VIX:
         return None
     return close * cur / base if base else cur
 

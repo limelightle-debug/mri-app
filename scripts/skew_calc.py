@@ -17,6 +17,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+from mkt_calendar import is_trading_day, options_close_minutes
+
 NY = ZoneInfo("America/New_York")
 OUT = Path(__file__).resolve().parent.parent / "data" / "skew_calc.json"
 LOG = OUT.with_name("skew_log.csv")  # every estimate, to compare with the official closes
@@ -25,6 +27,13 @@ SKEW_Q = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_SKEW.json"
 RATE = 0.04  # risk-free rate; its effect on SKEW is small
 SYM = re.compile(r"^(SPXW?)(\d{6})([CP])(\d{8})$")
 MIN_DAYS, MAX_DAYS = 23, 37
+# a snapshot is sane when its SKEW is within SANE_SKEW points of the last close-time value (SKEW's largest daily move
+# since 1990 is 24.8; broken snapshots were 55 off) and its VIX is at least SANE_VIX of the close-time value (VIX's
+# lowest low against the previous close is 0.59, 2020-03-24; broken snapshots were 0.65 with SKEW far off)
+SANE_SKEW, SANE_VIX = 30, .5
+# between two sane snapshots within 3 hours, a jump of more than JUMP_SKEW points or JUMP_VIX in VIX waits for
+# the next snapshot to confirm it (a lone broken snapshot once gave SKEW 122 between two 149s)
+JUMP_SKEW, JUMP_VIX = 6, .15
 
 
 def get(url):
@@ -123,6 +132,37 @@ def term_moments(strikes, T):
             "callsWithBid": calls_bid, "lowK": sk[0], "highK": sk[-1], "S": S, "varVix": var_vix}
 
 
+def judge(prev, snap, anchors, anchors_v):
+    """Whether to take a new snapshot ({quoteTime, skew, vix}) over the last result `prev`; returns (take, rejected),
+    `rejected` the snapshot when it is not taken (kept in the output, so the next run can confirm a real jump).
+
+    Insane (see SANE_*): not taken. Sane after an insane or missing last result: taken (a bad result never locks in).
+    Sane after a sane last result: taken unless it jumps (JUMP_*) within 3 hours; a jump is taken once the next
+    snapshot agrees with it (a real move stays, a broken snapshot does not)."""
+    def sane(sk, vx):
+        if sk is None:
+            return False
+        if not anchors:
+            return True
+        ka = max(anchors)
+        av = anchors_v.get(ka)
+        return abs(sk - anchors[ka]) <= SANE_SKEW and not (vx and av and vx / av < SANE_VIX)
+    def near(a, b):
+        return abs(a["skew"] - b["skew"]) <= JUMP_SKEW and not (a.get("vix") and b.get("vix") and abs(a["vix"] / b["vix"] - 1) > JUMP_VIX)
+    rec = {"quoteTime": snap["quoteTime"], "skew": round(snap["skew"], 2), "vix": snap["vix"] and round(snap["vix"], 4)}
+    if not sane(snap["skew"], snap["vix"]):
+        return (False, rec) if prev.get("skew") is not None and prev.get("quoteTime") else (True, None)
+    if prev.get("skew") is None or not prev.get("quoteTime") or not sane(prev["skew"], prev.get("vix")):
+        return True, None
+    t, pt = datetime.fromisoformat(snap["quoteTime"]), datetime.fromisoformat(prev["quoteTime"])
+    if abs((t - pt).total_seconds()) >= 3 * 3600 or near(snap, prev):
+        return True, None
+    last_rej = prev.get("rejected")
+    if last_rej and last_rej.get("skew") is not None and near(snap, last_rej):
+        return True, None  # the jump held for a second snapshot: a real move
+    return False, rec
+
+
 def main():
     t, terms = chain()
     cand = []
@@ -167,31 +207,13 @@ def main():
     except (OSError, ValueError):
         prev = {}
     anchors, anchors_f, anchors_v = prev.get("anchors", {}), prev.get("anchorsF", {}), prev.get("anchorsV", {})
-    # a snapshot with broken quotes can throw the result far off (once, SKEW 122 between two 149s; before the
-    # Monday open, 94 with VIX 12.6). Sane = within 25 SKEW points of the last close-time value (its largest real
-    # daily move since 1990 is 24.8) and VIX not below 70% of its close-time value. An insane snapshot keeps the last
-    # result; a sane one that jumps more than 6 SKEW points or 15% in VIX from a sane last result within 3 hours
-    # does too; a sane one after an insane last result is taken (so a bad result never locks in)
-    ka = max(anchors) if anchors else None
-    def sane(sk, vx):
-        if sk is None or ka is None:
-            return sk is not None
-        av = anchors_v.get(ka)
-        return abs(sk - anchors[ka]) <= 25 and not (vx and av and vx / av < .7)
-    rejected = None
-    try:
-        pt = datetime.fromisoformat(prev["quoteTime"]).astimezone(NY)
-        recent = abs((t - pt).total_seconds()) < 3 * 3600 and prev.get("skew") is not None
-    except (KeyError, ValueError):
-        pt, recent = None, False
-    prev_ok = prev.get("skew") is not None and sane(prev.get("skew"), prev.get("vix"))
-    jump = recent and prev_ok and (abs(skew - prev["skew"]) > 6 or (vixc and prev.get("vix") and abs(vixc / prev["vix"] - 1) > .15))
-    if (not sane(skew, vixc) or jump) and prev.get("skew") is not None and pt is not None:
-        rejected = {"quoteTime": t.isoformat(timespec="seconds"), "skew": round(skew, 2), "vix": vixc and round(vixc, 4)}
-        skew, vixc, forwards = prev["skew"], prev.get("vix"), prev.get("forwards", forwards)
-        t = pt
+    take, rejected = judge(prev, {"quoteTime": t.isoformat(timespec="seconds"), "skew": skew, "vix": vixc}, anchors, anchors_v)
+    if not take:
+        # keep the last result whole (its time, values, forwards and terms)
+        skew, vixc, forwards, out = prev["skew"], prev.get("vix"), prev.get("forwards", forwards), prev.get("terms", out)
+        t = datetime.fromisoformat(prev["quoteTime"]).astimezone(NY)
     mins = t.hour * 60 + t.minute
-    if t.weekday() < 5 and 16 * 60 + 15 <= mins < 20 * 60:
+    if is_trading_day(t.date()) and options_close_minutes(t.date()) <= mins < 20 * 60:
         anchors[t.strftime("%Y%m%d")] = round(skew, 3)
         anchors_f[t.strftime("%Y%m%d")] = forwards
         if vixc:
@@ -201,7 +223,7 @@ def main():
     anchors_v = dict(sorted(anchors_v.items())[-30:])
     res = {"at": datetime.now(NY).isoformat(timespec="seconds"), "quoteTime": t.isoformat(timespec="seconds"),
            "skew": round(skew, 2), "official": official, "weightNear": round(w, 4),
-           "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out],
+           "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out] if take else out,
            "vix": None if vixc is None else round(vixc, 4),
            "forwards": forwards, "anchors": anchors, "anchorsF": anchors_f, "anchorsV": anchors_v,
            **({"rejected": rejected} if rejected else {})}
