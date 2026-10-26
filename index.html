@@ -135,7 +135,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sigh td{text-align:right;padding:7px 4px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--ink2);white-space:nowrap;vertical-align:top}
 #sigh td small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
 #sigh td.up{color:#4CAF50}#sigh td.dn{color:#F44336}#sigh td .lit{color:var(--ink)}#sigh td.none{text-align:center;color:var(--muted)}
-#sigh .mini{display:inline-flex;gap:4px}#sigh .mini i{width:10px;height:10px;border-radius:50%;background:var(--c);opacity:.2}#sigh .mini i.on{opacity:1}
+#sigh td .lv{font-family:var(--f-body);font-stretch:100%;font-weight:800;font-size:13px;letter-spacing:.02em}
 .dstats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
 .dstats div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
 .dstats b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink)}
@@ -678,7 +678,7 @@ function renderSignals(){
   const k=SG.some(x=>x[0]===state.sigk)?state.sigk:"tbub",[,,E,th]=SG.find(x=>x[0]===k),L=R.length-1;
   const pc=v=>`${v>=0?"+":"−"}${Math.abs(v*100).toFixed(1)}%`;
   const rows=E.slice().reverse().map(e=>{const end=e.off==null?L:e.off,ch=R[end][8]/R[e.on][8]-1;
-    return`<tr><td>${ds(R[e.on][0])}</td><td><span class="mini">${C.map((c,i)=>`<i style="--c:${c}" class="${i<e.lv?"on":""}"></i>`).join("")}</span><small>${th[e.lv-1]} ${ds(R[e.top][0]).slice(2)}</small></td><td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:ds(R[e.off][0])}</td><td class="${ch>=0?"up":"dn"}">${pc(ch)}</td></tr>`}).join("");
+    return`<tr><td>${ds(R[e.on][0])}</td><td><b class="lv" style="color:${C[e.lv-1]}">Lv. ${e.lv}</b><small>${ds(R[e.top][0]).slice(2)}</small></td><td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:ds(R[e.off][0])}</td><td class="${ch>=0?"up":"dn"}">${pc(ch)}</td></tr>`}).join("");
   hb.innerHTML=`<h2><i class="h2t">${t("sigHist")}</i> <span>${t("since2018")}</span></h2>
     <div class="seg" id="sigk" role="group">${SG.map(([key,name])=>`<button type="button" data-sigk="${key}" aria-pressed="${key===k}">${name}</button>`).join("")}</div>
     <div class="shs"><table><thead><tr><th>${t("sigOnAt")}</th><th>${t("sigTop")}</th><th>${t("sigReset")}</th><th>S&amp;P500</th></tr></thead><tbody>${rows||`<tr><td colspan="4" class="none">${t("sigNone")}</td></tr>`}</tbody></table></div>`;
@@ -988,7 +988,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v102";
+const APP_VER="mri-v103";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
