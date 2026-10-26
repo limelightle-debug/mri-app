@@ -738,25 +738,21 @@ function renderMonthly(){
     const body=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}"`;
     p+=`<line x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${y(b.h).toFixed(1)}" y2="${y(b.l).toFixed(1)}" stroke="${c}" stroke-width="${ww}"/>${body} fill="${c}"/>`;
     clip+=`${body}/><rect x="${(x(i)-ww/2).toFixed(1)}" y="${y(b.h).toFixed(1)}" width="${ww}" height="${(y(b.l)-y(b.h)).toFixed(1)}"/>`});
-  // the S&P 500 month-end close as a line on top, on its own log scale (left axis); an edge in the background colour
+  // the S&P 500 month-end close as a line on top, on its own scale (left axis); an edge in the background colour
   // where it crosses a candle
   const pv=B.map(b=>b.spx).filter(v=>v!=null);let sp="";
-  // log scale: equal distances are equal percentage moves
-  if(pv.length){const lo=Math.min(...pv),hi=Math.max(...pv),k=Math.pow(hi/lo,.06),y2=d3.scaleLog().domain([lo/k,hi*k]).range([MT+PH,MT]);
-    // round thousands first; the halves only when too few of those fit
-    const pick=L=>{let lastY=1e9;return L.filter(v=>{const yy=y2(v);if(yy<MT+4||yy>MT+PH-2||lastY-yy<20)return false;lastY=yy;return true})};
-    let tk=pick([1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,15000,20000]);
-    if(tk.length<3)tk=pick([1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000,9000,10000,12000,15000,20000]);
-    tk.forEach(v=>{g+=`<text class="ax" x="0" y="${y2(v)+4}" text-anchor="start" style="fill:${COL["c-spx"]}">${v.toLocaleString("en-US")}</text>`});
+  const SPC="#c9b2ff";  // a lighter purple than the daily chart's, so the candles stay in front
+  if(pv.length){const lo=Math.min(...pv),hi=Math.max(...pv),pad=(hi-lo)*.06,y2=d3.scaleLinear().domain([lo-pad,hi+pad]).range([MT+PH,MT]).nice(5);
+    y2.ticks(5).forEach(v=>{if(y2(v)<MT-1||y2(v)>MT+PH+1)return;g+=`<text class="ax" x="0" y="${y2(v)+4}" text-anchor="start" style="fill:${SPC}">${v.toLocaleString("en-US")}</text>`});
     B.forEach((b,i)=>{if(b.spx!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y2(b.spx).toFixed(1)})}
   if(sp)p+=`<clipPath id="mcc">${clip}</clipPath><path d="${sp}" fill="none" stroke="${COL.panel}" stroke-width="4.6" stroke-linejoin="round" clip-path="url(#mcc)"/>`
-    +`<path d="${sp}" fill="none" stroke="${COL["c-spx"]}" stroke-width="2" stroke-linejoin="round"/>`;
+    +`<path d="${sp}" fill="none" stroke="${SPC}" stroke-width="2" stroke-linejoin="round"/>`;
   const ci=state.mci!=null&&state.mci<n?state.mci:null;
   const xh=ci!=null?`<rect x="${(x(ci)-sl/2).toFixed(1)}" y="${MT}" width="${sl.toFixed(1)}" height="${PH}" fill="#fff" opacity=".12"/>`:"";
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRI ${t("monthly")}">${g}${xh}${p}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n,slot:true};
   const b=B[ci!=null?ci:n-1],f=v=>(v*100).toFixed(2);
-  $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${b.spx!=null?`<span style="color:${COL["c-spx"]}">S&amp;P500 <b style="color:inherit">${b.spx.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b></span>`:""}</div>`;
+  $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${b.spx!=null?`<span style="color:#c9b2ff">S&amp;P500 <b style="color:inherit">${b.spx.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b></span>`:""}</div>`;
 }
 
 function renderTabs(){
@@ -837,7 +833,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v89";
+const APP_VER="mri-v90";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
