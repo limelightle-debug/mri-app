@@ -126,6 +126,16 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sig .tlh small{position:absolute;left:50%;top:27px;transform:translateX(-50%);font:600 9.5px/1 var(--f-tick);font-stretch:85%;color:var(--muted);white-space:nowrap;font-style:normal}
 #sig .tlh i.on small{color:var(--ink2)}
 #sig .tlv{text-align:right;font-family:var(--f-tick);font-stretch:82%;font-size:12px;color:var(--muted);white-space:nowrap}
+#sigh .seg{margin-bottom:8px}
+#sigh .shs{max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#sigh table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+#sigh th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 4px;position:sticky;top:0;background:var(--panel)}
+#sigh th:first-child,#sigh td:first-child{text-align:left}
+#sigh th:nth-child(2),#sigh td:nth-child(2){text-align:center}
+#sigh td{text-align:right;padding:7px 4px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13px;color:var(--ink2);white-space:nowrap;vertical-align:top}
+#sigh td small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
+#sigh td.up{color:#4CAF50}#sigh td.dn{color:#F44336}#sigh td .lit{color:var(--ink)}#sigh td.none{text-align:center;color:var(--muted)}
+#sigh .mini{display:inline-flex;gap:4px}#sigh .mini i{width:10px;height:10px;border-radius:50%;background:var(--c);opacity:.2}#sigh .mini i.on{opacity:1}
 .dstats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
 .dstats div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
 .dstats b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink)}
@@ -254,6 +264,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
     </section>
 
     <section class="panel" id="sig" hidden></section>
+    <section class="panel" id="sigh" hidden></section>
     <section class="panel" id="intra" hidden></section>
     <section class="panel sched" id="sched" hidden></section>
 
@@ -561,7 +572,7 @@ const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigFrom:d=>`${d}〜`,tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,ddTitle:"MRI と その後の下落",ddNote:"その日から12ヶ月以内に、S&amp;P500 がその日の終値から何%以上下げたか。いちばん上の行は、MRI を見ずに選んだ日の確率",ddBand:"MRI",ddDays:"日数",ddAny:"どの日でも",ddDn:x=>`−${x}%以上`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,ddTitle:"MRI と その後の下落",ddNote:"その日から12ヶ月以内に、S&amp;P500 がその日の終値から何%以上下げたか。いちばん上の行は、MRI を見ずに選んだ日の確率",ddBand:"MRI",ddDays:"日数",ddAny:"どの日でも",ddDn:x=>`−${x}%以上`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
@@ -572,7 +583,7 @@ const T={
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
    note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
- en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigFrom:d=>`since ${d}`,tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,ddTitle:"MRI and the fall that followed",ddNote:"How often the S&amp;P 500 fell this far below the day\u2019s close within the next 12 months. The top row is any day, without looking at MRI",ddBand:"MRI",ddDays:"Days",ddAny:"Any day",ddDn:x=>`−${x}% or more`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+ en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,ddTitle:"MRI and the fall that followed",ddNote:"How often the S&amp;P 500 fell this far below the day\u2019s close within the next 12 months. The top row is any day, without looking at MRI",ddBand:"MRI",ddDays:"Days",ddAny:"Any day",ddDn:x=>`−${x}% or more`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
@@ -598,7 +609,7 @@ let D=null, ALL=[], DAYS=[], HIST=[], loading=false;
 const SERIES=[["mri","MRI","ink"],["sr","SKEW","c-skew"],["vr","VIX","c-vix"],["cr","CAPE","c-cape"],["pr","S&P500","c-spx"]];
 function loadWin(){try{const w=JSON.parse(localStorage.getItem("mri.win"));if(Array.isArray(w)&&w.length===2&&w.every(a=>Array.isArray(a)))return w.map(a=>a.filter(k=>SERIES.some(s=>s[0]===k)))}catch(e){}return[["mri"],["pr"]]}
 const SHOW_FROM=20190101;
-const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,dci:null,mrange:store.get("mrange","5Y"),mfrom:store.get("mfrom",""),mto:store.get("mto",""),mci:null,mover:store.get("mover","spx")};
+const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,dci:null,sigk:store.get("sigk","tbub"),mrange:store.get("mrange","5Y"),mfrom:store.get("mfrom",""),mto:store.get("mto",""),mci:null,mover:store.get("mover","spx")};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","r3M",63],["1Y","r1Y",252],["3Y","r3Y",756],["5Y","r5Y",1260],["ALL","rALL",0]];
 const COL={};
@@ -649,18 +660,28 @@ function renderViews(){
 // +1σ / +2σ / +3σ; reset when the CAPE score is back to 50), BUY (MRI 7.5 / 5 / 2.5 or below; reset at MRI 50 or
 // above), SELL (MRI 75 / 80 / 85 or above; reset at MRI 50 or below). Run over the confirmed days since 2018.
 function renderSignals(){
-  const box=$("sig");box.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
+  const box=$("sig"),hb=$("sigh");box.hidden=hb.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
   const last=DAYS[DAYS.length-1];if(!last)return;
   const R=(D.daily||[]).filter(r=>r[0]>=20180101&&r[0]<=last.n);
-  const latch=(lvl,reset)=>{let L=0,since=null;R.forEach(r=>{if(L&&reset(r)){L=0;since=null}const l=lvl(r);if(l>L){if(!L)since=r[0];L=l}});return[L,since]};
+  // each time a light comes on: the day, the highest level and the day it got there, and the reset (null while on)
+  const latch=(lvl,reset)=>{const E=[];let cur=null;R.forEach((r,i)=>{if(cur&&reset(r)){cur.off=i;cur=null}const l=lvl(r);
+    if(l>(cur?cur.lv:0)){if(!cur){cur={on:i,lv:0,off:null};E.push(cur)}cur.lv=l;cur.top=i}});return E};
   // daily rows: [n, vix, skew, cape, vix score, skew score, cape score, MRI, S&P, S&P percentile]
   const up=(v,a)=>v>=a[2]?3:v>=a[1]?2:v>=a[0]?1:0,dn=(v,a)=>v<=a[2]?3:v<=a[1]?2:v<=a[0]?1:0;
-  const SG=[[t("sigBubble"),latch(r=>r[9]==null?0:up(r[9],[.841345,.97725,.99865]),r=>r[6]<=.5),["+1σ","+2σ","+3σ"]],
-    ["BUY",latch(r=>dn(r[7],[.075,.05,.025]),r=>r[7]>=.5),["7.5","5","2.5"]],
-    ["SELL",latch(r=>up(r[7],[.75,.8,.85]),r=>r[7]<=.5),["75","80","85"]]];
+  const SG=[["tbub",t("sigBubble"),latch(r=>r[9]==null?0:up(r[9],[.841345,.97725,.99865]),r=>r[6]<=.5),["+1σ","+2σ","+3σ"]],
+    ["buy","BUY",latch(r=>dn(r[7],[.075,.05,.025]),r=>r[7]>=.5),["7.5","5","2.5"]],
+    ["sell","SELL",latch(r=>up(r[7],[.75,.8,.85]),r=>r[7]<=.5),["75","80","85"]]];
   const C=["#4CAF50","#FF9800","#F44336"],ds=n=>{const x=String(n);return`${x.slice(0,4)}/${+x.slice(4,6)}/${+x.slice(6,8)}`};
-  box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i></h2>`+SG.map(([name,[lv,since],th])=>
-    `<div class="tl"><div class="tln">${name}</div><div class="tlh">${C.map((c,i)=>`<i class="${i<lv?"on":""}" style="--c:${c}"><small>${th[i]}</small></i>`).join("")}</div><div class="tlv">${since?t("sigFrom",ds(since)):""}</div></div>`).join("");
+  box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i></h2>`+SG.map(([,name,E,th])=>{const e=E[E.length-1],on=e&&e.off==null,lv=on?e.lv:0;
+    return`<div class="tl"><div class="tln">${name}</div><div class="tlh">${C.map((c,i)=>`<i class="${i<lv?"on":""}" style="--c:${c}"><small>${th[i]}</small></i>`).join("")}</div><div class="tlv">${on?t("sigFrom",ds(R[e.on][0])):""}</div></div>`}).join("");
+  // history: one signal at a time, newest first, in a scrolling list
+  const k=SG.some(x=>x[0]===state.sigk)?state.sigk:"tbub",[,,E,th]=SG.find(x=>x[0]===k),L=R.length-1;
+  const pc=v=>`${v>=0?"+":"−"}${Math.abs(v*100).toFixed(1)}%`;
+  const rows=E.slice().reverse().map(e=>{const end=e.off==null?L:e.off,ch=R[end][8]/R[e.on][8]-1;
+    return`<tr><td>${ds(R[e.on][0])}</td><td><span class="mini">${C.map((c,i)=>`<i style="--c:${c}" class="${i<e.lv?"on":""}"></i>`).join("")}</span><small>${th[e.lv-1]} ${ds(R[e.top][0]).slice(2)}</small></td><td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:ds(R[e.off][0])}</td><td class="${ch>=0?"up":"dn"}">${pc(ch)}</td></tr>`}).join("");
+  hb.innerHTML=`<h2><i class="h2t">${t("sigHist")}</i> <span>${t("since2018")}</span></h2>
+    <div class="seg" id="sigk" role="group">${SG.map(([key,name])=>`<button type="button" data-sigk="${key}" aria-pressed="${key===k}">${name}</button>`).join("")}</div>
+    <div class="shs"><table><thead><tr><th>${t("sigOnAt")}</th><th>${t("sigTop")}</th><th>${t("sigReset")}</th><th>S&amp;P500</th></tr></thead><tbody>${rows||`<tr><td colspan="4" class="none">${t("sigNone")}</td></tr>`}</tbody></table></div>`;
 }
 const md0=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
 function renderTop(){
@@ -967,7 +988,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v101";
+const APP_VER="mri-v102";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -993,6 +1014,7 @@ document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="ana")renderAna();window.scrollTo(0,0);return}
   const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
+  const sk=e.target.closest("[data-sigk]");if(sk){state.sigk=sk.dataset.sigk;store.set("sigk",state.sigk);renderSignals();return}
   const mo=e.target.closest("[data-mover]");if(mo){state.mover=mo.dataset.mover;store.set("mover",state.mover);renderMonthly();return}
   const mr=e.target.closest("[data-mrange]");if(mr){state.mrange=mr.dataset.mrange;store.set("mrange",state.mrange);state.mci=null;renderMonthly();return}
   const hr=e.target.closest("[data-ci]");if(hr){const i=+hr.dataset.ci;state.ci=state.ci===i?null:i;renderChart();return}
