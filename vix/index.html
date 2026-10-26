@@ -430,7 +430,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v97";
+const APP_VER="vix-v98";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -822,9 +822,7 @@ function renderBacktest(){
   // for each event, the highest probability in the k months before its start (shown in the period, window complete,
   // outside events): what matters is that it got high at some point, not the average; false alarms do not count
   const peaks=[];EP.forEach((e,q)=>{const lo=addM(e.day,-k);if(lo<BA[0][0]||lo<B[0][0]||e.day>B[B.length-1][0])return;
-    // only after the previous event ended (its own run-up belongs to it)
-    const pe=q?((D.eventInfo||{})[EP[q-1].m]||{}).end||0:0;
-    const W_=B.filter(r=>!r[1]&&r[0]>=lo&&r[0]>pe&&r[0]<e.day);if(!W_.length)return;
+    const W_=B.filter(r=>!r[1]&&r[0]>=lo&&r[0]<e.day);if(!W_.length)return;
     peaks.push({q,e,v:[col.bay,col.int,col.rnd].map(c=>d3.max(W_,r=>r[c]))})});
   const pc=v=>v==null||isNaN(v)?"—":f(v)+"%";
   $("btscore").innerHTML=`<tr><th>${t("btEvN")}</th><th style="color:${CB}">${t("lgBayK",k)}</th><th style="color:${CI}">${t("vInt")}</th><th style="color:${CR}">${t("lgRnd")}</th></tr>`
