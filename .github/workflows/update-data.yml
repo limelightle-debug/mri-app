@@ -56,14 +56,25 @@ jobs:
           start=$(date +%s)
           while true; do
             s=$(session)
+            # data/run_log.txt: what the last pass did (a stall or an error shows up there, in the repo)
+            log=data/run_log.txt
+            echo "$(date -u +%FT%TZ) $(TZ=America/New_York date +%H:%M) ET mode=$s run=$GITHUB_RUN_ID" > $log
+            # each script gets at most 4 minutes, so one hung download cannot stop the loop
             # SKEW recomputed from the option quotes (used for today's SKEW during the session)
-            python scripts/skew_calc.py > /dev/null || echo "SKEW estimate failed"
-            python scripts/update_mri.py || echo "update failed; trying again next time"
-            python scripts/update_vix.py || echo "VIX app update failed"
+            timeout 240 python scripts/skew_calc.py > /dev/null 2>> $log || echo "skew_calc failed ($?)" >> $log
+            timeout 240 python scripts/update_mri.py >> $log 2>&1 || echo "update_mri failed ($?)" >> $log
+            timeout 240 python scripts/update_vix.py > /dev/null 2>> $log || echo "update_vix failed ($?)" >> $log
+            cat $log
             git add data/
             if ! git diff --cached --quiet; then
               git commit -q -m "data: update MRI"
-              git pull -q --rebase origin main && git push -q || echo "push failed; trying again next time"
+              if ! git pull -q --rebase origin main; then
+                # a conflict would leave the rebase open and block every later pass: drop this pass and start
+                # again from main (the next pass recomputes everything)
+                git rebase --abort || true
+                git fetch -q origin main && git reset -q --hard origin/main
+              fi
+              git push -q || echo "push failed; trying again next time"
             fi
             [ "$s" = closed ] && break
             if [ $(( $(date +%s) - start )) -gt 20400 ]; then
