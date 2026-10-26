@@ -100,8 +100,8 @@ def model(spans, mri, months, today):
     Above the line the factor keeps growing: log factor x (1 + (x - 70) / 15), so 85 squares it.
     Bayes, month by month: each month's odds = the interval's odds for that month x the MRI factor; the chance
     within k months = 1 - the product of (1 - each month's chance).
-    Backtest (from 2018, the MRI period) rows: [month, during an event (1/0), then for "in" (parameters from all the data) and "out" (only what
-    was known then) the Bayes, interval and random probabilities for 1, 3, 6 and 12 months, in %]."""
+    Backtest (from 2018, the MRI period), one row per trading day: [yyyymmdd, during an event (1/0), Bayes 6 and 12
+    months, interval 6 and 12, random 6 and 12, in %], each from only what was known that day."""
     import bisect
     md = sorted(mri)
     idx = lambda m: m // 100 * 12 + m % 100
@@ -207,26 +207,26 @@ def model(spans, mri, months, today):
     if par_in:
         bayes.update({"lrHi": round(par_in["hi"], 3), "lrLo": round(par_in["lo"], 3), "events": par_in["events"],
                       "eventsAbove": par_in["eventsAbove"], "months": par_in["months"], "monthsAbove": round(par_in["pn"], 3)})
-    # backtest
+    # backtest, day by day: the probability as the app would have shown it that day (that day's MRI, the events and
+    # data known by then), so a jump in MRI in mid-month shows the day it came
     rows = []
-    for m in months:
-        if m < BAYES_FROM:  # the backtest covers the MRI period only, where the model is whole
+    cache = {}
+    for d in md:
+        if d < BAYES_FROM * 100 or d > today:
             continue
-        d = m * 100 + 1
-        row = [m, int(ONG[m])]
-        for mode in ("in", "out"):
-            upto = None if mode == "in" else m
-            par = par_in if mode == "in" else mri_params(m)
-            x = X.get(m)
-            fkm = factors(x, par, upto)[1] if x is not None and par else {}
-            pr = probs(m, ONG[m], d, lam_in if mode == "in" else rates(m), fkm)
-            row += [round(v[c] * 100, 2) for c in (1, 2, 3) for v in pr]
-        rows.append(row)
-    # the current month shows today's probability (the gauges), not the one from the start of the month
-    if rows and rows[-1][0] == cur:
-        now_p = probs(cur, ongoing, today + 1, lam_in, fk)
-        vals = [round(v[c] * 100, 2) for c in (1, 2, 3) for v in now_p]
-        rows[-1] = [cur, int(ongoing)] + vals + vals
+        m = d // 100
+        if m not in cache:
+            cache[m] = (mri_params(m), rates(m))
+        par, lam = cache[m]
+        ong = any(s_ <= d and (e is None or e >= d) for s_, e in spans)
+        x = xat(d, inclusive=True)[0]
+        fkm = factors(x, par, m)[1] if x is not None and par else {}
+        pr = {k: v for k, *v in probs(m, ong, d + 1, lam, fkm)}
+        rows.append([d, int(ong)] + [round(pr[k][c] * 100, 2) for c in (0, 1, 2) for k in (6, 12)])
+    # today shows the probability on the gauges
+    if rows and rows[-1][0] == today:
+        now_p = {k: v for k, *v in probs(cur, ongoing, today + 1, lam_in, fk)}
+        rows[-1] = [today, int(ongoing)] + [round(now_p[k][c] * 100, 2) for c in (0, 1, 2) for k in (6, 12)]
     return bayes, rows
 
 
