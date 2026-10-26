@@ -29,7 +29,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from mkt_calendar import is_trading_day
+from mkt_calendar import gth_morning_holiday, is_trading_day
 from skew_calc import SANE_SKEW, SANE_VIX
 
 DATA = Path(__file__).resolve().parent.parent / "data"
@@ -185,7 +185,8 @@ def cboe_live(symbol):
         # VIX's overnight session (20:15 ET Sun-Thu to 9:30 ET), even before it first moves
         close = q.get("close")
         fm, fwd = fetched.hour * 60 + fetched.minute, fetched.weekday()
-        night = (fwd in (6, 0, 1, 2, 3) and fm >= 20 * 60 + 15) or (fwd < 5 and fm < 9 * 60 + 30)
+        night = ((fwd in (6, 0, 1, 2, 3) and fm >= 20 * 60 + 15) or (fwd < 5 and fm < 9 * 60 + 30)
+                 or (gth_morning_holiday(fetched.date()) and fm < 11 * 60 + 30))  # GTH runs on a holiday's morning
         if symbol == "VIX" and close and (abs(float(price) - float(close)) > 1e-9 or night):
             return session_day(fetched), float(price), fetched.strftime("%Y-%m-%d %H:%M"), day, float(close)
         return day, float(close or price), dt.strftime("%Y-%m-%d %H:%M"), day, float(close or price)

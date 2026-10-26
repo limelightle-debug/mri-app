@@ -48,22 +48,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # open: the regular session until the official SKEW is in (every 5 minutes); pre: VIX's extended session from 3:00 ET
-          # (every 5 minutes, for the VIX app's latest value); night: VIX's overnight session from 20:15 ET
-          # (every 15 minutes); closed: one update, then stop
+          # open / pre / night / closed: see session_mode in scripts/mkt_calendar.py (weekends, holidays and Cboe's
+          # holiday trading hours included)
           session() {
-            python -c 'import sys; sys.path.insert(0, "scripts")
-          from datetime import datetime, timedelta; from zoneinfo import ZoneInfo; from mkt_calendar import is_trading_day
-          n = datetime.now(ZoneInfo("America/New_York")); m = n.hour * 60 + n.minute; d = n.date()
-          # trading days only; the night belongs to the next day, and is skipped when that day is a Monday or
-          # follows a holiday (Cboe does not refresh its quotes until the extended session at 3:15 ET then)
-          nxt = d + timedelta(days=1)
-          while not is_trading_day(nxt): nxt += timedelta(days=1)
-          if is_trading_day(d) and 9 * 60 + 15 <= m < 17 * 60 + 20: print("open")
-          elif is_trading_day(d) and 3 * 60 <= m < 9 * 60 + 15: print("pre")
-          elif is_trading_day(d) and m < 3 * 60 and (d - timedelta(days=1)).weekday() < 5 and is_trading_day(d - timedelta(days=1)): print("night")
-          elif is_trading_day(d) and m >= 20 * 60 + 15 and nxt == d + timedelta(days=1): print("night")
-          else: print("closed")'
+            python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import session_mode; print(session_mode())'
           }
           start=$(date +%s)
           while true; do

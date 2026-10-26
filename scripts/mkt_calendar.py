@@ -1,5 +1,9 @@
 """US market calendar for the realtime updates: NYSE/Cboe full holidays and early closes, computed from NYSE's rules
-for any year (no list to keep up to date).
+for any year (no list to keep up to date), and when the updates should run.
+
+Cboe's global trading hours (GTH) for SPX/VIX options keep running on most holidays: from 20:15 ET the evening before
+until 11:30 ET on the holiday, and again from 20:15 that evening when the next day trades. They do not run on Good
+Friday or Christmas Day, nor on the morning of New Year's Day (Cboe, "Hours & Holidays").
 
 Weekends and these days have no session; on early-close days the cash market closes at 13:00 ET and SPX options at
 13:15. One-off closures (a national day of mourning, say) cannot be computed: add them to EXTRA_CLOSED.
@@ -80,3 +84,41 @@ def is_trading_day(d):
 def options_close_minutes(d):
     """When SPX options stop trading that day (minutes after midnight, New York)."""
     return 13 * 60 + 15 if d in early_closes(d.year) else 16 * 60 + 15
+
+
+def gth_morning_holiday(d):
+    """A holiday on whose morning GTH runs (until 11:30 ET): all but Good Friday, Christmas and New Year's Day."""
+    if d not in holidays(d.year):
+        return False
+    y = d.year
+    return d not in {_easter(y) - timedelta(days=2), _observed(date(y, 12, 25)), date(y, 1, 1), date(y, 1, 2)}
+
+
+def _evening_session(d):
+    """Whether an overnight session starts at 20:15 on day d: GTH opens for a next day that trades or has a GTH
+    morning; never on Saturday or Sunday (after a weekend Cboe's delayed quotes stay stale until 3:15 ET Monday),
+    Good Friday or Christmas."""
+    if d.weekday() >= 5 or d in {_easter(d.year) - timedelta(days=2), _observed(date(d.year, 12, 25))}:
+        return False
+    nxt = d + timedelta(days=1)
+    return is_trading_day(nxt) or gth_morning_holiday(nxt)
+
+
+def session_mode(now=None):
+    """open: the regular session until the official SKEW is in (update every 5 minutes); pre: VIX's extended session
+    from 3:00 ET (every 5 minutes), also on a holiday's GTH morning until 11:30; night: an overnight session from 20:15
+    ET (every 15 minutes); closed: no session (one update, then stop)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    n = now or datetime.now(ZoneInfo("America/New_York"))
+    d, m = n.date(), n.hour * 60 + n.minute
+    td = is_trading_day(d)
+    if td and 9 * 60 + 15 <= m < 17 * 60 + 20:
+        return "open"
+    if (td and 3 * 60 <= m < 9 * 60 + 15) or (gth_morning_holiday(d) and 3 * 60 <= m < 11 * 60 + 30):
+        return "pre"
+    if m >= 20 * 60 + 15 and _evening_session(d):
+        return "night"
+    if m < 3 * 60 and (td or gth_morning_holiday(d)) and _evening_session(d - timedelta(days=1)):
+        return "night"
+    return "closed"
