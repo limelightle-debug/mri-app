@@ -62,7 +62,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .rampw{position:relative;padding-top:31px}
 .flag{--p:50%;position:absolute;top:0;transform:translateX(calc(-1 * var(--p)));white-space:nowrap;font-weight:800;font-size:13px;line-height:1;letter-spacing:.1em;color:#fff;padding:5px 10px 5px 11px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.55);z-index:1}
 .flag::after{content:"";position:absolute;left:var(--p);top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--c)}
-.flag b{font-family:var(--f-tick);font-stretch:82%;font-size:15px;letter-spacing:.02em;margin-left:4px;font-variant-numeric:tabular-nums}
+.flag b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;letter-spacing:.02em;margin-left:4px;font-variant-numeric:tabular-nums}
 .flag.buy{--p:28%;--c:#4CAF50;background:var(--c)}.flag.sell{--c:#F44336;background:var(--c)}
 .flag.on{outline:2px solid #fff;animation:flagon 1.6s ease-in-out infinite}
 @keyframes flagon{0%,100%{box-shadow:0 0 6px 1px var(--c)}50%{box-shadow:0 0 18px 6px var(--c)}}
@@ -774,7 +774,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v76";
+const APP_VER="mri-v77";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
