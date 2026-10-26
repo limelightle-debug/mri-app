@@ -720,7 +720,7 @@ function renderChart(){
 }
 
 /* ---------- monthly candles ---------- */
-const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60]];
+const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60],["ALL","rALL",0]];
 function monthBars(){const M=[];DAYS.forEach(b=>{const m=b.d.slice(0,7),v=b.mri,c=M[M.length-1];
   if(!c||c.m!==m)M.push({m,o:v,h:v,l:v,c:v,spx:b.spx});else{c.h=Math.max(c.h,v);c.l=Math.min(c.l,v);c.c=v;if(b.spx!=null)c.spx=b.spx}});return M}
 // TQQQ month-end closes from the TQQQ app's data (same site), loaded the first time TQQQ is picked
@@ -735,9 +735,9 @@ function renderMonthly(){
   const ovName=tq?"TQQQ":"S&amp;P500",ov=b=>tq?(TQ&&TQ[b.m]!=null?TQ[b.m]:null):b.spx;
   $("mrange").innerHTML=MRANGES.map(([k,l])=>`<button type="button" data-mrange="${k}" aria-pressed="${k===state.mrange}">${t(l)}</button>`).join("");
   const el=$("mchart"),all=monthBars();
-  // 3 or 5 years, or the months picked below (like the daily chart)
+  // 3 or 5 years, everything, or the months picked below (like the daily chart)
   let B=state.mrange==="CUSTOM"&&state.mfrom&&state.mto?all.filter(b=>b.m>=state.mfrom&&b.m<=state.mto):[];
-  if(!B.length){const r=MRANGES.find(x=>x[0]===state.mrange)||MRANGES[1];B=all.slice(-r[2])}
+  if(!B.length){const r=MRANGES.find(x=>x[0]===state.mrange)||MRANGES[1];B=r[2]?all.slice(-r[2]):all}
   const n=B.length;if(!n){el.innerHTML="";return}
   {const fm=$("mfrom"),tm=$("mto");[fm,tm].forEach(i=>{i.min=all[0].m;i.max=all[all.length-1].m});
    if(document.activeElement!==fm)fm.value=B[0].m;if(document.activeElement!==tm)tm.value=B[n-1].m}
@@ -853,7 +853,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v92";
+const APP_VER="mri-v93";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
