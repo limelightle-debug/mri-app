@@ -340,8 +340,8 @@ table.ev tr.on td{background:var(--chip)}
       <p><b>インターバル</b>：ランダムに倍率を掛ける。倍率は前回イベントの終了時に1（ランダムと同じ）、そこから直線で上がり、直近5回の平均インターバル m（イベント開始から数える）で2倍になる。それを過ぎたら2倍のまま（地震の長期評価のモデルと同じく、際限なく上がらずに頭打ちになる）。</p>
       <div class="eq">月あたり h(e) ＝ λ × min(2, 1 ＋ (e − d) ÷ (m − d))<br><small style="margin:0">λ ＝ ランダムの月あたり確率　e ＝ 前回イベントの開始からの月数　d ＝ そのイベントの長さ（月）　m ＝ 直近5回の間隔の平均</small></div>
       <p class="note">地震の長期評価の BPT モデル（間隔がたつほど確率が上がる）も試したが、バックテストではランダムに負けた。VIX イベントの間隔は8〜74か月とばらつきが大きく、周期性がないため。</p>
-      <p><b>MRI</b>：見るのは MRI の最高値 x だけ（1日の跳ね上がりに左右されないよう、10日平均の最高値）。6ヶ月以内の確率には直近6ヶ月、12ヶ月以内の確率には直近12ヶ月の最高値（前回イベントの終了からそれより短いときは終了からの最高値）。普段の月と比べた頻度などは使わず、決まった曲線で倍率に換える。50で1倍、50を超えるとゆるやかに上がり、100に近づくほど急に上がる（70で1.45倍、80で2.29倍、90で4.37倍、100で10倍）。50未満は1倍未満。</p>
-      <div class="eq">倍率 ＝ 10 の (±u²) 乗　　u ＝ (x − 50) ÷ 50<br><small style="margin:0">x が50以上なら ＋、50未満なら −</small></div>
+      <p><b>MRI</b>：見るのは MRI の最高値 x だけ（1日の跳ね上がりに左右されないよう、10日平均の最高値）。6ヶ月以内の確率には直近6ヶ月、12ヶ月以内の確率には直近12ヶ月の最高値（前回イベントの終了からそれより短いときは終了からの最高値）。普段の月と比べた頻度などは使わず、決まった曲線で倍率に換える。50で1倍、50を超えるとゆるやかに上がり、MRI の天井（85前後）に近づくほど急に上がる（70で1.8倍、80で3.7倍、85で6倍）。50未満は1倍未満（30で0.56倍）。</p>
+      <div class="eq">倍率 ＝ 6 の (±u²) 乗　　u ＝ (x − 50) ÷ 35<br><small style="margin:0">x が50以上なら ＋、50未満なら −</small></div>
       <p>発生確率は「k か月以内」に起きる確率なので、今の最高値は最初の月から効く。MRI の将来の動きは予想しない（MRI は VIX が跳ねると下がるので、予想に入れるとイベントを事後に読み込むことになる）。</p>
 
       <p><b>バックテスト</b>（上）：MRI が入った2018年以降、毎日その日に出ていた確率（その時点までのデータだけで計算）と、実際のイベントを比べる。表は各イベントの前に確率がどこまで上がったか（最高値）。</p>
@@ -397,8 +397,8 @@ table.ev tr.on td{background:var(--chip)}
       <p><b>Interval</b>: random times a multiplier that is 1 (random) when the last event ended, rises in a straight line to 2 at the mean m of the last 5 intervals (counted from the event's start), and stays at 2 after it (levelling off like the earthquake model rather than climbing).</p>
       <div class="eq">monthly h(e) = λ × min(2, 1 + (e − d) ÷ (m − d))<br><small style="margin:0">λ = random's monthly chance　e = months since the last event started　d = its length in months　m = mean of the last 5 intervals</small></div>
       <p class="note">The BPT model of long-term earthquake forecasts (the chance rising as time passes) was tried too, but lost to random in the backtest: intervals between VIX events range from 8 to 74 months, with no period to them.</p>
-      <p><b>MRI</b>: only the MRI's highest, x, counts (of its 10-day average, so a one-day spike does not set it): over the last 6 months for the 6-month chance, the last 12 for the 12-month (or since the last event ended if that is shorter). Nothing is taken from how often a level comes in quiet months: a fixed curve turns x into the factor, 1 at 50, rising slowly above it and steeply near 100 (1.45 at 70, 2.29 at 80, 4.37 at 90, 10 at 100), and below 1 under 50.</p>
-      <div class="eq">factor = 10 to the (±u²)　　u = (x − 50) ÷ 50<br><small style="margin:0">+ when x is 50 or more, − below</small></div>
+      <p><b>MRI</b>: only the MRI's highest, x, counts (of its 10-day average, so a one-day spike does not set it): over the last 6 months for the 6-month chance, the last 12 for the 12-month (or since the last event ended if that is shorter). Nothing is taken from how often a level comes in quiet months: a fixed curve turns x into the factor, 1 at 50, rising slowly above it and steeply near MRI’s ceiling of about 85 (1.8 at 70, 3.7 at 80, 6 at 85), and below 1 under 50 (0.56 at 30).</p>
+      <div class="eq">factor = 6 to the (±u²)　　u = (x − 50) ÷ 35<br><small style="margin:0">+ when x is 50 or more, − below</small></div>
       <p>The probability is for an event within k months, so today's peak counts from the first month. MRI's future path is not guessed (MRI falls when VIX jumps, so guessing it would read events in after the fact).</p>
 
       <p><b>Backtest</b> (above): the probability as it read each day since 2018, when MRI came in (from only the data known by then), against the events. The table shows how high it got before each event (the peak).</p>
@@ -432,7 +432,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v102";
+const APP_VER="vix-v103";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -528,8 +528,8 @@ function renderProb(){
   const P=eventProb();$("probp").hidden=!P;if(!P)return;
   $("probsub").textContent=P.ongoing?t("ongoing"):"";
   // the two variables take the colour of their state: interval green in the quiet period, red during an event, and
-  // in between by its monthly chance against random (half: green, 1.75 times: orange, 3 times: red); MRI from green at 50 to red at 90
-  const B=D.bayes||{},x=B.mri12!=null?B.mri12:B.mri6,w=x==null?0:Math.max(0,Math.min(1,(x-(B.pivot||50))/40));
+  // in between by its monthly chance against random (half: green, 1.75 times: orange, 3 times: red); MRI from green at 50 to red at 85
+  const B=D.bayes||{},x=B.mri12!=null?B.mri12:B.mri6,w=x==null?0:Math.max(0,Math.min(1,(x-(B.pivot||50))/((B.full||85)-(B.pivot||50))));
   const r1=P.rows[0],hr=r1.base>0?r1.p/r1.base:1,ci=P.ongoing?COL.s3:P.quiet?COL.s1:d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(Math.max(0,Math.min(1,(hr-.5)/2.5))),cm=x==null?"#3a3a6a":d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(w);
   $("pvars").innerHTML=`<div style="--vc:${ci}"><small>${t("vInt")}</small><b>${P.e}<span>${t("vMon")}</span></b><i>${P.ongoing?t("ongoing"):P.quiet?t("vQuiet",P.quiet):t("vIntSub")}</i></div><div style="--vc:${cm}"><small>MRI</small><span class="mri2">${[[6,"mri6"],[12,"mri12"]].map(([h,k])=>`<b><em>${t("hzS",h)}</em>${D.bayes&&D.bayes[k]!=null?D.bayes[k].toFixed(1):"–"}</b>`).join("")}</span><i>${t(D.bayes&&D.bayes.sinceEnd?"vMriEnd":"vMriSub")}</i></div>`;
   {const r1=P.rows[0];$("bayesnote").textContent=t("bayesNote",r1.fInt!=null?r1.fInt.toFixed(2):"–",D.bayes?D.bayes.mri6.toFixed(1):"–",r1.fMri.toFixed(2));}

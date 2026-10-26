@@ -34,9 +34,9 @@ SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
 BAYES_FROM, QUIET = 201801, 6
-# the MRI factor, a fixed curve of the highest MRI x: 1 at 50, MRI_TOP at 100, slow above 50 and steep near 100,
-# below 1 under 50: MRI_TOP ** (sign(u) |u| ** MRI_POW), u = (x - 50) / 50
-MRI_PIVOT, MRI_TOP, MRI_POW = 50, 10, 2
+# the MRI factor, a fixed curve of the highest MRI x: 1 at 50, MRI_TOP at MRI_FULL (about where MRI tops out), slow
+# above 50 and steep near the top, below 1 under 50: MRI_TOP ** (sign(u) |u| ** MRI_POW), u = (x - 50) / (MRI_FULL - 50)
+MRI_PIVOT, MRI_FULL, MRI_TOP, MRI_POW = 50, 85, 6, 2
 MRI_AVG = 10  # the peak is of the 10-day average MRI, so a one-day spike does not set it
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
 MULT_FLOOR = 1  # right after an event ends the multiplier is 1 (random), not 0: an event can follow soon (8 months, 2024-25)
@@ -96,8 +96,8 @@ def model(spans, mri, months, today):
     d the event's length in months; P = 1 - exp(-sum of lam_r * mult over the months).
     MRI (from 2018, when it works): x = the highest 10-day average MRI over the horizon (the last 6 months for 6 months and
     shorter, the last 12 for 12), or since the last event ended if that is more recent. Only this peak counts, on a
-    fixed curve (nothing is estimated from how often a level is passed in quiet times): factor = 10 ** (sign(u) u**2),
-    u = (x - 50) / 50, so 1 at 50, 1.45 at 70, 2.29 at 80, 4.37 at 90, 10 at 100, and below 1 under 50. Today's x
+    fixed curve (nothing is estimated from how often a level is passed in quiet times): factor = 6 ** (sign(u) u**2),
+    u = (x - 50) / 35, so 1 at 50, 1.8 at 70, 3.7 at 80, 6 at 85, and below 1 under 50. Today's x
     alone sets the factor (the probability is for an event within k months, so today's level counts from the first month).
     Bayes, month by month: each month's odds = the interval's odds for that month x the MRI factor; the chance
     within k months = 1 - the product of (1 - each month's chance).
@@ -155,7 +155,7 @@ def model(spans, mri, months, today):
     def factors(x, par, upto):
         # the highest MRI alone sets the factor (no guess at MRI's path: it falls when VIX jumps, which would read events
         # into their own forecast), on a fixed curve: 1 at 50, slow above it, steep near 100, below 1 under 50
-        u = (x - MRI_PIVOT) / (100 - MRI_PIVOT)
+        u = (x - MRI_PIVOT) / (MRI_FULL - MRI_PIVOT)
         f = MRI_TOP ** ((1 if u >= 0 else -1) * abs(u) ** MRI_POW)
         return [], f
     def probs(m, ongoing, d, lam, fk):
@@ -202,7 +202,7 @@ def model(spans, mri, months, today):
     lr = fk.get(6)
     bayes = {"mri6": None if now is None else round(now, 1), "mri12": None if nowB[12] is None else round(nowB[12], 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
              "ongoing": ongoing, "lamR": round(lam_in[0], 5),
-             "even": round(lam_in[1], 1), "evenN": EVEN_N, "shape": SHAPE, "lamQ": round(lam_in[2], 5), "pivot": MRI_PIVOT, "top": MRI_TOP, "pow": MRI_POW, "from": BAYES_FROM,
+             "even": round(lam_in[1], 1), "evenN": EVEN_N, "shape": SHAPE, "lamQ": round(lam_in[2], 5), "pivot": MRI_PIVOT, "full": MRI_FULL, "top": MRI_TOP, "pow": MRI_POW, "from": BAYES_FROM,
              "lr": None if lr is None else round(lr, 4), "lrK": {k: round(v, 4) for k, v in fk.items()},
              "q": [round(v, 2) for v in q],
              "prob": [{"k": k, "post": round(p, 5), "int": round(pi, 5), "base": round(b, 5)}
