@@ -33,14 +33,6 @@ SPX_HIST = "https://cdn.cboe.com/api/global/us_indices/daily_prices/SPX_History.
 SPX_CACHE = DATA / "spx_history.csv"  # not committed; refreshed hourly
 QUOTE = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"
 WINDOW, FIXED_UNTIL, K_EVENT, GAP, END_DAYS = 360, 201912, 2, 3, 10
-BAYES_FROM, QUIET = 201801, 6
-# the MRI factor, a fixed curve of the highest MRI x: 1 at 50, MRI_TOP at MRI_FULL (about where MRI tops out), slow
-# above 50 and steep near the top, below 1 under 50: MRI_TOP ** (sign(u) |u| ** MRI_POW), u = (x - 50) / (MRI_FULL - 50)
-MRI_PIVOT, MRI_FULL, MRI_TOP, MRI_POW = 50, 85, 6, 2
-MRI_AVG = 10  # the peak is of the 10-day average MRI, so a one-day spike does not set it
-EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
-MULT_FLOOR = 1  # right after an event ends the multiplier is 1 (random), not 0: an event can follow soon (8 months, 2024-25)
-MULT_CAP = 2  # past the mean interval the multiplier stays at 2 (the earthquake model levels off rather than climbing)
 
 
 def get(url):
@@ -84,151 +76,6 @@ SHINDO = [(0.40, "7"), (0.30, "6+"), (0.20, "6-"), (0.15, "5+"), (0.10, "5-"), (
 def add_months(m, k):
     y, mo = divmod(m // 100 * 12 + m % 100 - 1 + k, 12)
     return y * 100 + mo + 1
-
-
-def model(spans, mri, months, today):
-    """The event probability, now and on each past day (the backtest).
-
-    Random: events come with the same chance every month outside events, lam_r = events / months outside events.
-    Interval: random times a multiplier that is 1 (random) when the last event ended, rises in a straight line to 2 at the
-    mean m of the last 5 intervals (counted from the event's start) and stays at 2 after it (like the earthquake
-    model, which levels off instead of climbing): mult(e) = min(2, 1 + (e - d) / (m - d)), e months since the start (in days, from the end day),
-    d the event's length in months; P = 1 - exp(-sum of lam_r * mult over the months).
-    MRI (from 2018, when it works): x = the highest 10-day average MRI over the horizon (the last 6 months for 6 months and
-    shorter, the last 12 for 12), or since the last event ended if that is more recent. Only this peak counts, on a
-    fixed curve (nothing is estimated from how often a level is passed in quiet times): factor = 6 ** (sign(u) u**2),
-    u = (x - 50) / 35, so 1 at 50, 1.8 at 70, 3.7 at 80, 6 at 85, and below 1 under 50. Today's x
-    alone sets the factor (the probability is for an event within k months, so today's level counts from the first month).
-    Bayes, month by month: each month's odds = the interval's odds for that month x the MRI factor; the chance
-    within k months = 1 - the product of (1 - each month's chance).
-    Backtest (from 2018, the MRI period), one row per trading day: [yyyymmdd, during an event (1/0), Bayes 6 and 12
-    months, interval 6 and 12, random 6 and 12, in %], each from only what was known that day."""
-    import bisect
-    md = sorted(mri)
-    idx = lambda m: m // 100 * 12 + m % 100
-    smon = [s_ // 100 for s_, _ in spans]
-    odds = lambda p: p / (1 - p)
-    def last_end(d):
-        ends = [e for s_, e in spans if e and e < d]
-        return max(ends) if ends else 0
-    # the 10-day average MRI (trading days); its highest over the window is the evidence
-    MA = {}
-    for i_, k_ in enumerate(md):
-        w_ = [mri[x_] for x_ in md[max(0, i_ - MRI_AVG + 1):i_ + 1]]
-        MA[k_] = sum(w_) / len(w_)
-    def xat(d, inclusive=False, back=6):
-        lo = max(last_end(d), add_months(d // 100, -back) * 100 + d % 100)
-        hi_ = bisect.bisect_right(md, d) if inclusive else bisect.bisect_left(md, d)
-        vals = [MA[k] for k in md[bisect.bisect_right(md, lo):hi_]]
-        return (max(vals), lo == last_end(d)) if vals else (None, False)
-    in_event = lambda d: any(s_ <= d <= (e or 99999999) for s_, e in spans)
-    ongoing_at = lambda d: any(s_ < d and (e is None or e >= d) for s_, e in spans)
-    def quiet_until(d):  # the month index from which events can come again
-        e = last_end(d)
-        return idx(e // 100) + QUIET if e else -1
-    ONG = {m: ongoing_at(m * 100 + 1) for m in months}
-    QM = {m: idx(m) < quiet_until(m * 100 + 1) for m in months}
-    def rates(upto):
-        # the rate counts whole intervals only, from the first event's start to the latest one's: the years before
-        # the first event have no known start, and the wait since the latest is the interval's job (so quiet months
-        # piling up do not pull the rate down while time runs; it updates when an event comes)
-        known = [s_ for s_ in smon if upto is None or s_ < upto]
-        n, last_m = len(known), known[-1]
-        free = [m for m in months if m <= last_m and not ONG[m]]
-        if n >= 3:
-            n, free = n - 1, [m for m in free if known[0] <= m < last_m]
-        st_ = [idx(s_) for s_ in smon if upto is None or s_ < upto]
-        iv = [b - a for a, b in zip(st_, st_[1:])][-EVEN_N:]
-        # the interval clock runs from the first event; until 10 years of such months are known, the months before
-        # it count too (otherwise a single early event makes the rate explode)
-        act = [m for m in free if not QM[m] and m > smon[0]]
-        if len(act) < 120:
-            act = [m for m in free if not QM[m]]
-        return n / len(free), st.mean(iv) if iv else 30.0, n / len(act)
-    mm = [m for m in months if m >= BAYES_FROM]
-    # the MRI looks back as far as the horizon: 6 months for 6 months (and shorter), 12 for 12
-    BACKS = (6, 12)
-    back_of = lambda k: 12 if k == 12 else 6
-    def mri_params(upto=None, back=6):
-        # a fixed curve: the factor follows the highest MRI itself, not how often 70 is passed in quiet times
-        return {"top": MRI_TOP}
-    def factors(x, par, upto):
-        # the highest MRI alone sets the factor (no guess at MRI's path: it falls when VIX jumps, which would read events
-        # into their own forecast), on a fixed curve: 1 at 50, slow above it, steep near 100, below 1 under 50
-        u = (x - MRI_PIVOT) / (MRI_FULL - MRI_PIVOT)
-        f = MRI_TOP ** ((1 if u >= 0 else -1) * abs(u) ** MRI_POW)
-        return [], f
-    def probs(m, ongoing, d, lam, fk):
-        # the interval multiplies random: 1 on the day the last event ended, rising in a straight line to EVEN_X times at
-        # the mean of the last 5 intervals (counted from the event's start), and level after it. Time runs in days
-        # (months of 30.44 days); `d` is the day after the forecast day
-        lam_r, even, lam_q = lam
-        last = max((sp for sp in spans if sp[0] < d), key=lambda sp: sp[0])
-        ymd = lambda v: date(v // 10000, v // 100 % 100, v % 100)
-        day = ymd(d - 1) if (d - 1) % 100 else ymd(d)
-        ended = bool(last[1]) and last[1] < d
-        dlen = (ymd(last[1]) - ymd(last[0])).days / 30.4375 if ended else 0.0
-        t0 = (day - ymd(last[1])).days / 30.4375 if ended else 0.0
-        def mult(t):
-            # t: months since the event ended, at the start of each month ahead
-            if not ended:
-                return 0.0
-            v = MULT_FLOOR + (EVEN_X - MULT_FLOOR) * max(0.0, t) / max(1.0, even - dlen)
-            return min(v, MULT_CAP) if MULT_CAP else v
-        # month by month: each month's interval chance, its odds times the MRI factor; k months = 1 - the chance that
-        # none of the months has an event
-        pm = [0 if ongoing else 1 - math.exp(-lam_r * mult(t0 + j)) for j in range(12)]
-        out = []
-        for k in (1, 3, 6, 12):
-            f = fk.get(k, 1)
-            pb = [(odds(p) * f) / (1 + odds(p) * f) if 0 < p < 1 else 0 for p in pm]
-            b = 1 - math.exp(-lam_r * k)
-            pi = 1 - math.prod(1 - p for p in pm[:k])
-            post = 1 - math.prod(1 - p for p in pb[:k])
-            out.append((k, post, pi, b))
-        return out
-    # now
-    par_in = mri_params(None)
-    parB = {b: mri_params(None, b) for b in BACKS}
-    lam_in = rates(None)
-    ongoing = bool(spans) and spans[-1][1] is None
-    now, since_end = xat(md[-1], inclusive=True)
-    nowB = {b: xat(md[-1], inclusive=True, back=b)[0] for b in BACKS}
-    q = []
-    fk = {k: factors(nowB[back_of(k)], parB[back_of(k)], None)[1] for k in (1, 3, 6, 12)
-          if nowB[back_of(k)] is not None and parB[back_of(k)]}
-    cur = months[-1]
-    qu = quiet_until(today + 1)
-    lr = fk.get(6)
-    bayes = {"mri6": None if now is None else round(now, 1), "mri12": None if nowB[12] is None else round(nowB[12], 1), "sinceEnd": since_end, "lastEnd": last_end(today + 1),
-             "ongoing": ongoing, "lamR": round(lam_in[0], 5),
-             "even": round(lam_in[1], 1), "evenN": EVEN_N, "shape": SHAPE, "lamQ": round(lam_in[2], 5), "pivot": MRI_PIVOT, "full": MRI_FULL, "top": MRI_TOP, "pow": MRI_POW, "from": BAYES_FROM,
-             "lr": None if lr is None else round(lr, 4), "lrK": {k: round(v, 4) for k, v in fk.items()},
-             "q": [round(v, 2) for v in q],
-             "prob": [{"k": k, "post": round(p, 5), "int": round(pi, 5), "base": round(b, 5)}
-                      for k, p, pi, b in probs(cur, ongoing, today + 1, lam_in, fk)]}
-    # backtest, day by day: the probability as the app would have shown it that day (that day's MRI, the events and
-    # data known by then), so a jump in MRI in mid-month shows the day it came
-    rows = []
-    cache = {}
-    for d in md:
-        if d < BAYES_FROM * 100 or d > today:
-            continue
-        m = d // 100
-        if m not in cache:
-            cache[m] = ({b: mri_params(m, b) for b in BACKS}, rates(m))
-        parm, lam = cache[m]
-        ong = any(s_ <= d and (e is None or e >= d) for s_, e in spans)
-        xb = {b: xat(d, inclusive=True, back=b)[0] for b in BACKS}
-        fkm = {k: factors(xb[back_of(k)], parm[back_of(k)], m)[1] for k in (1, 3, 6, 12)
-               if xb[back_of(k)] is not None and parm[back_of(k)]}
-        pr = {k: v for k, *v in probs(m, ong, d + 1, lam, fkm)}
-        rows.append([d, int(ong)] + [round(pr[k][c] * 100, 2) for c in (0, 1, 2) for k in (6, 12)])
-    # today shows the probability on the gauges
-    if rows and rows[-1][0] == today:
-        now_p = {k: v for k, *v in probs(cur, ongoing, today + 1, lam_in, fk)}
-        rows[-1] = [today, int(ongoing)] + [round(now_p[k][c] * 100, 2) for c in (0, 1, 2) for k in (6, 12)]
-    return bayes, rows
 
 
 def history():
@@ -374,13 +221,6 @@ def main():
         before = [d for d in days if d < lv[0]]
         if before:
             quote["prevClose"] = days[max(before)][3]
-    # the event probability (Bayes: interval x MRI) and its backtest; see model()
-    bayes = bt = None
-    try:
-        mri_d = {r[0]: r[7] * 100 for r in json.loads((DATA / "mri.json").read_text(encoding="utf-8"))["daily"]}
-        bayes, bt = model(spans, mri_d, [r[0] for r in rows], dl[-1])
-    except (OSError, ValueError, KeyError, st.StatisticsError, ZeroDivisionError) as e:
-        print(f"warning: bayes: {e}", file=sys.stderr)
     lastday = max(days)
     data = {
         "source": "Cboe",
@@ -388,8 +228,6 @@ def main():
         "lastDay": lastday,
         "live": {"date": lv[0], "time": lv[2], "price": lv[1][3], "high": lv[1][1], "low": lv[1][2]} if lv else None,
         "quote": quote,
-        "bayes": bayes,
-        "backtest": bt,
         "months": rows,
         "events": events,
         "eventInfo": info,

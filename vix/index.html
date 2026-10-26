@@ -164,6 +164,18 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .ax{font-family:var(--f-tick);font-stretch:82%;font-size:11px;fill:var(--muted)}
 .grid{stroke:var(--line);stroke-width:1}
 .pnote{font-size:11px;color:var(--muted);margin:6px 0 0}
+.cynow{margin:2px 0 6px}
+.cyb{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cyb small{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.cyb b{font-family:var(--f-tick);font-stretch:85%;font-size:40px;line-height:1.05;color:var(--mean);text-shadow:0 0 14px color-mix(in srgb,var(--mean) 55%,transparent)}
+.cyb b span{font-family:var(--f-body);font-size:15px;margin-left:2px;color:var(--ink2);text-shadow:none}
+.cyt{font-size:12px;color:var(--ink2);line-height:1.65;margin-top:4px}
+.cyt b{color:var(--ink)}
+.cyh{font-size:11.5px;color:var(--muted);font-weight:700;margin:10px 0 2px}
+.cystats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:8px}
+.cystats div{background:var(--panel);padding:6px 4px;text-align:center}
+.cystats small{display:block;font-size:10px;color:var(--muted)}
+.cystats b{font-family:var(--f-tick);font-stretch:85%;font-size:17px;color:var(--ink)}
 /* backtest scores */
 table.bts{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
 table.bts th{font-weight:700;color:var(--muted);font-size:11px;text-align:right;padding:3px 6px;border-bottom:1px solid var(--line)}
@@ -242,11 +254,15 @@ table.ev tr.on td{background:var(--chip)}
       <p class="pnote" data-i18n="cNote"></p>
     </section>
 
-    <section class="panel" id="probp">
-      <h2><b data-i18n="probTitle">VIXイベント発生確率</b><span id="probsub"></span></h2>
-      <div class="gauges" id="gauges"></div>
-      <div class="pvars" id="pvars"></div>
-      <p class="pnote" id="bayesnote"></p>
+    <section class="panel" id="cyclep">
+      <h2><b data-i18n="cyTitle">VIXイベントの周期</b><span id="cysub"></span></h2>
+      <div class="cynow" id="cynow"></div>
+      <div class="cyh" data-i18n="cyDist">間隔の分布（ヶ月）</div>
+      <div class="chart" id="cydist"></div>
+      <div class="cyh" data-i18n="cySeq">間隔の推移（ヶ月）</div>
+      <div class="chart" id="cyseq"></div>
+      <div class="cystats" id="cystats"></div>
+      <p class="pnote" data-i18n="cyNote"></p>
     </section>
 
    </div>
@@ -287,22 +303,6 @@ table.ev tr.on td{background:var(--chip)}
 
    </div>
    <div id="t-method" hidden>
-    <section class="panel" id="btp">
-      <h2><b data-i18n="btTitle">発生確率のバックテスト</b></h2>
-      <div class="seg" id="bthz" role="group" style="width:fit-content;margin-bottom:8px"></div>
-      <div class="seg" id="btrange" role="group" style="width:fit-content;margin-bottom:8px"></div>
-      <div class="period">
-        <input type="month" id="btfrom" aria-label="始点（年月）">
-        <span>〜</span>
-        <input type="month" id="btto" aria-label="終点（年月）">
-      </div>
-      <div class="legend" id="btlegend"></div>
-      <div class="readout" id="btread"></div>
-      <div class="chart" id="btchart"></div>
-      <table class="bts" id="btscore"></table>
-      <p class="pnote" data-i18n="btNote"></p>
-    </section>
-
     <section class="panel doc">
      <div class="l-ja">
       <h3>VIXイベントとは</h3>
@@ -321,7 +321,6 @@ table.ev tr.on td{background:var(--chip)}
         <tr><th>項目</th><th>出所</th></tr>
         <tr><td>VIX</td><td>Cboe の日次履歴（始値・高値・安値・終値）と、約15分遅れの気配値</td></tr>
         <tr><td>S&amp;P500</td><td>Cboe の日次履歴（最大震度の計算に使う）</td></tr>
-        <tr><td>MRI</td><td>MRI アプリの日次データ（発生確率の補正に使う）</td></tr>
       </table>
       <p>平日、米東部3:15からの時間外取引と、9:30〜16:15の取引時間中は5分ごとに更新する。Cboe の値は約15分遅れなので、画面に出るのは米東部3:30〜16:30ごろ。</p>
 
@@ -333,19 +332,10 @@ table.ev tr.on td{background:var(--chip)}
       <div class="eq">平常範囲の中心 ＝ √(下限 × 上限)<small>対数での中心</small></div>
       <p>対数表示では、表示している期間の中心の平均（対数）がチャートの真ん中に来る。月足高値チャートは、月足高値の対数の平均が真ん中。</p>
 
-      <h3>発生確率</h3>
-      <p>表示はベイズ確率。<b>ランダム</b>（サイコロ）を参照に、<b>インターバル</b>で確率の水準を決め、<b>MRI</b> で更新する。▼ は参照のランダム。</p>
-      <div class="eq">その月のオッズ ＝ その月のインターバルのオッズ × MRI の倍率<br>k か月以内の確率 ＝ 1 − （各月に起きない確率の積）</div>
-      <p><b>ランダム</b>：イベント中以外の毎月、同じ確率で起きると考えた場合（ポアソン）。月あたり λ ＝ 間隔の数 ÷ 最初のイベントから直近のイベントまでのイベント中以外の月数で、k か月では 1 − e<sup>−λk</sup>。</p>
-      <p><b>インターバル</b>：ランダムに倍率を掛ける。倍率は前回イベントの終了時に1（ランダムと同じ）、そこから直線で上がり、直近5回の平均インターバル m（イベント開始から数える）で2倍になる。それを過ぎたら2倍のまま（地震の長期評価のモデルと同じく、際限なく上がらずに頭打ちになる）。</p>
-      <div class="eq">月あたり h(e) ＝ λ × min(2, 1 ＋ (e − d) ÷ (m − d))<br><small style="margin:0">λ ＝ ランダムの月あたり確率　e ＝ 前回イベントの開始からの月数　d ＝ そのイベントの長さ（月）　m ＝ 直近5回の間隔の平均</small></div>
-      <p class="note">地震の長期評価の BPT モデル（間隔がたつほど確率が上がる）も試したが、バックテストではランダムに負けた。VIX イベントの間隔は8〜74か月とばらつきが大きく、周期性がないため。</p>
-      <p><b>MRI</b>：見るのは MRI の最高値 x だけ（1日の跳ね上がりに左右されないよう、10日平均の最高値）。6ヶ月以内の確率には直近6ヶ月、12ヶ月以内の確率には直近12ヶ月の最高値（前回イベントの終了からそれより短いときは終了からの最高値）。普段の月と比べた頻度などは使わず、決まった曲線で倍率に換える。50で1倍、50を超えるとゆるやかに上がり、MRI の天井（85前後）に近づくほど急に上がる（70で1.8倍、80で3.7倍、85で6倍）。50未満は1倍未満（30で0.56倍）。</p>
-      <div class="eq">倍率 ＝ 6 の (±u²) 乗　　u ＝ (x − 50) ÷ 35<br><small style="margin:0">x が50以上なら ＋、50未満なら −</small></div>
-      <p>発生確率は「k か月以内」に起きる確率なので、今の最高値は最初の月から効く。MRI の将来の動きは予想しない（MRI は VIX が跳ねると下がるので、予想に入れるとイベントを事後に読み込むことになる）。</p>
+      <h3>周期</h3>
+      <p>VIX イベントの間隔（イベントの開始月から次の開始月までの月数）を並べ、前回イベントの開始から今までの経過がその中のどこにあるかを見る。分布は過去の間隔を月数の線上に並べたもの、推移は間隔を古い順に並べたもので、右端の点線が今の経過。</p>
+      <p>あわせて、今の経過と同じ月数以上続いた過去の間隔のうち、その後6ヶ月以内・12ヶ月以内に次のイベントが来た回数を数える。間隔は8〜74ヶ月とばらつきが大きく、周期性ははっきりしないので、予測ではなく今の位置を過去と比べるためのもの。</p>
 
-      <p><b>バックテスト</b>（上）：MRI が入った2018年以降、毎日その日に出ていた確率（その時点までのデータだけで計算）と、実際のイベントを比べる。表は各イベントの前に確率がどこまで上がったか（最高値）。</p>
-      <p class="note">どの確率も過去の頻度からの推定で、予測ではない。イベントは12回と少なく、とくに MRI の倍率はイベント4回からの推定。</p>
       <h3>マグニチュード</h3>
       <p>地震のマグニチュードが振幅の対数であるのにならい、月足高値の対数が平均から何σ離れているか（z）で表す。+2σ がちょうど M7.0。イベントはピークの月の値。</p>
       <div class="eq">M ＝ 5 ＋ z　　z ＝ ( log<sub>10</sub> 高値 − μ ) ÷ σ</div>
@@ -378,7 +368,6 @@ table.ev tr.on td{background:var(--chip)}
         <tr><th>Item</th><th>Source</th></tr>
         <tr><td>VIX</td><td>Cboe daily history (open, high, low, close) and its quote, about 15 minutes delayed</td></tr>
         <tr><td>S&amp;P 500</td><td>Cboe daily history (for the max. intensity)</td></tr>
-        <tr><td>MRI</td><td>The MRI app's daily data (for the probability update)</td></tr>
       </table>
       <p>On weekdays it updates every 5 minutes in VIX's extended hours from 3:15 ET and in the session from 9:30 to 16:15 ET. Cboe's values are about 15 minutes late, so they show from about 3:30 to 16:30 ET.</p>
 
@@ -390,19 +379,10 @@ table.ev tr.on td{background:var(--chip)}
       <div class="eq">Centre of the normal range = √(low × high)<small>the centre in logs</small></div>
       <p>On the log scale, the mean (in logs) of the centre over the shown period is in the middle of the chart; on the monthly-high chart, the mean of the log of monthly highs is.</p>
 
-      <h3>Event probability</h3>
-      <p>The probability shown is Bayesian: the <b>interval</b> sets its level and the <b>MRI</b> updates it, with <b>random</b> (dice) for reference (▼).</p>
-      <div class="eq">each month's odds = that month's interval odds × MRI factor<br>chance within k months = 1 − (product of each month's chance of none)</div>
-      <p><b>Random</b>: if events came with the same chance every month outside events (Poisson): λ = intervals ÷ months outside events from the first event to the latest, and 1 − e<sup>−λk</sup> over k months.</p>
-      <p><b>Interval</b>: random times a multiplier that is 1 (random) when the last event ended, rises in a straight line to 2 at the mean m of the last 5 intervals (counted from the event's start), and stays at 2 after it (levelling off like the earthquake model rather than climbing).</p>
-      <div class="eq">monthly h(e) = λ × min(2, 1 + (e − d) ÷ (m − d))<br><small style="margin:0">λ = random's monthly chance　e = months since the last event started　d = its length in months　m = mean of the last 5 intervals</small></div>
-      <p class="note">The BPT model of long-term earthquake forecasts (the chance rising as time passes) was tried too, but lost to random in the backtest: intervals between VIX events range from 8 to 74 months, with no period to them.</p>
-      <p><b>MRI</b>: only the MRI's highest, x, counts (of its 10-day average, so a one-day spike does not set it): over the last 6 months for the 6-month chance, the last 12 for the 12-month (or since the last event ended if that is shorter). Nothing is taken from how often a level comes in quiet months: a fixed curve turns x into the factor, 1 at 50, rising slowly above it and steeply near MRI’s ceiling of about 85 (1.8 at 70, 3.7 at 80, 6 at 85), and below 1 under 50 (0.56 at 30).</p>
-      <div class="eq">factor = 6 to the (±u²)　　u = (x − 50) ÷ 35<br><small style="margin:0">+ when x is 50 or more, − below</small></div>
-      <p>The probability is for an event within k months, so today's peak counts from the first month. MRI's future path is not guessed (MRI falls when VIX jumps, so guessing it would read events in after the fact).</p>
+      <h3>Cycle</h3>
+      <p>The intervals between VIX events (months from an event’s start to the next one’s), and where the wait since the last event’s start stands among them. The distribution lays the past intervals on a line of months; the sequence shows them in order, with the current wait dotted at the end.</p>
+      <p>It also counts, of the past intervals that lasted at least as long as the current wait, how many saw the next event within 6 and within 12 more months. The intervals range from 8 to 74 months, with no clear period, so this places today against the past rather than forecasting.</p>
 
-      <p><b>Backtest</b> (above): the probability as it read each day since 2018, when MRI came in (from only the data known by then), against the events. The table shows how high it got before each event (the peak).</p>
-      <p class="note">All probabilities are estimates from past frequencies, not forecasts. There are only 12 events, and the MRI factor rests on 4 of them.</p>
       <h3>Magnitude</h3>
       <p>As earthquake magnitude is a log of amplitude, it is how many σ the log of the monthly high is above its mean (z). +2σ is exactly M7.0. An event uses its peak month.</p>
       <div class="eq">M = 5 + z　　z = ( log<sub>10</sub> high − μ ) ÷ σ</div>
@@ -432,7 +412,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../d3.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v103";
+const APP_VER="vix-v104";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -440,7 +420,7 @@ const T={
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymd:d=>`${Math.floor(d/10000)}年${Math.floor(d/100)%100}月${d%100}日`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
-  probTitle:"VIXイベント発生確率",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>`${n}ヶ月`,rnd:"ランダム",vInt:"インターバル",vMon:"か月",vIntSub:"前回イベントから",vQuiet:n=>`静穏期間 あと${n}か月`,vMriSub:"10日平均の最高値",vMriEnd:"イベント終了からの最高",since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(fi,m,fm)=>`ベイズ確率：2つの変数から計算。インターバル＝ランダムの倍率。前回イベントの終了時に1倍、直近5回の平均間隔で2倍になり、その後は2倍で一定。MRI＝MRI の10日平均の最高値（6ヶ月の確率は直近6ヶ月、12ヶ月の確率は直近12ヶ月。前回イベントの終了後に限る）を決まった曲線で倍率に換える。イベント中は0%。▼ はランダムの場合。`,ongoing:"発生中",byMonth:"月別のイベント回数",mShort:["1","2","3","4","5","6","7","8","9","10","11","12"].map(v=>v+"月"),btTitle:"発生確率のバックテスト",btIn:"全データ",btOut:"当時のデータ",lgBay:"ベイズ",lgBayK:k=>`${k}ヶ月ベイズ`,hzS:n=>`${n}ヶ月`,lgInt:"インターバルのみ",lgRnd:"ランダム",lgWin:"イベント前の期間",btEv:"イベント前",btEvN:"イベント前の最高値",btAvg:"平均",btNone:"この期間にイベントなし",btNo:"それ以外",btScore:"スコア",btHit:(k,n)=>`${k}ヶ月以内にイベント #${n}`,btMiss:k=>`${k}ヶ月以内のイベントなし`,btOpen:"結果待ち",btNote:"MRI が入った2018年以降、毎日の確率（その日の MRI と、その時点までに分かっていたイベントとデータだけで計算。後知恵なし）。網掛けはイベント開始までの期間（そこで確率が高ければ当たり）。表は各イベントの開始前（網掛け）に出ていた確率の最高値。イベントが来なかった日（外れ）は数えない。",
+  probTitle:"VIXイベント発生確率",cyTitle:"VIXイベントの周期",cySub:n=>`過去${n}回の間隔`,cyFrom:(n,ym)=>`前回イベント（#${n}・${ym}）の開始から`,cyShorter:(n,k)=>`過去${n}回の間隔のうち <b>${k}回</b> はこれより短い`,cyToMed:(m,r)=>`中央値 ${m}ヶ月まで あと <b>${r}ヶ月</b>`,cyPastMed:m=>`中央値 ${m}ヶ月を超えている`,cyAfter:(e,n,a,b)=>`${e}ヶ月以上続いた${n}回のうち、その後6ヶ月以内に次が来たのは <b>${a}回</b>、12ヶ月以内は <b>${b}回</b>`,cyLongest:"過去最長の間隔を超えている",cyNow:"今",cyMed:"中央値",cyMean:"平均",cyR5:"直近5回",cyMin:"最短",cyMax:"最長",cyDist:"間隔の分布（ヶ月）",cySeq:"間隔の推移（ヶ月）",cyNote:"間隔＝イベントの開始月から次の開始月までの月数。丸の番号は間隔の終わりのイベント（色は規模）。周期性ははっきりしないので、予測ではなく今の位置を過去と比べるためのもの。",mapTitle:"VIXイベントの震源地",bDay:"発生日",zReset:"全体表示",bEpi:"震源地",bMag:"マグニチュード",bSh:"最大震度",bPeak:"VIX最大",shNote:"マグニチュード＝5＋z（VIX月足高値の対数の偏差、+2σ＝M7.0）。最大震度＝イベント前後のS&amp;P500の最大下落率（4：5%〜、5弱：10%〜、5強：15%〜、6弱：20%〜、6強：30%〜、7：40%〜）。",peak:"最大値",shCol:"震度",magNote:"M（マグニチュード）＝5＋z。z は月足高値の対数が平均から何σ離れているか（+2σ＝M7.0）。地震と同じく対数の尺度。",mapSub:"針が刺さった場所",typeName:{g:"グレースワン",b:"ブラックスワン",p:"純粋なブラックスワン"},tapMap:"点をタップすると詳細",probNote:"地震の長期評価と同じ更新過程モデル（BPT）で、過去のイベントの間隔から推定。",hz:n=>`${n}ヶ月`,rnd:"ランダム",vInt:"インターバル",vMon:"ヶ月",vIntSub:"前回イベントから",vQuiet:n=>`静穏期間 あと${n}か月`,vMriSub:"10日平均の最高値",vMriEnd:"イベント終了からの最高",since:n=>`前回から${n}か月`,base:v=>`ランダム発生なら ${v}%`,post:v=>`MRI込み ${v}%`,bayesNote:(fi,m,fm)=>`ベイズ確率：2つの変数から計算。インターバル＝ランダムの倍率。前回イベントの終了時に1倍、直近5回の平均間隔で2倍になり、その後は2倍で一定。MRI＝MRI の10日平均の最高値（6ヶ月の確率は直近6ヶ月、12ヶ月の確率は直近12ヶ月。前回イベントの終了後に限る）を決まった曲線で倍率に換える。イベント中は0%。▼ はランダムの場合。`,ongoing:"発生中",byMonth:"月別のイベント回数",mShort:["1","2","3","4","5","6","7","8","9","10","11","12"].map(v=>v+"月"),btTitle:"発生確率のバックテスト",btIn:"全データ",btOut:"当時のデータ",lgBay:"ベイズ",lgBayK:k=>`${k}ヶ月ベイズ`,hzS:n=>`${n}ヶ月`,lgInt:"インターバルのみ",lgRnd:"ランダム",lgWin:"イベント前の期間",btEv:"イベント前",btEvN:"イベント前の最高値",btAvg:"平均",btNone:"この期間にイベントなし",btNo:"それ以外",btScore:"スコア",btHit:(k,n)=>`${k}ヶ月以内にイベント #${n}`,btMiss:k=>`${k}ヶ月以内のイベントなし`,btOpen:"結果待ち",btNote:"MRI が入った2018年以降、毎日の確率（その日の MRI と、その時点までに分かっていたイベントとデータだけで計算。後知恵なし）。網掛けはイベント開始までの期間（そこで確率が高ければ当たり）。表は各イベントの開始前（網掛け）に出ていた確率の最高値。イベントが来なかった日（外れ）は数えない。",
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high and low",lowLab:"This month's low",monthHL:m=>`High and low, ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,nCentre:"Centre",lgMonth:"This month",lgLatest:"Latest",gHigh:"High",gLow:"Low",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
@@ -448,7 +428,7 @@ const T={
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymd:d=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Math.floor(d/100)%100-1]} ${d%100}, ${Math.floor(d/10000)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
-  probTitle:"VIX event probability",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"1 month":`${n} months`,rnd:"random",vInt:"Interval",vMon:" months",vIntSub:"since the last event",vQuiet:n=>`quiet period, ${n} more months`,vMriSub:"highest 10-day average",vMriEnd:"high since the event ended",since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(fi,m,fm)=>`Bayes probability from two variables: the interval (random times a multiplier rising in a straight line from 1 at the last event's end to 2 at the mean of the last 5 intervals, then level) and the highest 10-day average MRI (over the last 6 months for 6 months, 12 for 12; since the last event ended if more recent), turned into a factor on a fixed curve; 0% during an event. ▼ is the random case.`,ongoing:"Ongoing",byMonth:"Events by calendar month",mShort:["J","F","M","A","M","J","J","A","S","O","N","D"],btTitle:"Probability backtest",btIn:"All data",btOut:"Data then",lgBay:"Bayes",lgBayK:k=>`${k}-month Bayes`,hzS:n=>`${n}M`,lgInt:"Interval only",lgRnd:"Random",lgWin:"Before an event",btEv:"Before events",btEvN:"Highest before the event",btAvg:"Average",btNone:"No event in this period",btNo:"Other",btScore:"Score",btHit:(k,n)=>`event #${n} within ${k} months`,btMiss:k=>`no event within ${k} months`,btOpen:"pending",btNote:"The probability each day since 2018, when MRI came in, from that day’s MRI and only the events and data known by then (no hindsight). Shading is the period before each event’s start (a high probability there is a hit). The table shows, for each event, the highest probability in the shaded period before its start. Days with no event to follow (false alarms) do not count.",
+  probTitle:"VIX event probability",cyTitle:"VIX event cycle",cySub:n=>`${n} past intervals`,cyFrom:(n,ym)=>`since the last event (#${n}, ${ym}) started`,cyShorter:(n,k)=>`<b>${k}</b> of the ${n} past intervals were shorter`,cyToMed:(m,r)=>`<b>${r} months</b> to the median of ${m}`,cyPastMed:m=>`past the median of ${m} months`,cyAfter:(e,n,a,b)=>`of the ${n} that lasted ${e} months or more, the next came within 6 more months <b>${a}</b> times, within 12 <b>${b}</b>`,cyLongest:"longer than any past interval",cyNow:"Now",cyMed:"Median",cyMean:"Mean",cyR5:"Last 5",cyMin:"Shortest",cyMax:"Longest",cyDist:"Distribution of intervals (months)",cySeq:"Intervals in order (months)",cyNote:"Interval = months from an event’s start to the next one’s. The number in each dot is the event ending the interval (colour: its scale). There is no clear period, so this places today against the past rather than forecasting.",mapTitle:"VIX event epicentres",bDay:"Date",zReset:"Reset",bEpi:"Epicentre",bMag:"Magnitude",bSh:"Max. intensity",bPeak:"VIX peak",shNote:"Magnitude = 5 + z (deviation of the log of the VIX monthly high; +2σ = M7.0). Max. intensity = the S&amp;P 500\u2019s largest fall around the event, on Japan\u2019s shindo scale (4: 5%+, 5 lower: 10%+, 5 upper: 15%+, 6 lower: 20%+, 6 upper: 30%+, 7: 40%+).",peak:"Peak",shCol:"Int.",magNote:"M (magnitude) = 5 + z, where z is how many σ the log of the monthly high is above its mean (+2σ = M7.0). A log scale, like earthquake magnitude.",mapSub:"where the needle struck",typeName:{g:"Grey swan",b:"Black swan",p:"Pure black swan"},tapMap:"Tap a point for details",probNote:"Renewal model (BPT), as in long-term earthquake forecasts, fitted to the intervals between past events.",hz:n=>n===1?"1 month":`${n} months`,rnd:"random",vInt:"Interval",vMon:" months",vIntSub:"since the last event",vQuiet:n=>`quiet period, ${n} more months`,vMriSub:"highest 10-day average",vMriEnd:"high since the event ended",since:n=>`${n} months since the last`,base:v=>`if random ${v}%`,post:v=>`with MRI ${v}%`,bayesNote:(fi,m,fm)=>`Bayes probability from two variables: the interval (random times a multiplier rising in a straight line from 1 at the last event's end to 2 at the mean of the last 5 intervals, then level) and the highest 10-day average MRI (over the last 6 months for 6 months, 12 for 12; since the last event ended if more recent), turned into a factor on a fixed curve; 0% during an event. ▼ is the random case.`,ongoing:"Ongoing",byMonth:"Events by calendar month",mShort:["J","F","M","A","M","J","J","A","S","O","N","D"],btTitle:"Probability backtest",btIn:"All data",btOut:"Data then",lgBay:"Bayes",lgBayK:k=>`${k}-month Bayes`,hzS:n=>`${n}M`,lgInt:"Interval only",lgRnd:"Random",lgWin:"Before an event",btEv:"Before events",btEvN:"Highest before the event",btAvg:"Average",btNone:"No event in this period",btNo:"Other",btScore:"Score",btHit:(k,n)=>`event #${n} within ${k} months`,btMiss:k=>`no event within ${k} months`,btOpen:"pending",btNote:"The probability each day since 2018, when MRI came in, from that day’s MRI and only the events and data known by then (no hindsight). Shading is the period before each event’s start (a high probability there is a hit). The table shows, for each event, the highest probability in the shaded period before its start. Days with no event to follow (false alarms) do not count.",
   note:"Thresholds: mean + kσ of the log of monthly highs. Fixed at 1990–2019 values until 2019, then the latest 30 years.",
   loadFail:"Could not load the data. Please reopen in a while."}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
@@ -461,7 +441,7 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const COL={ink:css("--ink"),s1:css("--s1"),s2:css("--s2"),s3:css("--s3"),mean:css("--mean"),ev:css("--ev"),line:css("--line")};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 
-let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null,bh:+store.get("vixBH","12"),btr:store.get("vixBTR","ALL"),btf:store.get("vixBTF",""),btt:store.get("vixBTT",""),bpick:null};
+let D=null,M=[],state={r:store.get("vixRange","all"),cr:store.get("vixCRange","5"),tab:store.get("vixTab","vix"),sc:store.get("vixScale","log"),pick:null,cpick:null};
 // month rows: {m, h, l, c, th:[mean,+1σ,+2σ,+3σ]}
 // neon glow for lines and dots
 const GLOW=`<defs><filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
@@ -502,45 +482,46 @@ function applyLang(){
 }
 
 // the probability comes with the data (update_vix.py: random, interval with a quiet period after each event, MRI)
-function eventProb(){
-  const B=D.bayes;if(!B||!B.prob)return null;
-  const ev=D.events,e=mIdx(M[M.length-1].m)-mIdx(ev[ev.length-1]),od=p=>p/(1-p);
-  return {e,ongoing:!!B.ongoing,quiet:B.quietLeft||0,rows:B.prob.map(r=>({k:r.k,p:r.int,base:r.base,post:r.post,
-    fInt:r.int>0&&r.int<1?od(r.int)/od(r.base):null,fMri:(B.lrK&&B.lrK[r.k])||1}))};
+/* ---------- the cycle: intervals between VIX events (start to start, months) and where we stand ---------- */
+function renderCycle(){
+  const EP=episodes(),box=$("cyclep");if(EP.length<2){box.hidden=true;return}box.hidden=false;
+  const st=EP.map(e=>mIdx(e.m)),IV=EP.slice(1).map((e,i)=>({n:i+2,m:e.m,len:st[i+1]-st[i],peak:e.peak}));
+  const L=IV.map(x=>x.len),cur=M[M.length-1].m,last=EP[EP.length-1],lastNo=EP.length;
+  const info=(D.eventInfo||{})[last.m]||{},ongoing=!info.end,el=mIdx(cur)-mIdx(last.m);
+  const med=d3.median(L),mean=d3.mean(L),r5=d3.mean(L.slice(-5)),mn=d3.min(L),mx=d3.max(L);
+  const shorter=L.filter(v=>v<el).length,beyond=L.filter(v=>v>=el),w6=beyond.filter(v=>v<=el+6).length,w12=beyond.filter(v=>v<=el+12).length;
+  const f1=v=>Number.isInteger(v)?String(v):v.toFixed(1);
+  $("cysub").textContent=t("cySub",IV.length);
+  // where we stand
+  $("cynow").innerHTML=ongoing?`<div class="cyb"><small>${t("cyFrom",lastNo,t("ym",last.m))}</small><b style="color:${COL.s3}">${t("ongoing")}</b></div>`
+    :`<div class="cyb"><small>${t("cyFrom",lastNo,t("ym",last.m))}</small><b>${el}<span>${t("vMon")}</span></b></div>
+      <div class="cyt">${t("cyShorter",IV.length,shorter)}<br>${el<med?t("cyToMed",f1(med),f1(med-el)):t("cyPastMed",f1(med))}<br>${beyond.length?t("cyAfter",el,beyond.length,w6,w12):t("cyLongest")}</div>`;
+  // distribution: each past interval on a line of months, the wait so far marked
+  {const el2=$("cydist"),W=Math.max(300,el2.clientWidth||340),H=118,ML=10,MR=14,base=78,PW=W-ML-MR;
+   const top=Math.max(mx,el)+4,x=v=>ML+PW*v/top;let g="";
+   for(let v=0;v<=top;v+=12)g+=`<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="22" y2="${base}" opacity=".45"/><text class="ax" x="${x(v)}" y="${base+16}" text-anchor="middle">${v}</text>`;
+   g+=`<line x1="${x(0)}" x2="${x(top)}" y1="${base}" y2="${base}" stroke="var(--line)"/>`;
+   if(!ongoing)g+=`<rect x="${x(0)}" y="22" width="${x(el)-x(0)}" height="${base-22}" fill="${COL.mean}" opacity=".10"/>`;
+   g+=`<line x1="${x(med)}" x2="${x(med)}" y1="22" y2="${base}" stroke="var(--ink2)" stroke-dasharray="3 3" opacity=".7"/><text class="ax" x="${x(med)}" y="18" text-anchor="middle">${t("cyMed")} ${f1(med)}</text>`;
+   // dots, stacked where intervals are close
+   const placed=[];IV.forEach(o=>{let lv=0;while(placed.some(p=>p.lv===lv&&Math.abs(x(p.len)-x(o.len))<16))lv++;placed.push({...o,lv})});
+   placed.forEach(o=>{const cy=base-9-o.lv*17,c=evColor(o.peak);
+     g+=`<circle cx="${x(o.len)}" cy="${cy}" r="7" fill="${c}" opacity=".9" filter="url(#neon)"/><text x="${x(o.len)}" y="${cy+3.5}" text-anchor="middle" style="font:700 9px var(--f-tick);fill:#0a0a1a">${o.n}</text>`});
+   if(!ongoing)g+=`<line x1="${x(el)}" x2="${x(el)}" y1="14" y2="${base+4}" stroke="${COL.mean}" stroke-width="2.5" filter="url(#neon)"/><text x="${x(el)}" y="${H-4}" text-anchor="middle" style="font:700 11px var(--f-body);fill:${COL.mean}">${t("cyNow")} ${el}</text>`;
+   el2.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cyTitle")}">${GLOW}${g}</svg>`}
+  // in order: each interval, and the current wait growing at the end
+  {const el2=$("cyseq"),W=Math.max(300,el2.clientWidth||340),H=Math.round(W*.48),ML=6,MR=6,MT=16,MB=20,PW=W-ML-MR,PH=H-MT-MB;
+   const bars=IV.map(o=>({lab:"#"+o.n,len:o.len,c:evColor(o.peak)})).concat(ongoing?[]:[{lab:t("cyNow"),len:el,c:COL.mean,now:1}]);
+   const top=Math.max(...bars.map(b=>b.len))*1.1,bw=PW/bars.length,y=v=>MT+PH-PH*v/top;let g="";
+   [24,48,72].forEach(v=>{if(v<top)g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".4"/>`});
+   g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(mean)}" y2="${y(mean)}" stroke="var(--ink2)" stroke-dasharray="3 3" opacity=".6"/><text class="ax" x="${ML+PW}" y="${y(mean)-3}" text-anchor="end">${t("cyMean")} ${f1(mean)}</text>`;
+   bars.forEach((b,i)=>{const x0=ML+bw*i+bw*.16,w=bw*.68;
+     g+=b.now?`<rect x="${x0}" y="${y(b.len)}" width="${w}" height="${y(0)-y(b.len)}" rx="2" fill="none" stroke="${b.c}" stroke-width="1.6" stroke-dasharray="3 2" filter="url(#neon)"/>`
+       :`<rect x="${x0}" y="${y(b.len)}" width="${w}" height="${y(0)-y(b.len)}" rx="2" fill="${b.c}" opacity=".85"/>`;
+     g+=`<text x="${x0+w/2}" y="${y(b.len)-4}" text-anchor="middle" class="ax" style="fill:${b.now?COL.mean:"var(--ink)"};font-weight:700">${b.len}</text><text x="${x0+w/2}" y="${H-5}" text-anchor="middle" class="ax"${b.now?` style="fill:${COL.mean}"`:""}>${b.lab}</text>`});
+   el2.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("cySeq")}">${GLOW}${g}</svg>`}
+  $("cystats").innerHTML=[[t("cyMin"),mn],[t("cyMed"),med],[t("cyMean"),mean],[t("cyR5"),r5],[t("cyMax"),mx]].map(([l,v])=>`<div><small>${l}</small><b>${f1(v)}</b></div>`).join("");
 }
-const pColor=p=>d3.interpolateRgbBasis(["#3DFF6E","#C8F03A","#FFB020","#FF6B3A","#FF3B5C"])(Math.min(1,p/.6));
-function gaugeSVG(p,id,post){
-  const W=160,H=92,cx=80,cy=82,R=66,sw=9,ang=v=>Math.PI-Math.PI*Math.min(1,Math.max(0,v));
-  const pt=(v,r)=>[cx+r*Math.cos(ang(v)),cy-r*Math.sin(ang(v))];
-  const arc=(v0,v1,r)=>{const [x0,y0]=pt(v0,r),[x1,y1]=pt(v1,r);return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`};
-  let g=`<defs><linearGradient id="gg${id}" gradientUnits="userSpaceOnUse" x1="${cx-R}" x2="${cx+R}" y1="0" y2="0"><stop offset="0" stop-color="#3DFF6E"/><stop offset=".45" stop-color="#FFB020"/><stop offset="1" stop-color="#FF3B5C"/></linearGradient>
-    <filter id="gl${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter></defs>`;
-  g+=`<path d="${arc(0,1,R)}" fill="none" stroke="#1f1f44" stroke-width="${sw}" stroke-linecap="round"/>`;
-  [.25,.5,.75].forEach(v=>{const [x0,y0]=pt(v,R-sw/2-4),[x1,y1]=pt(v,R-sw/2-9);g+=`<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" stroke="#3a3a6a" stroke-width="1.4" stroke-linecap="round"/>`});
-  if(p>.002){g+=`<path d="${arc(0,p,R)}" fill="none" stroke="url(#gg${id})" stroke-width="${sw}" stroke-linecap="round" opacity=".6" filter="url(#gl${id})"/><path d="${arc(0,p,R)}" fill="none" stroke="url(#gg${id})" stroke-width="${sw}" stroke-linecap="round"/>`}
-  const [ex,ey]=pt(p,R);g+=`<circle cx="${ex.toFixed(2)}" cy="${ey.toFixed(2)}" r="3.2" fill="#fff"/>`;
-  // the reference (random) probability: a pointer just outside the arc
-  if(post!=null){const a=ang(post),[tx,ty]=pt(post,R+sw/2+2),[l1x,l1y]=pt(post,R+sw/2+10),ox=7*Math.sin(a)/2,oy=7*Math.cos(a)/2;
-    g+=`<path d="M${tx.toFixed(2)} ${ty.toFixed(2)}L${(l1x+ox).toFixed(2)} ${(l1y+oy).toFixed(2)}L${(l1x-ox).toFixed(2)} ${(l1y-oy).toFixed(2)}Z" fill="#d8d8ea" style="filter:drop-shadow(0 0 3px rgba(255,255,255,.6))"/>`}
-  return `<svg viewBox="-6 -10 ${W+12} ${H+10}" aria-hidden="true">${g}</svg>`;
-}
-function renderProb(){
-  const P=eventProb();$("probp").hidden=!P;if(!P)return;
-  $("probsub").textContent=P.ongoing?t("ongoing"):"";
-  // the two variables take the colour of their state: interval green in the quiet period, red during an event, and
-  // in between by its monthly chance against random (half: green, 1.75 times: orange, 3 times: red); MRI from green at 50 to red at 85
-  const B=D.bayes||{},x=B.mri12!=null?B.mri12:B.mri6,w=x==null?0:Math.max(0,Math.min(1,(x-(B.pivot||50))/((B.full||85)-(B.pivot||50))));
-  const r1=P.rows[0],hr=r1.base>0?r1.p/r1.base:1,ci=P.ongoing?COL.s3:P.quiet?COL.s1:d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(Math.max(0,Math.min(1,(hr-.5)/2.5))),cm=x==null?"#3a3a6a":d3.interpolateRgbBasis([COL.s1,COL.s2,COL.s3])(w);
-  $("pvars").innerHTML=`<div style="--vc:${ci}"><small>${t("vInt")}</small><b>${P.e}<span>${t("vMon")}</span></b><i>${P.ongoing?t("ongoing"):P.quiet?t("vQuiet",P.quiet):t("vIntSub")}</i></div><div style="--vc:${cm}"><small>MRI</small><span class="mri2">${[[6,"mri6"],[12,"mri12"]].map(([h,k])=>`<b><em>${t("hzS",h)}</em>${D.bayes&&D.bayes[k]!=null?D.bayes[k].toFixed(1):"–"}</b>`).join("")}</span><i>${t(D.bayes&&D.bayes.sinceEnd?"vMriEnd":"vMriSub")}</i></div>`;
-  {const r1=P.rows[0];$("bayesnote").textContent=t("bayesNote",r1.fInt!=null?r1.fInt.toFixed(2):"–",D.bayes?D.bayes.mri6.toFixed(1):"–",r1.fMri.toFixed(2));}
-  // only 6 and 12 months: shorter ones barely move and read as forecasts of timing
-  $("gauges").innerHTML=P.rows.filter(r=>r.k>=6).map((r,i)=>{const c=pColor(r.post),v=r.post*100,f=x=>x<.001?"<0.1":x*100<10?(x*100).toFixed(1):(x*100).toFixed(0);
-    return `<div class="gauge" style="--gc:${c}">${gaugeSVG(r.post,i,r.base)}<div class="pv" style="color:${c}">${v===0?"0":v<10?v.toFixed(1):v.toFixed(0)}<small>%</small></div><div class="hz">${t("hz",r.k)}</div>
-      <div class="gx"><span class="gm"><i></i>${t("rnd")} ${f(r.base)}%</span></div></div>`}).join("");
-}
-
-// the latest VIX: Cboe's delayed quote, with the regular session (9:30–16:15 ET) and the extended one (from 3:15 ET);
-// values show about 15 minutes late, so on screen 3:30 to 16:30 ET (16:30 to 5:30 in Japan in US summer time)
 function nyNow(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",weekday:"short",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric"}).formatToParts(d).forEach(x=>p[x.type]=x.value);return {wd:p.weekday,ymd:`${p.year}-${p.month}-${p.day}`,min:(+p.hour%24)*60+ +p.minute}}
 const inHours=(d=new Date())=>{const p=nyNow(d);return !["Sat","Sun"].includes(p.wd)&&p.min>=210&&p.min<990};
 function nextStart(now=new Date()){for(let k=0;k<8;k++){const d=new Date(now.getTime()+k*864e5),p=nyNow(d),c=nyDate(`${p.ymd} 03:30`);if(!["Sat","Sun"].includes(p.wd)&&c>now)return c}return null}
@@ -771,75 +752,14 @@ function renderTabs(){$("t-vix").hidden=state.tab!=="vix";$("t-ev").hidden=state
   document.querySelectorAll("#tabs [data-tab]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab))}
 // backtest: the probability at the start of each month against when events came
 const HZ=[6,12];
-const BTR=[["3M","r3M",63],["1Y","r1Y",252],["3Y","r3Y",756],["5Y","r5Y",1260],["ALL","rALL",0]];  // trading days
-const ymS=m=>`${Math.floor(m/100)}-${String(m%100).padStart(2,"0")}`;  // 202610 -> "2026-10"
-// a date (yyyymmdd) moved by k months
-const addM=(d,k)=>{let y=Math.floor(d/10000),mo=Math.floor(d/100)%100+k;y+=Math.floor((mo-1)/12);mo=((mo-1)%12+12)%12+1;return y*10000+mo*100+d%100};
-function renderBacktest(){
-  const BA=D.backtest;$("btp").hidden=!BA||!BA.length;if(!BA||!BA.length)return;
-  // the period: a span up to the latest day, or the picked start and end months
-  $("btrange").innerHTML=BTR.map(([key,l])=>`<button type="button" data-btr="${key}" aria-pressed="${key===state.btr}">${t(l)}</button>`).join("");
-  let B=BA;
-  if(state.btr==="CUSTOM"&&state.btf&&state.btt){const c=BA.filter(r=>ymS(Math.floor(r[0]/100))>=state.btf&&ymS(Math.floor(r[0]/100))<=state.btt);if(c.length>=2)B=c}
-  else{const r=BTR.find(x=>x[0]===state.btr);if(r&&r[2])B=BA.slice(-r[2])}
-  {const fm=$("btfrom"),tm=$("btto");[fm,tm].forEach(i=>{i.min=ymS(Math.floor(BA[0][0]/100));i.max=ymS(Math.floor(BA[BA.length-1][0]/100))});
-   if(document.activeElement!==fm)fm.value=ymS(Math.floor(B[0][0]/100));if(document.activeElement!==tm)tm.value=ymS(Math.floor(B[B.length-1][0]/100))}
-  // rows, one per trading day: [yyyymmdd, during an event, Bayes 6/12, interval 6/12, random 6/12]
-  const k=HZ.includes(state.bh)?state.bh:12,j=k===12?1:0,col={bay:2+j,int:4+j,rnd:6+j};
-  $("bthz").innerHTML=HZ.map(h=>`<button type="button" data-h="${h}" aria-pressed="${h===k}">${t("lgBayK",h)}</button>`).join("");
-  const CB=COL.mean,CI="#7fa8ff",CR="#8a8aa6";
-  $("btlegend").innerHTML=[[CB,t("lgBayK",k),""],[CI,t("lgInt"),"d"],[CR,t("lgRnd"),"d"],["rgba(255,176,32,.35)",t("lgWin"),"sq"]]
-    .map(([c,l,c2])=>`<span><i class="${c2}" style="--c:${c}"></i>${l}</span>`).join("");
-  const box=$("btchart"),W=Math.max(300,box.clientWidth),H=Math.round(W*.62),ML=4,MR=32,MT=14,MB=22,PW=W-ML-MR,PH=H-MT-MB;
-  const n=B.length,x=i=>ML+PW*i/(n-1),top=Math.min(100,Math.ceil(d3.max(B,r=>Math.max(r[col.bay],r[col.int]))/10)*10||10);
-  const y=d3.scaleLinear().domain([0,top]).range([MT+PH,MT]);
-  const last=BA[BA.length-1][0];
-  // events by their start day
-  const EP=episodes().map(e=>({...e,day:((D.eventInfo||{})[e.m]||{}).day||e.m*100+1}));
-  const firstAt=d=>{const i=B.findIndex(r=>r[0]>=d);return i<0?null:i},lastAt=d=>{let i=-1;B.forEach((r,q)=>{if(r[0]<=d)i=q});return i<0?null:i};
-  let g="";
-  // the k months before each event's start: where a forecast for k months is a hit
-  EP.forEach(e=>{const i0=firstAt(addM(e.day,-k)),i1=lastAt(e.day);if(i0==null||i1==null||i1<i0)return;const c=evColor(e.peak),hw=PW/(n-1)/2;
-    g+=`<rect x="${x(i0)-hw}" y="${MT}" width="${x(i1)-x(i0)+2*hw}" height="${PH}" fill="${c}" opacity=".16"/>`});
-  y.ticks(5).forEach(v=>{g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".6"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}%</text>`});
-  // axis: years for long spans, months for short ones
-  const yrs=n/252,step=yrs>24?5:yrs>12?2:1;
-  if(n>500)B.forEach((r,i)=>{const yr=Math.floor(r[0]/10000);if((i?yr!==Math.floor(B[i-1][0]/10000):Math.floor(r[0]/100)%100===1)&&yr%step===0)g+=`<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${yr}</text>`});
-  else B.forEach((r,i)=>{const mo=Math.floor(r[0]/100)%100;if(!i||mo===Math.floor(B[i-1][0]/100)%100)return;if(n>130&&mo%3!==1)return;
-    g+=`<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${mo===1?String(Math.floor(r[0]/10000)).slice(2)+"/":""}${mo}</text>`});
-  const line=(c,ci,w,dash,op,gl)=>`<path d="${B.map((r,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(r[c]).toFixed(1)).join("")}" fill="none" stroke="${ci}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""} opacity="${op}"${gl?' filter="url(#neon)"':""}/>`;
-  g+=line(col.rnd,CR,1.2,"4 3",.9)+line(col.int,CI,1.1,"3 2",.8)+line(col.bay,CB,1.7,"",1,1);
-  // event starts: a line and the event number
-  EP.forEach((e,q)=>{const i=firstAt(e.day);if(i==null||B[i][0]>addM(e.day,1))return;const c=evColor(e.peak);
-    g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${MT}" y2="${MT+PH}" stroke="${c}" stroke-width="1.4" filter="url(#neon)"/><text class="ax" x="${x(i)}" y="${MT-3}" text-anchor="middle" style="fill:${c};font-size:10px">${q+1}</text>`});
-  let pi=n-1;if(state.bpick!=null){const q=B.findIndex(r=>r[0]===state.bpick);if(q>=0)pi=q}
-  const pr=B[pi];
-  if(state.bpick!=null)g+=`<line x1="${x(pi)}" x2="${x(pi)}" y1="${MT}" y2="${MT+PH}" stroke="${COL.ink}" stroke-dasharray="3 3" opacity=".7"/><circle cx="${x(pi)}" cy="${y(pr[col.bay])}" r="3.5" fill="none" stroke="${COL.ink}" stroke-width="1.5"/>`;
-  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("btTitle")}">${GLOW}${g}</svg>`;
-  // did an event start within k months of the picked day?
-  const within=d=>EP.findIndex(e=>e.day>=d&&e.day<addM(d,k));
-  const hit=within(pr[0]),open=addM(pr[0],k)>last;
-  const f=v=>v==null||isNaN(v)?"—":v<10?v.toFixed(1):v.toFixed(0);
-  $("btread").innerHTML=`<div><b>${t("ymd",pr[0])}</b>${pr[1]?`<b style="color:${COL.s3}">${t("ongoing")}</b>`:hit>=0?`<b style="color:${evColor(EP[hit].peak)}">${t("btHit",k,hit+1)}</b>`:`<span>${open?t("btOpen"):t("btMiss",k)}</span>`}</div><div><small>${t("lgBayK",k)}</small> <b style="color:${CB}">${f(pr[col.bay])}%</b><small>${t("vInt")}</small> <b>${f(pr[col.int])}%</b><small>${t("lgRnd")}</small> <b>${f(pr[col.rnd])}%</b></div>`;
-  // for each event, the highest probability in the k months before its start (shown in the period, window complete,
-  // outside events): what matters is that it got high at some point, not the average; false alarms do not count
-  const peaks=[];EP.forEach((e,q)=>{const lo=addM(e.day,-k);if(lo<BA[0][0]||lo<B[0][0]||e.day>B[B.length-1][0])return;
-    const W_=B.filter(r=>!r[1]&&r[0]>=lo&&r[0]<e.day);if(!W_.length)return;
-    peaks.push({q,e,v:[col.bay,col.int,col.rnd].map(c=>d3.max(W_,r=>r[c]))})});
-  const pc=v=>v==null||isNaN(v)?"—":f(v)+"%";
-  $("btscore").innerHTML=`<tr><th>${t("btEvN")}</th><th style="color:${CB}">${t("lgBayK",k)}</th><th style="color:${CI}">${t("vInt")}</th><th style="color:${CR}">${t("lgRnd")}</th></tr>`
-    +peaks.map(p=>`<tr><td><span style="color:${evColor(p.e.peak)}">#${p.q+1}</span> ${t("ym",p.e.m)}</td>${p.v.map(v=>`<td>${pc(v)}</td>`).join("")}</tr>`).join("")
-    +(peaks.length?`<tr class="avg"><td>${t("btAvg")}</td>${[0,1,2].map(j=>`<td>${pc(d3.mean(peaks,p=>p.v[j]))}</td>`).join("")}</tr>`:`<tr><td colspan="4" style="text-align:center;color:var(--muted)">${t("btNone")}</td></tr>`);
-  box._geo={W,idx:cx=>Math.max(0,Math.min(n-1,Math.round((cx-ML)/PW*(n-1)))),set:i=>{const d=B[i][0];if(state.bpick!==d){state.bpick=d;renderBacktest()}}};
-}
 
 function renderAll(){
-  applyLang();renderTabs();markScale();renderLatest();renderProb();renderTop();renderLegend();renderChart();renderBacktest();renderCandle();renderMap();renderEvents();renderByMonth();
+  applyLang();renderTabs();markScale();renderLatest();renderCycle();renderTop();renderLegend();renderChart();renderCandle();renderMap();renderEvents();renderByMonth();
   document.querySelectorAll("#range [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.r));
 }
 
 // charts: a tap picks a month, sliding sideways moves it, a vertical swipe scrolls and keeps it (as in the MRI app)
-["chart","cchart","btchart"].forEach(id=>{const el=$(id);let t=null;
+["chart","cchart"].forEach(id=>{const el=$(id);let t=null;
   const at=e=>{const g=el._geo,svg=el.querySelector("svg");if(!g||!svg)return;const r=svg.getBoundingClientRect();g.set(g.idx((e.clientX-r.left)*g.W/r.width))};
   el.addEventListener("pointerdown",e=>{t={x:e.clientX,y:e.clientY,id:e.pointerId,slide:false}});
   el.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"&&!t){at(e);return}if(!t||e.pointerId!==t.id)return;
@@ -852,24 +772,18 @@ document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.map
 document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
   if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.pick==null&&state.cpick==null&&state.bpick==null))return;
-  state.pick=null;state.cpick=null;state.bpick=null;if(D){renderChart();renderBacktest();renderCandle();renderMap();markRow()}},true);
+  state.pick=null;state.cpick=null;if(D){renderChart();renderCandle();renderMap();markRow()}},true);
 $("range").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.r=b.dataset.r;store.set("vixRange",state.r);renderAll()});
 document.querySelectorAll(".scseg").forEach(el=>el.addEventListener("click",e=>{const b=e.target.closest("[data-sc]");if(!b)return;state.sc=b.dataset.sc;store.set("vixScale",state.sc);markScale();renderChart();renderCandle()}));
 function markScale(){document.querySelectorAll(".scseg [data-sc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sc===state.sc))}
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b||b.dataset.tab===state.tab)return;state.tab=b.dataset.tab;store.set("vixTab",state.tab);
-  renderTabs();window.scrollTo(0,0);if(D){if(state.tab==="vix"){renderCandle();renderProb();renderTop()}else if(state.tab==="ev"){renderChart();renderMap();renderEvents();renderByMonth()}else renderBacktest()}});
-$("btrange").addEventListener("click",e=>{const b=e.target.closest("[data-btr]");if(!b)return;state.btr=b.dataset.btr;store.set("vixBTR",state.btr);state.bpick=null;renderBacktest()});
-// picking either month switches to that period
-function pickBtPeriod(){let f=$("btfrom").value,to=$("btto").value;if(!f||!to||!D)return;if(f>to)[f,to]=[to,f];
-  state.btr="CUSTOM";state.btf=f;state.btt=to;state.bpick=null;store.set("vixBTR","CUSTOM");store.set("vixBTF",f);store.set("vixBTT",to);renderBacktest()}
-$("btfrom").addEventListener("change",pickBtPeriod);$("btto").addEventListener("change",pickBtPeriod);
-$("bthz").addEventListener("click",e=>{const b=e.target.closest("[data-h]");if(!b)return;state.bh=+b.dataset.h;store.set("vixBH",state.bh);renderBacktest()});
+  renderTabs();window.scrollTo(0,0);if(D){if(state.tab==="vix"){renderCandle();renderCycle();renderTop()}else if(state.tab==="ev"){renderChart();renderMap();renderEvents();renderByMonth()}}});
 $("crange").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(!b)return;state.cr=b.dataset.r;store.set("vixCRange",state.cr);renderCandle()});
 $("evchips").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;state.pick=+b.dataset.m;renderMap();renderChart();markRow()});
 $("evbody").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const m=+tr.dataset.m;state.pick=m;
   if(!rangeRows().some(r=>r.m===m)){state.r="all";store.set("vixRange","all")}renderAll();$("map").scrollIntoView({behavior:"smooth",block:"start"})});
 $("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;store.set("lang",LANG);D?renderAll():applyLang()});
-let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(D){renderTop();renderByMonth();renderChart();renderBacktest();renderCandle();renderMap()}},150)});
+let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(D){renderTop();renderByMonth();renderChart();renderCandle();renderMap();renderCycle()}},150)});
 
 async function load(){
   try{
