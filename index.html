@@ -684,7 +684,7 @@ function renderSignals(){
     return`<tr>${e.at.map((i,k)=>`<td style="${i!=null?`color:${C[k]}`:""}">${i!=null?sd(i):"–"}</td>`).join("")}<td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:sd(e.off)}</td><td class="${ch>=0?"up":"dn"}">${pc(ch)}</td></tr>`}).join("");
   hb.innerHTML=`<h2><i class="h2t">${t("sigHist")}</i> <span>${t("since2018")}</span></h2>
     <div class="seg" id="sigk" role="group">${SG.map(([key,name])=>`<button type="button" data-sigk="${key}" aria-pressed="${key===k}">${name}</button>`).join("")}</div>
-    <div class="shs"><table><thead><tr>${C.map((c,k)=>`<th style="color:${c}">Lv. ${k+1}<small>${th[k]}</small></th>`).join("")}<th>${t("sigReset")}</th><th>S&amp;P500</th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="none">${t("sigNone")}</td></tr>`}</tbody></table></div>`;
+    <div class="shs"><table><thead><tr>${C.map((c,i)=>`<th style="color:${c}">${k==="tbub"?`Lv. ${i+1}<small>${th[i]}</small>`:th[i]}</th>`).join("")}<th>${t("sigReset")}</th><th>S&amp;P500</th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="none">${t("sigNone")}</td></tr>`}</tbody></table></div>`;
 }
 const md0=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
 function renderTop(){
@@ -991,7 +991,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v104";
+const APP_VER="mri-v105";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
