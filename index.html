@@ -716,12 +716,12 @@ function renderChart(){
 /* ---------- monthly candles ---------- */
 const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60],["ALL","rALL",0]];
 function monthBars(){const M=[];DAYS.forEach(b=>{const m=b.d.slice(0,7),v=b.mri,c=M[M.length-1];
-  if(!c||c.m!==m)M.push({m,o:v,h:v,l:v,c:v,pr:b.pr});else{c.h=Math.max(c.h,v);c.l=Math.min(c.l,v);c.c=v;if(b.pr!=null)c.pr=b.pr}});return M}
+  if(!c||c.m!==m)M.push({m,o:v,h:v,l:v,c:v,spx:b.spx});else{c.h=Math.max(c.h,v);c.l=Math.min(c.l,v);c.c=v;if(b.spx!=null)c.spx=b.spx}});return M}
 function renderMonthly(){
   $("mrange").innerHTML=MRANGES.map(([k,l])=>`<button type="button" data-mrange="${k}" aria-pressed="${k===state.mrange}">${t(l)}</button>`).join("");
   const el=$("mchart"),all=monthBars(),r=MRANGES.find(x=>x[0]===state.mrange)||MRANGES[1],B=r[2]?all.slice(-r[2]):all,n=B.length;
   if(!n){el.innerHTML="";return}
-  const W=Math.max(300,el.clientWidth),PH=W<560?Math.round(W*.62)-28:300,ML=2,MR=24,MT=6,MB=22,PW=W-ML-MR,H=MT+PH+MB;
+  const W=Math.max(300,el.clientWidth),PH=W<560?Math.round(W*.62)-28:300,ML=34,MR=24,MT=6,MB=22,PW=W-ML-MR,H=MT+PH+MB;
   const sl=PW/n,x=i=>ML+sl*(i+.5),bw=Math.max(1,Math.min(sl*.66,14)),y=d3.scaleLinear().domain([0,1]).range([MT+PH,MT]);
   let g="",p="";
   [[0,.2,"l1"],[.2,.4,"l2"],[.4,.6,"l3"],[.6,.8,"l4"],[.8,1,"l5"]].forEach(([a,b,c])=>{g+=`<rect x="${ML}" y="${y(b)}" width="${PW}" height="${y(a)-y(b)}" fill="${COL[c]}" opacity=".13"/>`});
@@ -738,8 +738,12 @@ function renderMonthly(){
     const body=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}"`;
     p+=`<line x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${y(b.h).toFixed(1)}" y2="${y(b.l).toFixed(1)}" stroke="${c}" stroke-width="${ww}"/>${body} fill="${c}"/>`;
     clip+=`${body}/><rect x="${(x(i)-ww/2).toFixed(1)}" y="${y(b.h).toFixed(1)}" width="${ww}" height="${(y(b.l)-y(b.h)).toFixed(1)}"/>`});
-  // the S&P 500 (trend-corrected, month-end) as a line on top; an edge in the background colour where it crosses a candle
-  let sp="";B.forEach((b,i)=>{if(b.pr!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y(b.pr).toFixed(1)});
+  // the S&P 500 month-end close as a line on top, on its own scale (left axis); an edge in the background colour
+  // where it crosses a candle
+  const pv=B.map(b=>b.spx).filter(v=>v!=null);let sp="";
+  if(pv.length){const lo=Math.min(...pv),hi=Math.max(...pv),pad=(hi-lo)*.06,y2=d3.scaleLinear().domain([lo-pad,hi+pad]).range([MT+PH,MT]).nice(5);
+    y2.ticks(5).forEach(v=>{if(y2(v)<MT-1||y2(v)>MT+PH+1)return;g+=`<text class="ax" x="0" y="${y2(v)+4}" text-anchor="start" style="fill:${COL["c-spx"]}">${v.toLocaleString("en-US")}</text>`});
+    B.forEach((b,i)=>{if(b.spx!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y2(b.spx).toFixed(1)})}
   if(sp)p+=`<clipPath id="mcc">${clip}</clipPath><path d="${sp}" fill="none" stroke="${COL.panel}" stroke-width="4.6" stroke-linejoin="round" clip-path="url(#mcc)"/>`
     +`<path d="${sp}" fill="none" stroke="${COL["c-spx"]}" stroke-width="2" stroke-linejoin="round"/>`;
   const ci=state.mci!=null&&state.mci<n?state.mci:null;
@@ -747,7 +751,7 @@ function renderMonthly(){
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRI ${t("monthly")}">${g}${xh}${p}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n,slot:true};
   const b=B[ci!=null?ci:n-1],f=v=>(v*100).toFixed(2);
-  $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${b.pr!=null?`<span style="color:${COL["c-spx"]}">S&amp;P <b style="color:inherit">${(b.pr*100).toFixed(1)}</b></span>`:""}</div>`;
+  $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${b.spx!=null?`<span style="color:${COL["c-spx"]}">S&amp;P500 <b style="color:inherit">${b.spx.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b></span>`:""}</div>`;
 }
 
 function renderTabs(){
@@ -828,7 +832,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v87";
+const APP_VER="mri-v88";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
