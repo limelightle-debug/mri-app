@@ -643,7 +643,8 @@ function renderViews(){
   const tm=live?fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"}):t("paused");
   el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}${t("confirmed")}</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">${t("realtime")}<small>${tm}</small></button>`;
 }
-// signals as traffic lights: three levels, left to right green / orange / red, all dark when off. A light stays on
+// signals as traffic lights: three levels, left to right green / orange / red, lit up to the level reached (all three
+// at the top level), all dark when off. A light stays on
 // (at the highest level reached) until its reset: technical bubble (the S&P 500's trend-corrected percentile at
 // +1σ / +2σ / +3σ; reset when the CAPE score is back to 50), BUY (MRI 7.5 / 5 / 2.5 or below; reset at MRI 50 or
 // above), SELL (MRI 75 / 80 / 85 or above; reset at MRI 50 or below). Run over the confirmed days since 2018.
@@ -659,7 +660,7 @@ function renderSignals(){
     ["SELL",latch(r=>up(r[7],[.75,.8,.85]),r=>r[7]<=.5),["75","80","85"]]];
   const C=["#4CAF50","#FF9800","#F44336"],ds=n=>{const x=String(n);return`${x.slice(0,4)}/${+x.slice(4,6)}/${+x.slice(6,8)}`};
   box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i></h2>`+SG.map(([name,[lv,since],th])=>
-    `<div class="tl"><div class="tln">${name}</div><div class="tlh">${C.map((c,i)=>`<i class="${i===lv-1?"on":""}" style="--c:${c}"><small>${th[i]}</small></i>`).join("")}</div><div class="tlv">${since?t("sigFrom",ds(since)):""}</div></div>`).join("");
+    `<div class="tl"><div class="tln">${name}</div><div class="tlh">${C.map((c,i)=>`<i class="${i<lv?"on":""}" style="--c:${c}"><small>${th[i]}</small></i>`).join("")}</div><div class="tlv">${since?t("sigFrom",ds(since)):""}</div></div>`).join("");
 }
 const md0=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
 function renderTop(){
@@ -966,7 +967,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v100";
+const APP_VER="mri-v101";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
