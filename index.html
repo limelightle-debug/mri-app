@@ -346,7 +346,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>60〜80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
         <tr><td>80〜100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
       </table>
-      <p>チャートの MRI の線には、<b>80超えに赤</b>、<b>75以上にオレンジ</b>、<b>7.5以下に薄い緑</b>、<b>5以下に濃い緑</b>の点を付けています。上のバーの BUY は MRI 7.5、SELL は 80 の位置で、MRI がその先に入ると光ります。インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
+      <p>チャートの MRI の線には、<b>80超えに赤</b>、<b>75以上にオレンジ</b>、<b>10以下に薄い緑</b>、<b>7.5以下に濃い緑</b>の点を付けています。上のバーの BUY は MRI 7.5、SELL は 80 の位置で、MRI がその先に入ると光ります。インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
 
       <h3>チャート</h3>
       <p>チャートは上下2つの欄に分かれていて、それぞれに表示するもの（MRI・SKEW・VIX・CAPE・S&amp;P500）をチェックボックスで選べます。どれも同じ 0〜100 の目盛りです。下の欄で何も選ばなければ、上の欄だけになります。期間はボタンのほか、始点と終点の年月でも選べます。</p>
@@ -464,7 +464,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>60–80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
         <tr><td>80–100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
       </table>
-      <p>On the chart, the MRI line has <b>red dots above 80</b>, <b>orange dots from 75</b> and <b>light green dots at 7.5 or below</b>, <b>deep green dots at 5 or below</b>. On the bar above, BUY marks MRI 7.5 and SELL marks 80; each lights up once MRI is past it. The lines on the indicator bars mark z at ±1σ and ±2σ.</p>
+      <p>On the chart, the MRI line has <b>red dots above 80</b>, <b>orange dots from 75</b> and <b>light green dots at 10 or below</b>, <b>deep green dots at 7.5 or below</b>. On the bar above, BUY marks MRI 7.5 and SELL marks 80; each lights up once MRI is past it. The lines on the indicator bars mark z at ±1σ and ±2σ.</p>
 
       <h3>Chart</h3>
       <p>The chart has two windows, top and bottom. Tick boxes choose what each shows (MRI, SKEW, VIX, CAPE, S&amp;P 500), all on the same 0–100 scale. If nothing is ticked for the bottom window, only the top one is shown. Pick a period with the buttons or with start and end months.</p>
@@ -671,8 +671,8 @@ function renderChart(){
   const colOf=k=>COL[SERIES.find(s=>s[0]===k)[2]];
   const line=(k,sc)=>{let d="";B.forEach((b,i)=>{if(b[k]!=null)d+=(d?"L":"M")+x(i).toFixed(1)+" "+sc(b[k]).toFixed(1)});return d};
   const dr=n>1500?1.4:n>500?1.9:2.6;
-  // dots on MRI: orange from 75, red above 80, light green at 7.5 or below, deep green at 5 or below
-  const dot=v=>v>.8?COL.hot:v>=.75?COL.warm:v<=.05?COL.cold:v<=.075?COL["cold-l"]:null;
+  // dots on MRI: orange from 75, red above 80, light green at 10 or below, deep green at 7.5 or below
+  const dot=v=>v>.8?COL.hot:v>=.75?COL.warm:v<=.075?COL.cold:v<=.1?COL["cold-l"]:null;
   let g="",p="";
   const span=(B[n-1].t-B[0].t)/864e5, xt=[];
   {let last="";B.forEach((b,i)=>{const lab=span>800?b.d.slice(0,4):b.d.slice(0,7);if(lab!==last){const show=span>800?(+lab%(span>3000?2:1)===0):(+b.d.slice(5,7)%(span>300?3:1)===0);if(show&&i>0)xt.push([i,span>800?"’"+lab.slice(2):(+lab.slice(5)===1?lab.slice(2,4)+"/1":t("month",+lab.slice(5)))])}last=lab})}
@@ -781,7 +781,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v83";
+const APP_VER="mri-v84";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
