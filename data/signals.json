@@ -1,3 +1,5 @@
 {"certified": [
+  {"signal": "tbub", "level": 1, "date": 20251027},
+  {"signal": "sell", "level": 2, "date": 20251222},
   {"signal": "tbub", "level": 1, "date": 20260513}
 ]}
