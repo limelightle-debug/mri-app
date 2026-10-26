@@ -254,6 +254,11 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <div class="seg" id="mrange" role="group" aria-label="期間"></div>
         <div class="seg" id="mover" role="group" aria-label="S&amp;P500 / TQQQ"></div>
       </div>
+      <div class="period">
+        <input type="month" id="mfrom" aria-label="始点（年月）">
+        <span>〜</span>
+        <input type="month" id="mto" aria-label="終点（年月）">
+      </div>
       <div class="readout" id="mread"></div>
       <div class="chart" id="mchart"></div>
     </section>
@@ -552,7 +557,7 @@ let D=null, ALL=[], DAYS=[], loading=false;
 const SERIES=[["mri","MRI","ink"],["sr","SKEW","c-skew"],["vr","VIX","c-vix"],["cr","CAPE","c-cape"],["pr","S&P500","c-spx"]];
 function loadWin(){try{const w=JSON.parse(localStorage.getItem("mri.win"));if(Array.isArray(w)&&w.length===2&&w.every(a=>Array.isArray(a)))return w.map(a=>a.filter(k=>SERIES.some(s=>s[0]===k)))}catch(e){}return[["mri"],["pr"]]}
 const SHOW_FROM=20190101;
-const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,mrange:store.get("mrange","5Y"),mci:null,mover:store.get("mover","spx")};
+const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,mrange:store.get("mrange","5Y"),mfrom:store.get("mfrom",""),mto:store.get("mto",""),mci:null,mover:store.get("mover","spx")};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","r3M",63],["1Y","r1Y",252],["3Y","r3Y",756],["5Y","r5Y",1260],["ALL","rALL",0]];
 const COL={};
@@ -715,7 +720,7 @@ function renderChart(){
 }
 
 /* ---------- monthly candles ---------- */
-const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60],["ALL","rALL",0]];
+const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60]];
 function monthBars(){const M=[];DAYS.forEach(b=>{const m=b.d.slice(0,7),v=b.mri,c=M[M.length-1];
   if(!c||c.m!==m)M.push({m,o:v,h:v,l:v,c:v,spx:b.spx});else{c.h=Math.max(c.h,v);c.l=Math.min(c.l,v);c.c=v;if(b.spx!=null)c.spx=b.spx}});return M}
 // TQQQ month-end closes from the TQQQ app's data (same site), loaded the first time TQQQ is picked
@@ -729,8 +734,13 @@ function renderMonthly(){
   const tq=state.mover==="tqqq";if(tq)loadTQ();
   const ovName=tq?"TQQQ":"S&amp;P500",ov=b=>tq?(TQ&&TQ[b.m]!=null?TQ[b.m]:null):b.spx;
   $("mrange").innerHTML=MRANGES.map(([k,l])=>`<button type="button" data-mrange="${k}" aria-pressed="${k===state.mrange}">${t(l)}</button>`).join("");
-  const el=$("mchart"),all=monthBars(),r=MRANGES.find(x=>x[0]===state.mrange)||MRANGES[1],B=r[2]?all.slice(-r[2]):all,n=B.length;
-  if(!n){el.innerHTML="";return}
+  const el=$("mchart"),all=monthBars();
+  // 3 or 5 years, or the months picked below (like the daily chart)
+  let B=state.mrange==="CUSTOM"&&state.mfrom&&state.mto?all.filter(b=>b.m>=state.mfrom&&b.m<=state.mto):[];
+  if(!B.length){const r=MRANGES.find(x=>x[0]===state.mrange)||MRANGES[1];B=all.slice(-r[2])}
+  const n=B.length;if(!n){el.innerHTML="";return}
+  {const fm=$("mfrom"),tm=$("mto");[fm,tm].forEach(i=>{i.min=all[0].m;i.max=all[all.length-1].m});
+   if(document.activeElement!==fm)fm.value=B[0].m;if(document.activeElement!==tm)tm.value=B[n-1].m}
   const W=Math.max(300,el.clientWidth),PH=W<560?Math.round(W*.62)-28:300,ML=34,MR=24,MT=6,MB=22,PW=W-ML-MR,H=MT+PH+MB;
   const sl=PW/n,x=i=>ML+sl*(i+.5),bw=Math.max(1,Math.min(sl*.66,14)),y=d3.scaleLinear().domain([0,1]).range([MT+PH,MT]);
   let g="",p="";
@@ -843,7 +853,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v91";
+const APP_VER="mri-v92";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -885,6 +895,13 @@ function pickPeriod(){
   store.set("range","CUSTOM");store.set("from",f);store.set("to",t);renderChart();
 }
 $("from").addEventListener("change",pickPeriod);$("to").addEventListener("change",pickPeriod);
+function pickMPeriod(){
+  let f=$("mfrom").value,t=$("mto").value;if(!f||!t||!D)return;
+  if(f>t)[f,t]=[t,f];
+  state.mrange="CUSTOM";state.mfrom=f;state.mto=t;state.mci=null;
+  store.set("mrange","CUSTOM");store.set("mfrom",f);store.set("mto",t);renderMonthly();
+}
+$("mfrom").addEventListener("change",pickMPeriod);$("mto").addEventListener("change",pickMPeriod);
 // charts: a tap (or click) picks a day (a month on the monthly chart), sliding sideways moves it, a vertical swipe scrolls and keeps it
 [["chart","ci",()=>renderChart()],["mchart","mci",()=>renderMonthly()]].forEach(([id,key,draw])=>{const el=$(id);let t=null;
  const at=e=>{const g=el._geo,svg=el.querySelector("svg");if(!g||!svg)return;const r=svg.getBoundingClientRect();
