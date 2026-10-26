@@ -15,6 +15,9 @@ on:
     - cron: "43 22 * * 1-5"   # after the close, for the final daily figures
     - cron: "20 0 * * 1-5"    # 20:20 ET (summer), Sun-Thu: VIX's overnight session
     - cron: "20 1 * * 1-5"    # 20:20 ET (winter)
+    - cron: "52 0 * * 1-5"    # second tries for the overnight start (the scheduler often fires late or not at all)
+    - cron: "52 1 * * 1-5"
+    - cron: "37 2 * * 1-5"
     - cron: "7 5 * * 1-5"     # backups through the night
     - cron: "7 9 * * 1-5"
   workflow_dispatch:
