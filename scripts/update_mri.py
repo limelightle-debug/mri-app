@@ -200,6 +200,13 @@ def calc_time():
         return datetime.now(NY).strftime("%Y-%m-%d %H:%M")
 
 
+def calc_usable(j):
+    """The option quotes reach far enough out of the money for VIX and SKEW to mean something. Before a session
+    opens (Sunday evening, say) only quotes near the money carry bids, and both come out far too low."""
+    terms = j.get("terms") or []
+    return bool(terms) and all(t.get("lowK") and t.get("F") and t["lowK"] <= 0.8 * t["F"] for t in terms)
+
+
 def skew_change(prev):
     """How much the SKEW recomputed from the option quotes has moved since the close of `prev`."""
     try:
@@ -210,7 +217,7 @@ def skew_change(prev):
         return None
     # the estimate must be fresh and from a later session (overnight counts), with a close-time
     # estimate for `prev`
-    if anchor is None or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev:
+    if anchor is None or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev or not calc_usable(j):
         return None
     return None if j.get("skew") is None else j["skew"] - anchor
 
@@ -224,7 +231,7 @@ def vix_estimate(prev, close):
         base, cur = j.get("anchorsV", {}).get(str(prev)), j.get("vix")
     except (OSError, ValueError, KeyError):
         return None
-    if not cur or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev:
+    if not cur or (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev or not calc_usable(j):
         return None
     return close * cur / base if base else cur
 
