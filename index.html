@@ -738,11 +738,16 @@ function renderMonthly(){
     const body=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}"`;
     p+=`<line x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${y(b.h).toFixed(1)}" y2="${y(b.l).toFixed(1)}" stroke="${c}" stroke-width="${ww}"/>${body} fill="${c}"/>`;
     clip+=`${body}/><rect x="${(x(i)-ww/2).toFixed(1)}" y="${y(b.h).toFixed(1)}" width="${ww}" height="${(y(b.l)-y(b.h)).toFixed(1)}"/>`});
-  // the S&P 500 month-end close as a line on top, on its own scale (left axis); an edge in the background colour
+  // the S&P 500 month-end close as a line on top, on its own log scale (left axis); an edge in the background colour
   // where it crosses a candle
   const pv=B.map(b=>b.spx).filter(v=>v!=null);let sp="";
-  if(pv.length){const lo=Math.min(...pv),hi=Math.max(...pv),pad=(hi-lo)*.06,y2=d3.scaleLinear().domain([lo-pad,hi+pad]).range([MT+PH,MT]).nice(5);
-    y2.ticks(5).forEach(v=>{if(y2(v)<MT-1||y2(v)>MT+PH+1)return;g+=`<text class="ax" x="0" y="${y2(v)+4}" text-anchor="start" style="fill:${COL["c-spx"]}">${v.toLocaleString("en-US")}</text>`});
+  // log scale: equal distances are equal percentage moves
+  if(pv.length){const lo=Math.min(...pv),hi=Math.max(...pv),k=Math.pow(hi/lo,.06),y2=d3.scaleLog().domain([lo/k,hi*k]).range([MT+PH,MT]);
+    // round thousands first; the halves only when too few of those fit
+    const pick=L=>{let lastY=1e9;return L.filter(v=>{const yy=y2(v);if(yy<MT+4||yy>MT+PH-2||lastY-yy<20)return false;lastY=yy;return true})};
+    let tk=pick([1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,15000,20000]);
+    if(tk.length<3)tk=pick([1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000,9000,10000,12000,15000,20000]);
+    tk.forEach(v=>{g+=`<text class="ax" x="0" y="${y2(v)+4}" text-anchor="start" style="fill:${COL["c-spx"]}">${v.toLocaleString("en-US")}</text>`});
     B.forEach((b,i)=>{if(b.spx!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y2(b.spx).toFixed(1)})}
   if(sp)p+=`<clipPath id="mcc">${clip}</clipPath><path d="${sp}" fill="none" stroke="${COL.panel}" stroke-width="4.6" stroke-linejoin="round" clip-path="url(#mcc)"/>`
     +`<path d="${sp}" fill="none" stroke="${COL["c-spx"]}" stroke-width="2" stroke-linejoin="round"/>`;
@@ -832,7 +837,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v88";
+const APP_VER="mri-v89";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
