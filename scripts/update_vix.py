@@ -18,7 +18,7 @@ import json
 import math
 import statistics as st
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -91,7 +91,7 @@ def model(spans, mri, months, today):
     Random: events come with the same chance every month outside events, lam_r = events / months outside events.
     Interval: random times a multiplier that is 1 (random) when the last event ended, rises in a straight line to 2 at the
     mean m of the last 5 intervals (counted from the event's start) and stays at 2 after it (like the earthquake
-    model, which levels off instead of climbing): mult(e) = min(2, 1 + (e - d) / (m - d)), e months since the start,
+    model, which levels off instead of climbing): mult(e) = min(2, 1 + (e - d) / (m - d)), e months since the start (in days, from the end day),
     d the event's length in months; P = 1 - exp(-sum of lam_r * mult over the months).
     MRI (from 2018, when it works): x = the highest daily MRI over the last 6 months, or since the last event ended if
     that is more recent. Every event so far came with x at or above 70, but so did many quiet months: the line works
@@ -163,21 +163,26 @@ def model(spans, mri, months, today):
         f = math.exp((1 - w) * math.log(par["lo"]) + w * math.log(par["hi"]) * (1 + max(0, x - MRI_LINE) / MRI_SLOPE))
         return [], {k: f for k in (1, 3, 6, 12)}
     def probs(m, ongoing, d, lam, fk):
-        # the interval multiplies random: 1 when the last event ended, rising in a straight line to EVEN_X times at
-        # the mean of the last 5 intervals (counted from the event's start), and level after it
+        # the interval multiplies random: 1 on the day the last event ended, rising in a straight line to EVEN_X times at
+        # the mean of the last 5 intervals (counted from the event's start), and level after it. Time runs in days
+        # (months of 30.44 days); `d` is the day after the forecast day
         lam_r, even, lam_q = lam
         last = max((sp for sp in spans if sp[0] < d), key=lambda sp: sp[0])
-        s0 = idx(last[0] // 100)
-        ee = idx(last[1] // 100) - s0 if last[1] and last[1] < d else None
-        def mult(e):
-            if ee is None or e <= ee:
+        ymd = lambda v: date(v // 10000, v // 100 % 100, v % 100)
+        day = ymd(d - 1) if (d - 1) % 100 else ymd(d)
+        ended = bool(last[1]) and last[1] < d
+        dlen = (ymd(last[1]) - ymd(last[0])).days / 30.4375 if ended else 0.0
+        t0 = (day - ymd(last[1])).days / 30.4375 if ended else 0.0
+        def mult(t):
+            # t: months since the event ended, at the start of each month ahead
+            if not ended:
                 return 0.0
-            v = MULT_FLOOR + (EVEN_X - MULT_FLOOR) * (e - ee) / max(1.0, even - ee)
+            v = MULT_FLOOR + (EVEN_X - MULT_FLOOR) * max(0.0, t) / max(1.0, even - dlen)
             return min(v, MULT_CAP) if MULT_CAP else v
         # month by month: each month's interval chance, its odds times the MRI factor; k months = 1 - the chance that
         # none of the months has an event
         f = fk.get(1, 1)
-        pm = [0 if ongoing else 1 - math.exp(-lam_r * mult(idx(m) + j + .5 - s0)) for j in range(12)]
+        pm = [0 if ongoing else 1 - math.exp(-lam_r * mult(t0 + j)) for j in range(12)]
         pb = [(odds(p) * f) / (1 + odds(p) * f) if 0 < p < 1 else 0 for p in pm]
         out = []
         for k in (1, 3, 6, 12):
