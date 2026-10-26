@@ -257,7 +257,23 @@ def spx_ratio(prev):
     if (datetime.now(NY) - at).total_seconds() > 4 * 3600 or session_day(at) <= prev:
         return None
     common = [e for e in now_f if e in base and base[e]]
-    return now_f[common[0]] / base[common[0]] if common else None
+    if common:
+        return now_f[common[0]] / base[common[0]]
+    # the chain moved on to later expiries (after a weekend, say): the close-time forward at the new expiry from the
+    # two close-time expiries, in a straight line (the carry between expiries a few days apart is tiny)
+    try:
+        bk = sorted((datetime.fromisoformat(e), v) for e, v in base.items() if v)
+        e0, f0 = min(((datetime.fromisoformat(e), v) for e, v in now_f.items() if v), key=lambda x: x[0])
+    except (ValueError, TypeError):
+        return None
+    if not bk:
+        return None
+    if len(bk) >= 2 and (bk[-1][0] - bk[0][0]).total_seconds() > 0:
+        slope = (bk[-1][1] - bk[0][1]) / (bk[-1][0] - bk[0][0]).total_seconds()
+        fb = bk[-1][1] + slope * (e0 - bk[-1][0]).total_seconds()
+    else:
+        fb = bk[-1][1]
+    return f0 / fb if fb else None
 
 
 def load_sources(cache):

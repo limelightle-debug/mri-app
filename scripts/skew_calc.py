@@ -167,15 +167,26 @@ def main():
     except (OSError, ValueError):
         prev = {}
     anchors, anchors_f, anchors_v = prev.get("anchors", {}), prev.get("anchorsF", {}), prev.get("anchorsV", {})
-    # a snapshot with broken quotes can throw the result far off (once, SKEW 122 between two 149s): a jump
-    # of more than 6 SKEW points or 15% in VIX from the last result within 3 hours keeps the last result
+    # a snapshot with broken quotes can throw the result far off (once, SKEW 122 between two 149s; before the
+    # Monday open, 94 with VIX 12.6). Sane = within 25 SKEW points of the last close-time value (its largest real
+    # daily move since 1990 is 24.8) and VIX not below 70% of its close-time value. An insane snapshot keeps the last
+    # result; a sane one that jumps more than 6 SKEW points or 15% in VIX from a sane last result within 3 hours
+    # does too; a sane one after an insane last result is taken (so a bad result never locks in)
+    ka = max(anchors) if anchors else None
+    def sane(sk, vx):
+        if sk is None or ka is None:
+            return sk is not None
+        av = anchors_v.get(ka)
+        return abs(sk - anchors[ka]) <= 25 and not (vx and av and vx / av < .7)
     rejected = None
     try:
         pt = datetime.fromisoformat(prev["quoteTime"]).astimezone(NY)
         recent = abs((t - pt).total_seconds()) < 3 * 3600 and prev.get("skew") is not None
     except (KeyError, ValueError):
-        recent = False
-    if recent and (abs(skew - prev["skew"]) > 6 or (vixc and prev.get("vix") and abs(vixc / prev["vix"] - 1) > .15)):
+        pt, recent = None, False
+    prev_ok = prev.get("skew") is not None and sane(prev.get("skew"), prev.get("vix"))
+    jump = recent and prev_ok and (abs(skew - prev["skew"]) > 6 or (vixc and prev.get("vix") and abs(vixc / prev["vix"] - 1) > .15))
+    if (not sane(skew, vixc) or jump) and prev.get("skew") is not None and pt is not None:
         rejected = {"quoteTime": t.isoformat(timespec="seconds"), "skew": round(skew, 2), "vix": vixc and round(vixc, 4)}
         skew, vixc, forwards = prev["skew"], prev.get("vix"), prev.get("forwards", forwards)
         t = pt
