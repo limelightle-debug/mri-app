@@ -636,12 +636,16 @@ function renderViews(){
 function renderTop(){
   renderViews();
   const last=DAYS[DAYS.length-1], prev=DAYS[DAYS.length-2];
-  const lv=level(last.mri);
+  // realtime paused: the gauge keeps the session's last realtime value (against the close before it), like the chart
+  const IP=D.intraday,ipts=IP&&IP.points;
+  const endRt=state.view!=="close"&&!hasLive()&&ipts&&ipts.length&&IP.day===last.n?ipts[ipts.length-1][1]:null;
+  const gv=endRt!=null?endRt:last.mri, gp=endRt!=null?IP.prevClose:prev&&prev.mri;
+  const lv=level(gv);
   $("level").textContent=lv[1];$("level").style.background=COL[lv[2]];$("level").style.color=lv[3];
-  $("mri").textContent=(last.mri*100).toFixed(2);$("mri").style.color=colorOf(last.mri);
-  if(prev){const dd=(last.mri-prev.mri)*100;$("chg").textContent=`${t("chg")} ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
-  $("fbuy").classList.toggle("on",last.mri<=.075);$("fsell").classList.toggle("on",last.mri>=.8);
-  $("ramp").innerHTML=`<div class="tk" style="left:7.5%"></div><div class="tk" style="left:80%"></div><div class="mk" style="left:${Math.min(Math.max(last.mri*100,1),99)}%"></div>`;
+  $("mri").textContent=(gv*100).toFixed(2);$("mri").style.color=colorOf(gv);
+  if(gp!=null){const dd=(gv-gp)*100;$("chg").textContent=`${t("chg")} ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`}
+  $("fbuy").classList.toggle("on",gv<=.075);$("fsell").classList.toggle("on",gv>=.8);
+  $("ramp").innerHTML=`<div class="tk" style="left:7.5%"></div><div class="tk" style="left:80%"></div><div class="mk" style="left:${Math.min(Math.max(gv*100,1),99)}%"></div>`;
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const isLive=hasLive()&&last.n===liveDay();
   {const tm=fmtTime(new Date(D.updatedAt),{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -932,7 +936,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v95";
+const APP_VER="mri-v96";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
