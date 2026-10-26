@@ -117,7 +117,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .grid{stroke:var(--line);stroke-width:1}
 .xh{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3}
 #dread{height:22px}
-#sig .tl{display:grid;grid-template-columns:112px 1fr 80px;align-items:center;gap:10px;padding:9px 0}
+#sig .tl{display:grid;grid-template-columns:112px 1fr 76px;align-items:center;gap:10px;padding:9px 0}
 #sig .tl+.tl{border-top:1px solid var(--line)}
 #sig .tln{font-weight:800;font-size:13.5px;color:var(--ink);white-space:nowrap}
 #sig .tlh{justify-self:center;display:flex;gap:10px;background:#07070f;border:1px solid var(--line);border-radius:22px;padding:7px 12px 15px}
@@ -125,7 +125,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sig .tlh i.on{opacity:1;box-shadow:0 0 12px 3px var(--c),inset 0 -3px 6px rgba(0,0,0,.25)}
 #sig .tlh small{position:absolute;left:50%;top:27px;transform:translateX(-50%);font:600 9.5px/1 var(--f-tick);font-stretch:85%;color:var(--muted);white-space:nowrap;font-style:normal}
 #sig .tlh i.on small{color:var(--ink2)}
-#sig .tlv{text-align:right;font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink2)}
+#sig .tlv{text-align:right;font-family:var(--f-tick);font-stretch:82%;font-size:12px;color:var(--muted);white-space:nowrap}
 .dstats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
 .dstats div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
 .dstats b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink)}
@@ -561,7 +561,7 @@ const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigSince:"2018年以降",sigLatest:"最新のシグナル",sigSinceThen:"その後の S&amp;P500",sigMaxDD:"その後の最大下落",sigMaxUp:"その後の最大上昇",sigDays:"経過",sigDaysN:n=>`${n}営業日`,sigDate:"日付",sigM:m=>`${m}ヶ月`,sigDDh:"最大下落",sigNote:"BUY は MRI 7.5 以下、SELL は 80 以上に入った最初の日（3ヶ月以上あいたら新しいシグナル）。数字はその日の S&amp;P500 終値からの変化で、最大下落は12ヶ月以内。薄い数字はまだ期間が終わっていない途中経過",tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,ddTitle:"MRI と その後の下落",ddNote:"その日から12ヶ月以内に、S&amp;P500 がその日の終値から何%以上下げたか。いちばん上の行は、MRI を見ずに選んだ日の確率",ddBand:"MRI",ddDays:"日数",ddAny:"どの日でも",ddDn:x=>`−${x}%以上`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigFrom:d=>`${d}〜`,tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,ddTitle:"MRI と その後の下落",ddNote:"その日から12ヶ月以内に、S&amp;P500 がその日の終値から何%以上下げたか。いちばん上の行は、MRI を見ずに選んだ日の確率",ddBand:"MRI",ddDays:"日数",ddAny:"どの日でも",ddDn:x=>`−${x}%以上`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
@@ -572,7 +572,7 @@ const T={
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
    note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
- en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigSince:"since 2018",sigLatest:"Latest signal",sigSinceThen:"S&amp;P 500 since",sigMaxDD:"Largest fall since",sigMaxUp:"Largest rise since",sigDays:"Elapsed",sigDaysN:n=>`${n} trading days`,sigDate:"Date",sigM:m=>`${m}M`,sigDDh:"Max fall",sigNote:"BUY: the first day MRI is 7.5 or below; SELL: the first day at 80 or above (a new signal after a gap of 3 months or more). Changes are from that day\u2019s S&amp;P 500 close. Faded figures are still running",tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,ddTitle:"MRI and the fall that followed",ddNote:"How often the S&amp;P 500 fell this far below the day\u2019s close within the next 12 months. The top row is any day, without looking at MRI",ddBand:"MRI",ddDays:"Days",ddAny:"Any day",ddDn:x=>`−${x}% or more`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+ en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigFrom:d=>`since ${d}`,tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,ddTitle:"MRI and the fall that followed",ddNote:"How often the S&amp;P 500 fell this far below the day\u2019s close within the next 12 months. The top row is any day, without looking at MRI",ddBand:"MRI",ddDays:"Days",ddAny:"Any day",ddDn:x=>`−${x}% or more`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
@@ -643,19 +643,23 @@ function renderViews(){
   const tm=live?fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"}):t("paused");
   el.innerHTML=`<button type="button" data-view="close" aria-pressed="${state.view==="close"}">${c?md(c.d)+" ":""}${t("confirmed")}</button><button type="button" data-view="live" aria-pressed="${state.view!=="close"}">${t("realtime")}<small>${tm}</small></button>`;
 }
-// signals as traffic lights, left to right green / orange / red: technical bubble (the S&P 500's trend-corrected
-// percentile: +1σ = 84.13, +2σ = 97.72), BUY (MRI 10, then 7.5 or below) and SELL (MRI 75, then 80 or above)
+// signals as traffic lights: three levels, left to right green / orange / red, all dark when off. A light stays on
+// (at the highest level reached) until its reset: technical bubble (the S&P 500's trend-corrected percentile at
+// +1σ / +2σ / +3σ; reset when the CAPE score is back to 50), BUY (MRI 7.5 / 5 / 2.5 or below; reset at MRI 50 or
+// above), SELL (MRI 75 / 80 / 85 or above; reset at MRI 50 or below). Run over the confirmed days since 2018.
 function renderSignals(){
   const box=$("sig");box.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
   const last=DAYS[DAYS.length-1];if(!last)return;
-  const m=last.mri*100,pr=last.pr!=null?last.pr*100:null;
-  const SG=[
-    ["tbub",t("sigBubble"),pr==null?-1:pr>=97.725?2:pr>=84.134?1:0,`S&amp;P ${pr==null?"–":pr.toFixed(1)}`,["","+1σ","+2σ"]],
-    ["buy","BUY",m<=7.5?2:m<=10?1:0,`MRI ${m.toFixed(2)}`,["","10","7.5"]],
-    ["sell","SELL",m>=80?2:m>=75?1:0,`MRI ${m.toFixed(2)}`,["","75","80"]]];
-  const C=["#4CAF50","#FF9800","#F44336"];
-  box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i> <span>${md0(last.d)} ${t("confirmed")}</span></h2>`+SG.map(([k,name,lv,val,th])=>
-    `<div class="tl"><div class="tln">${name}</div><div class="tlh">${C.map((c,i)=>`<i class="${i===lv?"on":""}" style="--c:${c}"><small>${th[i]}</small></i>`).join("")}</div><div class="tlv">${val}</div></div>`).join("");
+  const R=(D.daily||[]).filter(r=>r[0]>=20180101&&r[0]<=last.n);
+  const latch=(lvl,reset)=>{let L=0,since=null;R.forEach(r=>{if(L&&reset(r)){L=0;since=null}const l=lvl(r);if(l>L){if(!L)since=r[0];L=l}});return[L,since]};
+  // daily rows: [n, vix, skew, cape, vix score, skew score, cape score, MRI, S&P, S&P percentile]
+  const up=(v,a)=>v>=a[2]?3:v>=a[1]?2:v>=a[0]?1:0,dn=(v,a)=>v<=a[2]?3:v<=a[1]?2:v<=a[0]?1:0;
+  const SG=[[t("sigBubble"),latch(r=>r[9]==null?0:up(r[9],[.841345,.97725,.99865]),r=>r[6]<=.5),["+1σ","+2σ","+3σ"]],
+    ["BUY",latch(r=>dn(r[7],[.075,.05,.025]),r=>r[7]>=.5),["7.5","5","2.5"]],
+    ["SELL",latch(r=>up(r[7],[.75,.8,.85]),r=>r[7]<=.5),["75","80","85"]]];
+  const C=["#4CAF50","#FF9800","#F44336"],ds=n=>{const x=String(n);return`${x.slice(0,4)}/${+x.slice(4,6)}/${+x.slice(6,8)}`};
+  box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i></h2>`+SG.map(([name,[lv,since],th])=>
+    `<div class="tl"><div class="tln">${name}</div><div class="tlh">${C.map((c,i)=>`<i class="${i===lv-1?"on":""}" style="--c:${c}"><small>${th[i]}</small></i>`).join("")}</div><div class="tlv">${since?t("sigFrom",ds(since)):""}</div></div>`).join("");
 }
 const md0=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
 function renderTop(){
@@ -962,7 +966,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v98";
+const APP_VER="mri-v99";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
