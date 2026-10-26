@@ -37,6 +37,7 @@ BAYES_FROM, QUIET = 201801, 6
 # the MRI factor, a fixed curve of the highest MRI x: 1 at 50, MRI_TOP at 100, slow above 50 and steep near 100,
 # below 1 under 50: MRI_TOP ** (sign(u) |u| ** MRI_POW), u = (x - 50) / 50
 MRI_PIVOT, MRI_TOP, MRI_POW = 50, 10, 2
+MRI_AVG = 10  # the peak is of the 10-day average MRI, so a one-day spike does not set it
 EVEN_N, SHAPE, EVEN_X = 5, 1.5, 2
 MULT_FLOOR = 1  # right after an event ends the multiplier is 1 (random), not 0: an event can follow soon (8 months, 2024-25)
 MULT_CAP = 2  # past the mean interval the multiplier stays at 2 (the earthquake model levels off rather than climbing)
@@ -93,7 +94,7 @@ def model(spans, mri, months, today):
     mean m of the last 5 intervals (counted from the event's start) and stays at 2 after it (like the earthquake
     model, which levels off instead of climbing): mult(e) = min(2, 1 + (e - d) / (m - d)), e months since the start (in days, from the end day),
     d the event's length in months; P = 1 - exp(-sum of lam_r * mult over the months).
-    MRI (from 2018, when it works): x = the highest daily MRI over the horizon (the last 6 months for 6 months and
+    MRI (from 2018, when it works): x = the highest 10-day average MRI over the horizon (the last 6 months for 6 months and
     shorter, the last 12 for 12), or since the last event ended if that is more recent. Only this peak counts, on a
     fixed curve (nothing is estimated from how often a level is passed in quiet times): factor = 10 ** (sign(u) u**2),
     u = (x - 50) / 50, so 1 at 50, 1.45 at 70, 2.29 at 80, 4.37 at 90, 10 at 100, and below 1 under 50. Today's x
@@ -110,10 +111,15 @@ def model(spans, mri, months, today):
     def last_end(d):
         ends = [e for s_, e in spans if e and e < d]
         return max(ends) if ends else 0
+    # the 10-day average MRI (trading days); its highest over the window is the evidence
+    MA = {}
+    for i_, k_ in enumerate(md):
+        w_ = [mri[x_] for x_ in md[max(0, i_ - MRI_AVG + 1):i_ + 1]]
+        MA[k_] = sum(w_) / len(w_)
     def xat(d, inclusive=False, back=6):
         lo = max(last_end(d), add_months(d // 100, -back) * 100 + d % 100)
         hi_ = bisect.bisect_right(md, d) if inclusive else bisect.bisect_left(md, d)
-        vals = [mri[k] for k in md[bisect.bisect_right(md, lo):hi_]]
+        vals = [MA[k] for k in md[bisect.bisect_right(md, lo):hi_]]
         return (max(vals), lo == last_end(d)) if vals else (None, False)
     in_event = lambda d: any(s_ <= d <= (e or 99999999) for s_, e in spans)
     ongoing_at = lambda d: any(s_ < d and (e is None or e >= d) for s_, e in spans)
