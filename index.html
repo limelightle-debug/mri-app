@@ -252,6 +252,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h2><i class="h2t" data-i18n="trend">MRI の推移</i> <span data-i18n="monthly">月足</span></h2>
       <div class="ctlrow">
         <div class="seg" id="mrange" role="group" aria-label="期間"></div>
+        <div class="seg" id="mover" role="group" aria-label="S&amp;P500 / TQQQ"></div>
       </div>
       <div class="readout" id="mread"></div>
       <div class="chart" id="mchart"></div>
@@ -551,7 +552,7 @@ let D=null, ALL=[], DAYS=[], loading=false;
 const SERIES=[["mri","MRI","ink"],["sr","SKEW","c-skew"],["vr","VIX","c-vix"],["cr","CAPE","c-cape"],["pr","S&P500","c-spx"]];
 function loadWin(){try{const w=JSON.parse(localStorage.getItem("mri.win"));if(Array.isArray(w)&&w.length===2&&w.every(a=>Array.isArray(a)))return w.map(a=>a.filter(k=>SERIES.some(s=>s[0]===k)))}catch(e){}return[["mri"],["pr"]]}
 const SHOW_FROM=20190101;
-const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,mrange:store.get("mrange","5Y"),mci:null};
+const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,mrange:store.get("mrange","5Y"),mci:null,mover:store.get("mover","spx")};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","r3M",63],["1Y","r1Y",252],["3Y","r3Y",756],["5Y","r5Y",1260],["ALL","rALL",0]];
 const COL={};
@@ -717,7 +718,16 @@ function renderChart(){
 const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60],["ALL","rALL",0]];
 function monthBars(){const M=[];DAYS.forEach(b=>{const m=b.d.slice(0,7),v=b.mri,c=M[M.length-1];
   if(!c||c.m!==m)M.push({m,o:v,h:v,l:v,c:v,spx:b.spx});else{c.h=Math.max(c.h,v);c.l=Math.min(c.l,v);c.c=v;if(b.spx!=null)c.spx=b.spx}});return M}
+// TQQQ month-end closes from the TQQQ app's data (same site), loaded the first time TQQQ is picked
+let TQ=null,tqLoading=false;
+function loadTQ(){if(TQ||tqLoading)return;tqLoading=true;
+  fetch("../tqqq/data/tqqq.json",{cache:"no-store"}).then(r=>r.json()).then(j=>{const m={};(j.daily||[]).forEach(r=>{const s=String(r[0]);m[`${s.slice(0,4)}-${s.slice(4,6)}`]=r[4]});TQ=m})
+    .catch(()=>{TQ={}}).finally(()=>{tqLoading=false;if(D&&state.view==="close")renderMonthly()})}
+const MOVER=[["spx","S&P500"],["tqqq","TQQQ"]];
 function renderMonthly(){
+  $("mover").innerHTML=MOVER.map(([k,l])=>`<button type="button" data-mover="${k}" aria-pressed="${k===state.mover}">${l.replace("&","&amp;")}</button>`).join("");
+  const tq=state.mover==="tqqq";if(tq)loadTQ();
+  const ovName=tq?"TQQQ":"S&amp;P500",ov=b=>tq?(TQ&&TQ[b.m]!=null?TQ[b.m]:null):b.spx;
   $("mrange").innerHTML=MRANGES.map(([k,l])=>`<button type="button" data-mrange="${k}" aria-pressed="${k===state.mrange}">${t(l)}</button>`).join("");
   const el=$("mchart"),all=monthBars(),r=MRANGES.find(x=>x[0]===state.mrange)||MRANGES[1],B=r[2]?all.slice(-r[2]):all,n=B.length;
   if(!n){el.innerHTML="";return}
@@ -738,13 +748,13 @@ function renderMonthly(){
     const body=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}"`;
     p+=`<line x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${y(b.h).toFixed(1)}" y2="${y(b.l).toFixed(1)}" stroke="${c}" stroke-width="${ww}"/>${body} fill="${c}"/>`;
     clip+=`${body}/><rect x="${(x(i)-ww/2).toFixed(1)}" y="${y(b.h).toFixed(1)}" width="${ww}" height="${(y(b.l)-y(b.h)).toFixed(1)}"/>`});
-  // the S&P 500 month-end close as a line on top, on its own scale (left axis); an edge in the background colour
-  // where it crosses a candle
-  const pv=B.map(b=>b.spx).filter(v=>v!=null);let sp="";
+  // the S&P 500 (or TQQQ) month-end close as a line on top, on its own scale (left axis); an edge in the
+  // background colour where it crosses a candle
+  const pv=B.map(ov).filter(v=>v!=null);let sp="";
   const SPC="#c9b2ff";  // a lighter purple than the daily chart's, so the candles stay in front
   if(pv.length){const lo=Math.min(...pv),hi=Math.max(...pv),pad=(hi-lo)*.06,y2=d3.scaleLinear().domain([lo-pad,hi+pad]).range([MT+PH,MT]).nice(5);
     y2.ticks(5).forEach(v=>{if(y2(v)<MT-1||y2(v)>MT+PH+1)return;g+=`<text class="ax" x="0" y="${y2(v)+4}" text-anchor="start" style="fill:${SPC}">${v.toLocaleString("en-US")}</text>`});
-    B.forEach((b,i)=>{if(b.spx!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y2(b.spx).toFixed(1)})}
+    B.forEach((b,i)=>{const v=ov(b);if(v!=null)sp+=(sp?"L":"M")+x(i).toFixed(1)+" "+y2(v).toFixed(1)})}
   if(sp)p+=`<clipPath id="mcc">${clip}</clipPath><path d="${sp}" fill="none" stroke="${COL.panel}" stroke-width="4.6" stroke-linejoin="round" clip-path="url(#mcc)"/>`
     +`<path d="${sp}" fill="none" stroke="${SPC}" stroke-width="2" stroke-linejoin="round"/>`;
   const ci=state.mci!=null&&state.mci<n?state.mci:null;
@@ -752,7 +762,7 @@ function renderMonthly(){
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MRI ${t("monthly")}">${g}${xh}${p}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
   el._geo={ML,PW,n,slot:true};
   const b=B[ci!=null?ci:n-1],f=v=>(v*100).toFixed(2);
-  $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${b.spx!=null?`<span style="color:#c9b2ff">S&amp;P500 <b style="color:inherit">${b.spx.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b></span>`:""}</div>`;
+  $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${(v=>v!=null?`<span style="color:${SPC}">${ovName} <b style="color:inherit">${v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b></span>`:tq&&!TQ?`<span style="color:var(--muted)">${ovName} …</span>`:"")(ov(b))}</div>`;
 }
 
 function renderTabs(){
@@ -833,7 +843,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v90";
+const APP_VER="mri-v91";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -859,6 +869,7 @@ document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri"&&state.view==="close")renderChart();window.scrollTo(0,0);return}
   const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();if(state.view==="close")renderChart();return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
+  const mo=e.target.closest("[data-mover]");if(mo){state.mover=mo.dataset.mover;store.set("mover",state.mover);renderMonthly();return}
   const mr=e.target.closest("[data-mrange]");if(mr){state.mrange=mr.dataset.mrange;store.set("mrange",state.mrange);state.mci=null;renderMonthly();return}
   const hr=e.target.closest("[data-ci]");if(hr){const i=+hr.dataset.ci;state.ci=state.ci===i?null:i;renderChart();return}
 });
