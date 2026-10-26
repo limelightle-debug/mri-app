@@ -518,10 +518,19 @@ def build():
     # signals are judged on the values as they were computed at the time ("point in time"): each confirmed day's
     # CAPE score and MRI are frozen the first time they are written, later revisions (of CAPE) do not change them.
     # Days before this record use today's values. Signals certified by hand (data/signals.json) count as well.
-    pit = old.get("pit") or {}
+    # kept in its own file (never rebuilt from the sources), and copied into mri.json for the page
+    pit_file = DATA / "signals_pit.json"
+    try:
+        pit = json.loads(pit_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pit = old.get("pit") or {}
+    added = False
     for r in rows[-10:]:
         if r[0] != live_day and str(r[0]) not in pit:
             pit[str(r[0])] = [r[6], r[7]]
+            added = True
+    if added or not pit_file.exists():
+        pit_file.write_text(json.dumps(dict(sorted(pit.items())), separators=(",", ":")) + "\n", encoding="utf-8")
     data["pit"] = pit
     try:
         data["certified"] = json.loads((DATA / "signals.json").read_text(encoding="utf-8")).get("certified", [])
