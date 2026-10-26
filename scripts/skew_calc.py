@@ -150,6 +150,11 @@ def judge(prev, snap, anchors, anchors_v):
     def near(a, b):
         return abs(a["skew"] - b["skew"]) <= JUMP_SKEW and not (a.get("vix") and b.get("vix") and abs(a["vix"] / b["vix"] - 1) > JUMP_VIX)
     rec = {"quoteTime": snap["quoteTime"], "skew": round(snap["skew"], 2), "vix": snap["vix"] and round(snap["vix"], 4)}
+    # 9:15 to 9:30 ET: the overnight session has closed and the regular one not yet opened, so the quotes are
+    # left over and one-sided (SKEW 144.6 between two 147.9s on 2026-10-26); keep the last result
+    qt = datetime.fromisoformat(snap["quoteTime"]).astimezone(NY)
+    if 9 * 60 + 15 <= qt.hour * 60 + qt.minute < 9 * 60 + 30 and prev.get("skew") is not None:
+        return False, prev.get("rejected")
     if not sane(snap["skew"], snap["vix"]):
         return (False, rec) if prev.get("skew") is not None and prev.get("quoteTime") else (True, None)
     if prev.get("skew") is None or not prev.get("quoteTime") or not sane(prev["skew"], prev.get("vix")):

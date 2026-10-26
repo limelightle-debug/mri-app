@@ -57,6 +57,10 @@ run("VIX falling 36% stays sane", [("2026-10-27T14:00:00-04:00", 147.0, 12.5), (
 run("big change after 3 hours taken", [("2026-10-27T03:30:00-04:00", 141.0, 23.0)],
     {"quoteTime": "2026-10-26T23:00:00-04:00", "skew": 149.0, "vix": 19.4}, [141.0])
 
+# the 9:15-9:30 gap between the overnight and the regular session (2026-10-26: 144.63 between 147.94 and 147.76)
+run("9:15-9:30 snapshot skipped", [("2026-10-26T09:17:19-04:00", 144.63, 19.1), ("2026-10-26T09:31:33-04:00", 147.77, 19.1)],
+    {"quoteTime": "2026-10-26T09:12:31-04:00", "skew": 147.94, "vix": 19.1}, [147.94, 147.77])
+
 # session days
 cases = [
     ("Fri 21:00 -> Mon", datetime(2026, 10, 23, 21, 0, tzinfo=NY), 20261026),
