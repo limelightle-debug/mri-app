@@ -116,6 +116,20 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ax{font-family:var(--f-tick);font-stretch:82%;font-size:11px;fill:var(--muted)}
 .grid{stroke:var(--line);stroke-width:1}
 .xh{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3}
+#dread{height:22px}
+.dstats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
+.dstats div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
+.dstats b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink)}
+.dstats .wide{grid-column:1/-1}
+.ddnote{font-size:11.5px;color:var(--muted);margin:-2px 0 8px;line-height:1.5}
+.ddtab table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.ddtab th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px}
+.ddtab th:first-child,.ddtab td:first-child{text-align:left}
+.ddtab td{text-align:right;padding:7px 6px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13.5px;color:var(--ink2)}
+.ddtab td small{font-size:11px;color:var(--muted);margin-left:4px}
+.ddtab tr.base td{color:var(--muted)}
+.ddtab tr.now td{background:rgba(255,255,255,.07);color:var(--ink)}
+.ddtab tr.now td:first-child{box-shadow:inset 3px 0 0 #fff}
 .hotlist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .hotlist h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--ink2);display:flex;justify-content:space-between}
 .hotlist h3 span{font-weight:400;color:var(--muted)}
@@ -200,6 +214,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
   <div class="stick">
     <div class="seg tabs" id="tabs" role="group" aria-label="表示">
       <button type="button" data-tab="mri">MRI</button>
+      <button type="button" data-tab="ana" data-i18n="tabAna">分析</button>
       <button type="button" data-tab="method" data-i18n="tabMethod">算出方法</button>
     </div>
     <div class="seg views" id="views" role="group" aria-label="確定値とリアルタイム" hidden></div>
@@ -231,6 +246,22 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
     <section class="panel" id="intra" hidden></section>
     <section class="panel sched" id="sched" hidden></section>
+
+   </div>
+
+   <div id="t-ana" hidden>
+    <section class="panel" id="dist">
+      <h2><i class="h2t" data-i18n="distTitle">MRI の分布</i> <span data-i18n="since2018">2018年以降</span></h2>
+      <div class="readout" id="dread"></div>
+      <div class="chart" id="dchart"></div>
+      <div class="dstats" id="dstats"></div>
+    </section>
+
+    <section class="panel" id="ddp">
+      <h2><i class="h2t" data-i18n="ddTitle">MRI と その後の下落</i> <span data-i18n="since2018">2018年以降</span></h2>
+      <div class="ddnote" data-i18n="ddNote"></div>
+      <div class="ddtab" id="ddtab"></div>
+    </section>
 
     <section class="panel" id="chartbox">
       <h2><i class="h2t" data-i18n="trend">MRI の推移</i> <span data-i18n="daily">日足</span></h2>
@@ -520,7 +551,7 @@ const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,ddTitle:"MRI と その後の下落",ddNote:"その日から12ヶ月以内に、S&amp;P500 がその日の終値から何%以上下げたか。いちばん上の行は、MRI を見ずに選んだ日の確率",ddBand:"MRI",ddDays:"日数",ddAny:"どの日でも",ddDn:x=>`−${x}%以上`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
@@ -531,7 +562,7 @@ const T={
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
    note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
- en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+ en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,ddTitle:"MRI and the fall that followed",ddNote:"How often the S&amp;P 500 fell this far below the day\u2019s close within the next 12 months. The top row is any day, without looking at MRI",ddBand:"MRI",ddDays:"Days",ddAny:"Any day",ddDn:x=>`−${x}% or more`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
@@ -552,12 +583,12 @@ function applyLang(){
 }
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store={get(k,d){try{const v=localStorage.getItem("mri."+k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("mri."+k,v)}catch(e){}}};
-let D=null, ALL=[], DAYS=[], loading=false;
+let D=null, ALL=[], DAYS=[], HIST=[], loading=false;
 // the chart's two windows (top, bottom) and what each shows
 const SERIES=[["mri","MRI","ink"],["sr","SKEW","c-skew"],["vr","VIX","c-vix"],["cr","CAPE","c-cape"],["pr","S&P500","c-spx"]];
 function loadWin(){try{const w=JSON.parse(localStorage.getItem("mri.win"));if(Array.isArray(w)&&w.length===2&&w.every(a=>Array.isArray(a)))return w.map(a=>a.filter(k=>SERIES.some(s=>s[0]===k)))}catch(e){}return[["mri"],["pr"]]}
 const SHOW_FROM=20190101;
-const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,mrange:store.get("mrange","5Y"),mfrom:store.get("mfrom",""),mto:store.get("mto",""),mci:null,mover:store.get("mover","spx")};
+const state={view:store.get("view","live"),tab:store.get("tab","mri"),range:store.get("range","1Y"),win:loadWin(),from:store.get("from",""),to:store.get("to",""),ci:null,dci:null,mrange:store.get("mrange","5Y"),mfrom:store.get("mfrom",""),mto:store.get("mto",""),mci:null,mover:store.get("mover","spx")};
 if(!["mri","method"].includes(state.tab))state.tab="mri";
 const RANGES=[["3M","r3M",63],["1Y","r1Y",252],["3Y","r3Y",756],["5Y","r5Y",1260],["ALL","rALL",0]];
 const COL={};
@@ -576,7 +607,7 @@ function setData(d){
 // 確定: official closes only; リアルタイム: the provisional row for the current session as well
 function liveDay(){if(!D)return null;if(D.liveDay!==undefined)return D.liveDay;const k=D.live&&D.live.skew;return k&&(k.estimate||k.carried)?k.date:null}
 function hasLive(){const l=liveDay();return !!(l&&ALL.length&&ALL[ALL.length-1].n===l)}
-function pickView(){DAYS=state.view==="close"&&hasLive()?ALL.slice(0,-1):ALL}
+function pickView(){DAYS=state.view==="close"&&hasLive()?ALL.slice(0,-1):ALL;HIST=hasLive()?ALL.slice(0,-1):ALL}
 
 /* ---------- status ---------- */
 function nyParts(date){const f=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(date);const o={};f.forEach(p=>o[p.type]=p.value);return{wd:o.weekday,min:(+o.hour%24)*60+(+o.minute)}}
@@ -660,17 +691,17 @@ function renderTop(){
 
 /* ---------- daily chart ---------- */
 function shown(){
-  if(state.range==="CUSTOM"&&state.from&&state.to){const B=DAYS.filter(b=>{const m=b.d.slice(0,7);return m>=state.from&&m<=state.to});if(B.length)return B}
-  const r=RANGES.find(x=>x[0]===state.range)||RANGES[1];return r[2]?DAYS.slice(-r[2]):DAYS}
+  if(state.range==="CUSTOM"&&state.from&&state.to){const B=HIST.filter(b=>{const m=b.d.slice(0,7);return m>=state.from&&m<=state.to});if(B.length)return B}
+  const r=RANGES.find(x=>x[0]===state.range)||RANGES[1];return r[2]?HIST.slice(-r[2]):HIST}
 function renderChart(){
   $("range").innerHTML=RANGES.map(([k,l])=>`<button type="button" data-range="${k}" aria-pressed="${k===state.range}">${t(l)}</button>`).join("");
-  const hasSpx=DAYS.some(b=>b.pr!=null);
+  const hasSpx=HIST.some(b=>b.pr!=null);
   const avail=SERIES.filter(([k])=>k!=="pr"||hasSpx);
   $("picks").innerHTML=[t("top"),t("bottom")].map((lb,w)=>`<div class="prow"><b>${lb}</b>${avail.map(([k,l,c])=>`<label class="ck" style="--c:${COL[c]}"><input type="checkbox" data-win="${w}" data-k="${k}"${state.win[w].includes(k)?" checked":""}><span>${l}</span></label>`).join("")}</div>`).join("")
     +(hasSpx?`<div class="pnote">${t("spxNote")}</div>`:"");
   const el=$("chart"), B=shown(); if(!B.length){el.innerHTML="";return}
   // start and end year-month: the shown span, editable to pick any period
-  const fm=$("from"),tm=$("to"),lo=DAYS[0].d.slice(0,7),hi=DAYS[DAYS.length-1].d.slice(0,7);
+  const fm=$("from"),tm=$("to"),lo=HIST[0].d.slice(0,7),hi=HIST[HIST.length-1].d.slice(0,7);
   [fm,tm].forEach(i=>{i.min=lo;i.max=hi});
   if(document.activeElement!==fm)fm.value=B[0].d.slice(0,7);
   if(document.activeElement!==tm)tm.value=B[B.length-1].d.slice(0,7);
@@ -719,15 +750,56 @@ function renderChart(){
   renderMonthly();
 }
 
+/* ---------- analysis tab ---------- */
+function renderAna(){renderDist();renderDD();renderChart()}
+// every day since 2018 (MRI works from then on): [MRI, S&P 500 close], from the full history in the data
+function anaDays(){return(D.daily||[]).filter(r=>r[0]>=20180101&&r[7]!=null).map(r=>({n:r[0],m:r[7],spx:r[8]}))}
+function renderDist(){
+  const A=anaDays().filter(r=>!hasLive()||r.n!==liveDay()),el=$("dchart");if(!A.length){el.innerHTML="";return}
+  const vals=A.map(r=>r.m*100),N=vals.length,BW=5,NB=20,cnt=Array(NB).fill(0);
+  vals.forEach(v=>cnt[Math.min(NB-1,Math.floor(v/BW))]++);
+  const now=ALL[ALL.length-1].mri*100;
+  const W=Math.max(300,el.clientWidth),PH=W<560?Math.round(W*.5):240,ML=2,MR=30,MT=18,MB=22,PW=W-ML-MR,H=MT+PH+MB;
+  const x=v=>ML+PW*v/100,top=Math.max(...cnt)/N*100,ymax=Math.ceil(top/2)*2,y=v=>MT+PH-PH*v/ymax;
+  let g="",p="";
+  for(let v=0;v<=ymax;v+=ymax>10?4:2)g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".5"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;
+  [0,20,40,60,80,100].forEach(v=>{g+=`<text class="ax" x="${x(v)}" y="${H-6}" text-anchor="${v===0?"start":v===100?"end":"middle"}">${v}</text>`});
+  const ci=state.dci!=null&&state.dci<NB?state.dci:null;
+  cnt.forEach((c,i)=>{const share=c/N*100,lv=level((i*BW+BW/2)/100);
+    p+=`<rect x="${(x(i*BW)+1).toFixed(1)}" y="${y(share).toFixed(1)}" width="${(PW*BW/100-2).toFixed(1)}" height="${(y(0)-y(share)).toFixed(1)}" fill="${COL[lv[2]]}" opacity="${ci==null||ci===i?.9:.45}" rx="1.5"/>`});
+  // the BUY and SELL lines, and today
+  [[7.5,COL.cold],[80,COL.hot]].forEach(([v,c])=>{p+=`<line x1="${x(v)}" x2="${x(v)}" y1="${MT}" y2="${MT+PH}" stroke="${c}" stroke-width="1" stroke-dasharray="4 3"/>`});
+  p+=`<line x1="${x(now)}" x2="${x(now)}" y1="${MT-2}" y2="${MT+PH}" stroke="#fff" stroke-width="2"/><text x="${x(now)}" y="${MT-6}" text-anchor="middle" style="fill:#fff;font:700 11px var(--f-tick)">${t("distNow")} ${now.toFixed(1)}</text>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("distTitle")}">${g}${p}<rect class="hit" x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="transparent"/></svg>`;
+  el._geo={ML,PW,n:NB,slot:true};
+  const pct=v=>(v*100).toFixed(1),below=vals.filter(v=>v<now).length/N;
+  $("dread").innerHTML=`<div class="rrow"><span>${ci!=null?t("distBin",ci*BW,ci*BW+BW,pct(cnt[ci]/N),cnt[ci]):t("distPos",pct(below))}</span></div>`;
+  const srt=vals.slice().sort((a,b)=>a-b),med=N%2?srt[(N-1)/2]:(srt[N/2-1]+srt[N/2])/2,mean=vals.reduce((a,b)=>a+b,0)/N;
+  $("dstats").innerHTML=`<div><span>${t("distMean")}</span><b>${mean.toFixed(1)}</b></div><div><span>${t("distMed")}</span><b>${med.toFixed(1)}</b></div>`
+    +`<div><span>${t("distHi")}</span><b style="color:${COL.hot}">${pct(vals.filter(v=>v>=80).length/N)}%</b></div><div><span>${t("distLo")}</span><b style="color:${COL.cold}">${pct(vals.filter(v=>v<=7.5).length/N)}%</b></div>`;
+}
+// for each MRI band: how often the S&P 500 fell 10 / 15 / 20% or more within the next 12 months (252 trading days)
+function renderDD(){
+  const A=anaDays(),H=252,rows=[];
+  for(let i=0;i+H<A.length;i++){let lo=Infinity;for(let k=i+1;k<=i+H;k++)if(A[k].spx<lo)lo=A[k].spx;rows.push({m:A[i].m*100,dd:1-lo/A[i].spx})}
+  const BANDS=[[0,7.5],[7.5,20],[20,40],[40,60],[60,80],[80,101]],TH=[.1,.15,.2],now=ALL[ALL.length-1].mri*100;
+  const cell=R=>R.length?TH.map(th=>`<td>${(R.filter(r=>r.dd>=th).length/R.length*100).toFixed(1)}%</td>`).join(""):TH.map(()=>"<td>–</td>").join("");
+  const lab=(a,b)=>b>100?`${a}〜`:`${a}〜${b}`;
+  $("ddtab").innerHTML=`<table><thead><tr><th>${t("ddBand")}</th>${TH.map(x=>`<th>${t("ddDn",x*100)}</th>`).join("")}<th>${t("ddDays")}</th></tr></thead><tbody>`
+    +`<tr class="base"><td>${t("ddAny")}</td>${cell(rows)}<td>${rows.length}</td></tr>`
+    +BANDS.map(([a,b])=>{const R=rows.filter(r=>r.m>=a&&r.m<b);return`<tr class="${now>=a&&now<b?"now":""}"><td>${lab(a,b)}</td>${cell(R)}<td>${R.length}</td></tr>`}).join("")
+    +`</tbody></table>`;
+}
+
 /* ---------- monthly candles ---------- */
 const MRANGES=[["3Y","r3Y",36],["5Y","r5Y",60],["ALL","rALL",0]];
-function monthBars(){const M=[];DAYS.forEach(b=>{const m=b.d.slice(0,7),v=b.mri,c=M[M.length-1];
+function monthBars(){const M=[];HIST.forEach(b=>{const m=b.d.slice(0,7),v=b.mri,c=M[M.length-1];
   if(!c||c.m!==m)M.push({m,o:v,h:v,l:v,c:v,spx:b.spx});else{c.h=Math.max(c.h,v);c.l=Math.min(c.l,v);c.c=v;if(b.spx!=null)c.spx=b.spx}});return M}
 // TQQQ month-end closes from the TQQQ app's data (same site), loaded the first time TQQQ is picked
 let TQ=null,tqLoading=false;
 function loadTQ(){if(TQ||tqLoading)return;tqLoading=true;
   fetch("../tqqq/data/tqqq.json",{cache:"no-store"}).then(r=>r.json()).then(j=>{const m={};(j.daily||[]).forEach(r=>{const s=String(r[0]);m[`${s.slice(0,4)}-${s.slice(4,6)}`]=r[4]});TQ=m})
-    .catch(()=>{TQ={}}).finally(()=>{tqLoading=false;if(D&&state.view==="close")renderMonthly()})}
+    .catch(()=>{TQ={}}).finally(()=>{tqLoading=false;if(D&&state.tab==="ana")renderMonthly()})}
 const MOVER=[["spx","S&P500"],["tqqq","TQQQ"]];
 function renderMonthly(){
   $("mover").innerHTML=MOVER.map(([k,l])=>`<button type="button" data-mover="${k}" aria-pressed="${k===state.mover}">${l.replace("&","&amp;")}</button>`).join("");
@@ -777,7 +849,7 @@ function renderMonthly(){
 
 function renderTabs(){
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab));
-  $("t-mri").hidden=state.tab!=="mri";$("t-method").hidden=state.tab!=="method";
+  $("t-mri").hidden=state.tab!=="mri";$("t-ana").hidden=state.tab!=="ana";$("t-method").hidden=state.tab!=="method";
   if(D)$("views").hidden=state.tab!=="mri";
 }
 function renderAll(){
@@ -785,11 +857,11 @@ function renderAll(){
   if(!D)return;
   $("app").hidden=false;$("empty").hidden=true;
   renderStatus();renderTop();renderSched();
-  if(state.view==="close")renderChart();
+  if(state.tab==="ana")renderAna();
 }
 // realtime view: no chart, the schedule instead
 function renderSched(){
-  const live=state.view!=="close";$("sched").hidden=!live;$("chartbox").hidden=live;$("mbox").hidden=live;renderIntra();if(!live)return;
+  const live=state.view!=="close";$("sched").hidden=!live;renderIntra();if(!live)return;
   const summer=nyOffset()===-4,S=t("sched");
   // the current US daylight/standard period and the next switch (DST: 2nd Sunday of March to 1st Sunday of November)
   const sun=(y,m,n)=>{const d=new Date(Date.UTC(y,m,1));return new Date(Date.UTC(y,m,1+(7-d.getUTCDay())%7+7*(n-1)))};
@@ -853,7 +925,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v93";
+const APP_VER="mri-v94";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -876,8 +948,8 @@ async function load(){
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
-  const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="mri"&&state.view==="close")renderChart();window.scrollTo(0,0);return}
-  const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();if(state.view==="close")renderChart();return}
+  const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="ana")renderAna();window.scrollTo(0,0);return}
+  const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
   const mo=e.target.closest("[data-mover]");if(mo){state.mover=mo.dataset.mover;store.set("mover",state.mover);renderMonthly();return}
   const mr=e.target.closest("[data-mrange]");if(mr){state.mrange=mr.dataset.mrange;store.set("mrange",state.mrange);state.mci=null;renderMonthly();return}
@@ -903,7 +975,7 @@ function pickMPeriod(){
 }
 $("mfrom").addEventListener("change",pickMPeriod);$("mto").addEventListener("change",pickMPeriod);
 // charts: a tap (or click) picks a day (a month on the monthly chart), sliding sideways moves it, a vertical swipe scrolls and keeps it
-[["chart","ci",()=>renderChart()],["mchart","mci",()=>renderMonthly()]].forEach(([id,key,draw])=>{const el=$(id);let t=null;
+[["chart","ci",()=>renderChart()],["mchart","mci",()=>renderMonthly()],["dchart","dci",()=>renderDist()]].forEach(([id,key,draw])=>{const el=$(id);let t=null;
  const at=e=>{const g=el._geo,svg=el.querySelector("svg");if(!g||!svg)return;const r=svg.getBoundingClientRect();
    const px=(e.clientX-r.left)*(svg.viewBox.baseVal.width/r.width)-g.ML;
    const i=Math.max(0,Math.min(g.n-1,g.slot?Math.floor(px/g.PW*g.n):Math.round(px/g.PW*(g.n-1))));
@@ -920,12 +992,12 @@ $("mfrom").addEventListener("change",pickMPeriod);$("mto").addEventListener("cha
  el.addEventListener("pointercancel",()=>{t=null});});
 // a tap outside the chart clears the selection (a swipe to scroll does not)
 let tapOut=null;
-document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.hotlist,.picks,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
+document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.hotlist,.picks,.ddtab,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
 document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
-  if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.ci==null&&state.mci==null))return;
-  state.ci=null;state.mci=null;if(D)renderChart()},true);
-let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D&&state.tab==="mri"){if(state.view==="close")renderChart();else renderIntra()}},80)}).observe($("app"));
+  if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.ci==null&&state.mci==null&&state.dci==null))return;
+  state.ci=null;state.mci=null;state.dci=null;if(D&&state.tab==="ana")renderAna()},true);
+let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D&&state.tab==="ana")renderAna();else if(D&&state.tab==="mri"&&state.view!=="close")renderIntra()},80)}).observe($("app"));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
 // the data is published every 5 minutes during the US session; look for it every minute
 setInterval(()=>{if(document.visibilityState==="visible")load()},60*1000);
