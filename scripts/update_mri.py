@@ -222,8 +222,9 @@ def skew_change(prev):
     if j.get("skew") is None:
         return None
     # against the close-time value, not just the last result (which a weekend makes stale, so broken snapshots that
-    # agree with each other got through): SKEW does not move 15 points between sessions
-    return None if abs(j["skew"] - anchor) > 15 else j["skew"] - anchor
+    # agree with each other got through): SKEW's largest move in a day since 1990 is 24.8 points (broken snapshots
+    # were 55 off), so 25 lets every real move through
+    return None if abs(j["skew"] - anchor) > 25 else j["skew"] - anchor
 
 
 def vix_estimate(prev, close):
