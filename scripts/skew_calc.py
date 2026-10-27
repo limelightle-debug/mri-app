@@ -8,6 +8,7 @@ and, if it tracks it, used during the session.
 Writes data/skew_calc.json: {"at", "quoteTime", "skew", "official", "terms": [...]}.
 """
 import json
+import time
 import math
 import re
 import sys
@@ -37,7 +38,9 @@ JUMP_SKEW, JUMP_VIX = 6, .15
 
 
 def get(url):
-    r = requests.get(url, timeout=120, headers={"User-Agent": "Mozilla/5.0"})
+    # a throwaway query so a cached copy at the CDN is not served (the quotes are refreshed through the night)
+    r = requests.get(url, params={"_": int(time.time())}, timeout=120,
+                     headers={"User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache"})
     r.raise_for_status()
     return r.json()
 

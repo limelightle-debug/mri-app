@@ -166,7 +166,8 @@ def cboe_live(symbol):
     Overnight (VIX trades from 20:15 ET), Cboe's quote keeps the regular close's time but its
     current price moves: that price is returned under the coming session's day, so it never
     overwrites the close."""
-    j = get(f"https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{symbol}.json").json()
+    j = get(f"https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{symbol}.json?_={int(time.time())}",
+            headers={"Cache-Control": "no-cache"}).json()  # not a cached copy
     q = j.get("data") or {}
     price = q.get("current_price") or q.get("close")
     stamp = q.get("last_trade_time")
