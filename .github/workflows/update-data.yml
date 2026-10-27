@@ -64,6 +64,7 @@ jobs:
             timeout 240 python scripts/skew_calc.py > /dev/null 2>> $log || echo "skew_calc failed ($?)" >> $log
             timeout 240 python scripts/update_mri.py >> $log 2>&1 || echo "update_mri failed ($?)" >> $log
             timeout 240 python scripts/update_vix.py > /dev/null 2>> $log || echo "update_vix failed ($?)" >> $log
+            timeout 120 python scripts/update_indices.py > /dev/null 2>> $log || echo "update_indices failed ($?)" >> $log
             cat $log
             git add data/
             if ! git diff --cached --quiet; then
