@@ -318,7 +318,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>MRI（Market Risk Index）は、<b>恐怖指数研究所が2025年に開発した指標</b>です。</p>
       <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値の10年平均からの乖離率が、<b>過去10年の乖離率の平均からどれだけ外れているか</b>を、正規分布の中での位置（パーセンタイル、0〜100）で表し、その3つを平均したものです。平均からの乖離ではなく、<b>乖離の平均からの乖離</b>を見ています。</p>
       <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
-      <p class="note">MRI は、上がる・下がる確率を表すものではありません。10年の傾向から見て、いまの値がどれだけ外れているかを表します。</p>
+      <p class="note">MRI は、相場の天井と底を推定するための指標です。10年の傾向から見て、いまの値がどれだけ外れているかで、天井と底に近づいた局面を示します。</p>
 
       <h3>確定値とリアルタイム</h3>
       <p>MRI タブの上の切り替えで、2つの値を見られます。</p>
@@ -437,7 +437,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>MRI (Market Risk Index) is <b>an indicator developed by the Fear Index Research Institute in 2025</b>.</p>
       <p>For each of SKEW, VIX and the Shiller PE (CAPE), MRI takes today's deviation from the 10-year average and measures <b>how far it sits from the average deviation of the past 10 years</b>. That distance is expressed as a position in the normal distribution (a percentile, 0 to 100), and MRI is the average of the three. It is not the deviation from the average, but <b>the deviation from the average deviation</b>.</p>
       <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
-      <p class="note">MRI is not a probability of the market rising or falling. It shows how far the current values are from their 10-year trend.</p>
+      <p class="note">MRI is built to estimate market tops and bottoms. It shows how far the current values are from their 10-year trend, and so when the market is nearing a top or a bottom.</p>
 
       <h3>Confirmed and realtime</h3>
       <p>The switch at the top of the MRI tab shows two values.</p>
@@ -989,7 +989,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v126";
+const APP_VER="mri-v127";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
