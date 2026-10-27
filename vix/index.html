@@ -265,6 +265,7 @@ table.ev tr.on td{background:var(--chip)}
       <p class="pnote" data-i18n="cyNote"></p>
     </section>
 
+    <section class="panel books" data-books="vix:8:9"></section>
    </div>
    <div id="t-ev">
     <section class="panel">
@@ -301,6 +302,7 @@ table.ev tr.on td{background:var(--chip)}
       <div class="chart" id="bmchart"></div>
     </section>
 
+    <section class="panel books" data-books="vix:2:9:10"></section>
    </div>
    <div id="t-method" hidden>
     <section class="panel doc">
@@ -399,6 +401,7 @@ table.ev tr.on td{background:var(--chip)}
       <p>Where the "needle" struck, from figure 1-1 of the book. The types are also the book's: grey swan (the needle came from where the shadow was), black swan (from elsewhere), pure black swan (no balloon, no shadow).</p>
      </div>
     </section>
+    <section class="panel books" data-books="vix:8:9:10"></section>
    </div>
 
     <div class="foot">
@@ -410,9 +413,10 @@ table.ev tr.on td{background:var(--chip)}
 </div>
 
 <script src="../d3.min.js"></script>
+<script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v104";
+const APP_VER="vix-v105";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",

@@ -269,6 +269,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
     <section class="panel" id="intra" hidden></section>
     <section class="panel sched" id="sched" hidden></section>
 
+    <section class="panel books" data-books="vix:3"></section>
    </div>
 
    <div id="t-ana" hidden>
@@ -309,6 +310,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <div class="readout" id="mread"></div>
       <div class="chart" id="mchart"></div>
     </section>
+    <section class="panel books" data-books="vix:3"></section>
    </div>
 
    <div id="t-method" hidden>
@@ -551,6 +553,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       </ul>
      </div>
     </section>
+    <section class="panel books" data-books="vix:3"></section>
    </div>
 
     <div class="foot">
@@ -562,6 +565,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 </div>
 
 <script src="d3.min.js"></script>
+<script src="books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
@@ -996,7 +1000,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v129";
+const APP_VER="mri-v130";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
