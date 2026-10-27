@@ -84,7 +84,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ann span.b{font-weight:700;color:var(--ink2);top:-22px;font-size:12.5px;letter-spacing:.02em}
 .track{position:relative;height:20px;background:#0c0c22;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
 .track .fill{position:absolute;inset:0 auto 0 0;opacity:.85}
-.track .stag{position:absolute;top:50%;transform:translate(calc(-100% - 3px),-50%);font-style:normal;font-weight:800;font-size:8.5px;line-height:1;letter-spacing:.05em;color:#fff;background:#F44336;border-radius:3px;padding:2px 4px;z-index:3}
+.sig.wt{height:33px}.sig .stg{display:inline-block;margin-top:2px;font-style:normal;font-family:var(--f-body);font-stretch:100%;font-weight:800;font-size:7px;line-height:1;letter-spacing:.04em;color:#fff;background:#F44336;border-radius:2px;padding:1.5px 3px}
 .track .sl{position:absolute;top:0;bottom:0;width:1px;z-index:2;opacity:.9}
 .sig{position:relative;height:22px}
 .sig div{position:absolute;transform:translateX(-50%);text-align:center;line-height:1.35;font-family:var(--f-tick);font-stretch:82%}
@@ -749,8 +749,8 @@ function renderTop(){
     <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
     <div class="sub">${UT[k]||""}<span class="dc">${dch(k,v)}</span></div>
     <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}<span style="left:50%">Neutral</span></div>
-    <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}${k==="cape"?SIG.slice(2).map(([x])=>`<em class="stag" style="left:${x}%">SELL</em>`).join(""):""}</div>
-    <div class="sig">${SIG.map(([x,a,b,c])=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small></div>`).join("")}</div>
+    <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}</div>
+    <div class="sig${k==="cape"?" wt":""}">${SIG.map(([x,a,b,c],i)=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small>${k==="cape"&&i>=2?`<em class="stg">SELL</em>`:""}</div>`).join("")}</div>
   </div>`;
     // during the session SKEW is estimated from the option quotes (Cboe publishes it after the close)
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
@@ -1005,7 +1005,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v116";
+const APP_VER="mri-v118";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
