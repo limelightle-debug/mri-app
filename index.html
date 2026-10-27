@@ -150,15 +150,6 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .dstats div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
 .dstats b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink)}
 .dstats .wide{grid-column:1/-1}
-.ddnote{font-size:11.5px;color:var(--muted);margin:-2px 0 8px;line-height:1.5}
-.ddtab table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
-.ddtab th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px}
-.ddtab th:first-child,.ddtab td:first-child{text-align:left}
-.ddtab td{text-align:right;padding:7px 6px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:13.5px;color:var(--ink2)}
-.ddtab td small{font-size:11px;color:var(--muted);margin-left:4px}
-.ddtab tr.base td{color:var(--muted)}
-.ddtab tr.now td{background:rgba(255,255,255,.07);color:var(--ink)}
-.ddtab tr.now td:first-child{box-shadow:inset 3px 0 0 #fff}
 .hotlist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .hotlist h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--ink2);display:flex;justify-content:space-between}
 .hotlist h3 span{font-weight:400;color:var(--muted)}
@@ -286,12 +277,6 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <div class="readout" id="dread"></div>
       <div class="chart" id="dchart"></div>
       <div class="dstats" id="dstats"></div>
-    </section>
-
-    <section class="panel" id="ddp">
-      <h2><i class="h2t" data-i18n="ddTitle">MRI と その後の下落</i> <span data-i18n="since2018">2018年以降</span></h2>
-      <div class="ddnote" data-i18n="ddNote"></div>
-      <div class="ddtab" id="ddtab"></div>
     </section>
 
     <section class="panel" id="chartbox">
@@ -582,7 +567,7 @@ const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,ddTitle:"MRI と その後の下落",ddNote:"その日から12ヶ月以内に、S&amp;P500 がその日の終値から何%以上下げたか。いちばん上の行は、MRI を見ずに選んだ日の確率",ddBand:"MRI",ddDays:"日数",ddAny:"どの日でも",ddDn:x=>`−${x}%以上`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
@@ -593,7 +578,7 @@ const T={
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
    note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
- en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,ddTitle:"MRI and the fall that followed",ddNote:"How often the S&amp;P 500 fell this far below the day\u2019s close within the next 12 months. The top row is any day, without looking at MRI",ddBand:"MRI",ddDays:"Days",ddAny:"Any day",ddDn:x=>`−${x}% or more`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+ en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
@@ -835,7 +820,7 @@ function renderChart(){
 }
 
 /* ---------- analysis tab ---------- */
-function renderAna(){renderDist();renderDD();renderChart()}
+function renderAna(){renderDist();renderChart()}
 // every day since 2018 (MRI works from then on): [MRI, S&P 500 close], from the full history in the data
 function anaDays(){return(D.daily||[]).filter(r=>r[0]>=20180101&&r[7]!=null).map(r=>({n:r[0],m:r[7],spx:r[8]}))}
 function renderDist(){
@@ -861,18 +846,6 @@ function renderDist(){
   const srt=vals.slice().sort((a,b)=>a-b),med=N%2?srt[(N-1)/2]:(srt[N/2-1]+srt[N/2])/2,mean=vals.reduce((a,b)=>a+b,0)/N;
   $("dstats").innerHTML=`<div><span>${t("distMean")}</span><b>${mean.toFixed(1)}</b></div><div><span>${t("distMed")}</span><b>${med.toFixed(1)}</b></div>`
     +`<div><span>${t("distHi")}</span><b style="color:${COL.hot}">${pct(vals.filter(v=>v>=80).length/N)}%</b></div><div><span>${t("distLo")}</span><b style="color:${COL.cold}">${pct(vals.filter(v=>v<=7.5).length/N)}%</b></div>`;
-}
-// for each MRI band: how often the S&P 500 fell 10 / 15 / 20% or more within the next 12 months (252 trading days)
-function renderDD(){
-  const A=anaDays(),H=252,rows=[];
-  for(let i=0;i+H<A.length;i++){let lo=Infinity;for(let k=i+1;k<=i+H;k++)if(A[k].spx<lo)lo=A[k].spx;rows.push({m:A[i].m*100,dd:1-lo/A[i].spx})}
-  const BANDS=[[0,7.5],[7.5,20],[20,40],[40,60],[60,80],[80,101]],TH=[.1,.15,.2],now=ALL[ALL.length-1].mri*100;
-  const cell=R=>R.length?TH.map(th=>`<td>${(R.filter(r=>r.dd>=th).length/R.length*100).toFixed(1)}%</td>`).join(""):TH.map(()=>"<td>–</td>").join("");
-  const lab=(a,b)=>b>100?`${a}〜`:`${a}〜${b}`;
-  $("ddtab").innerHTML=`<table><thead><tr><th>${t("ddBand")}</th>${TH.map(x=>`<th>${t("ddDn",x*100)}</th>`).join("")}<th>${t("ddDays")}</th></tr></thead><tbody>`
-    +`<tr class="base"><td>${t("ddAny")}</td>${cell(rows)}<td>${rows.length}</td></tr>`
-    +BANDS.map(([a,b])=>{const R=rows.filter(r=>r.m>=a&&r.m<b);return`<tr class="${now>=a&&now<b?"now":""}"><td>${lab(a,b)}</td>${cell(R)}<td>${R.length}</td></tr>`}).join("")
-    +`</tbody></table>`;
 }
 
 /* ---------- monthly candles ---------- */
@@ -1016,7 +989,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v125";
+const APP_VER="mri-v126";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -1084,7 +1057,7 @@ $("mfrom").addEventListener("change",pickMPeriod);$("mto").addEventListener("cha
  el.addEventListener("pointercancel",()=>{t=null});});
 // a tap outside the chart clears the selection (a swipe to scroll does not)
 let tapOut=null;
-document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.hotlist,.picks,.ddtab,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
+document.addEventListener("pointerdown",e=>{tapOut=e.target.closest(".chart,.hotlist,.picks,button,a,input")?null:{x:e.clientX,y:e.clientY,id:e.pointerId}},true);
 document.addEventListener("pointercancel",()=>{tapOut=null},true);
 document.addEventListener("pointerup",e=>{const o=tapOut;tapOut=null;
   if(!o||e.pointerId!==o.id||Math.hypot(e.clientX-o.x,e.clientY-o.y)>=10||(state.ci==null&&state.mci==null&&state.dci==null))return;
