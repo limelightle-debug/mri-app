@@ -127,6 +127,14 @@ def live():
     return t.year * 10000 + t.month * 100 + t.day, reg, t.strftime("%Y-%m-%d %H:%M"), quote
 
 
+def write_daily(days):
+    """The daily highs (history plus today's live range) for the Mind app, which replays the VIX event rules day by day."""
+    out = DATA / "vix_daily.json"
+    body = json.dumps({"high": [[d, days[d][1]] for d in sorted(days)]}, separators=(",", ":"))
+    if not out.exists() or out.read_text(encoding="utf-8") != body:
+        out.write_text(body, encoding="utf-8")
+
+
 def main():
     days = history()
     lv = None
@@ -222,6 +230,7 @@ def main():
         if before:
             quote["prevClose"] = days[max(before)][3]
     lastday = max(days)
+    write_daily(days)
     data = {
         "source": "Cboe",
         "method": {"window": WINDOW, "fixedUntil": FIXED_UNTIL, "event": K_EVENT, "gap": GAP, "log10": True},
