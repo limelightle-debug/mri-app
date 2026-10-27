@@ -132,6 +132,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sig .tln .sk{font-style:normal;font-weight:800;font-size:9.5px;letter-spacing:.06em;color:#fff;background:#F44336;border-radius:4px;padding:1px 5px;margin-right:5px}
 #sig .tln .sk.buy{background:#4CAF50}
 #sigh .seg{margin-bottom:8px}
+#sigh .seg .sk.buy{background:#4CAF50}
 #sigh .seg .sk{font-style:normal;font-weight:800;font-size:9px;letter-spacing:.06em;color:#fff;background:#F44336;border-radius:4px;padding:2px 5px;margin-right:6px;vertical-align:1px}
 #sigh .snote{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.5}
 #sigh .shs{overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -702,7 +703,7 @@ function renderSignals(){
     const sd=i=>ds(R[i][0]).slice(2);
     return`<tr>${e.at.map((i,k)=>`<td style="${i!=null?`color:${C[k]}`:""}">${i!=null?sd(i):"–"}</td>`).join("")}<td>${e.off==null?`<b class="lit">${t("sigOn")}</b>`:sd(e.off)}</td><td class="${v>=0?"up":"dn"}${open?" open":""}">${pc(v)}</td></tr>`}).join("");
   hb.innerHTML=`<h2><i class="h2t">${t("sigHist")}</i> <span>${t("since2018")}</span></h2>
-    <div class="seg" id="sigk" role="group">${SG.map(([key,name])=>`<button type="button" data-sigk="${key}" aria-pressed="${key===k}">${key==="tbub"?`<em class="sk">SELL</em>`:""}${name}</button>`).join("")}</div>
+    <div class="seg" id="sigk" role="group">${SG.map(([key,name])=>`<button type="button" data-sigk="${key}" aria-pressed="${key===k}">${key==="buy"?`<em class="sk buy">BUY</em>`:`<em class="sk">SELL</em>`}${key==="tbub"?name:"MRI"}</button>`).join("")}</div>
     <div class="shs"><table><thead><tr>${C.map((c,i)=>`<th style="color:${c}">${k==="tbub"?`${t("sigLevel",i+1)}<small>(${th[i]})</small>`:th[i]}</th>`).join("")}<th>${t("sigReset")}</th><th>${sellK?t("sigDD"):t("sigUp")}<small>${t("sig12m")}</small></th></tr></thead><tbody>${rows}${("<tr>"+"<td>–</td>".repeat(5)+"</tr>").repeat(Math.max(0,6-E.length))}</tbody></table></div><p class="snote">${t("sigPitNote")}</p>`;
   // six rows in view whatever the signal (fewer are padded with dashes), so the panel keeps its height
   {const sc=hb.querySelector(".shs"),th=sc.querySelector("thead"),tr=sc.querySelector("tbody tr");if(th&&tr)sc.style.height=(th.offsetHeight+tr.offsetHeight*6)+"px"}
@@ -1012,7 +1013,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v121";
+const APP_VER="mri-v122";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
