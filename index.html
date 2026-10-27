@@ -84,7 +84,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ann span.b{font-weight:700;color:var(--ink2);top:-22px;font-size:12.5px;letter-spacing:.02em}
 .track{position:relative;height:20px;background:#0c0c22;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
 .track .fill{position:absolute;inset:0 auto 0 0;opacity:.85}
-.sig.wt{height:33px}.sig .stg{display:inline-block;margin-top:2px;font-style:normal;font-family:var(--f-body);font-stretch:100%;font-weight:800;font-size:7px;line-height:1;letter-spacing:.04em;color:#fff;background:#F44336;border-radius:2px;padding:1.5px 3px}
+.sig.wt{height:33px}.sig .stg:not(.on){opacity:.28}.sig .stg.on{box-shadow:0 0 6px 1px rgba(244,67,54,.8)}.sig .stg{display:inline-block;margin-top:2px;font-style:normal;font-family:var(--f-body);font-stretch:100%;font-weight:800;font-size:7px;line-height:1;letter-spacing:.04em;color:#fff;background:#F44336;border-radius:2px;padding:1.5px 3px}
 .track .sl{position:absolute;top:0;bottom:0;width:1px;z-index:2;opacity:.9}
 .sig{position:relative;height:22px}
 .sig div{position:absolute;transform:translateX(-50%);text-align:center;line-height:1.35;font-family:var(--f-tick);font-stretch:82%}
@@ -654,9 +654,9 @@ function renderViews(){
 // (at the highest level reached) until its reset: technical bubble (the CAPE score alone at
 // +1σ / +2σ / +3σ; reset when the CAPE score is back to 50), BUY (MRI 7.5 / 5 / 2.5 or below; reset at MRI 50 or
 // above), SELL (MRI 80 / 85 / 90 or above; reset at MRI 50 or below). Run over the confirmed days since 2018.
-function renderSignals(){
-  const box=$("sig"),hb=$("sigh");box.hidden=hb.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
-  const last=DAYS[DAYS.length-1];if(!last)return;
+// the three signals over the confirmed days since 2018: [key, name, lights (each time on), thresholds, R]
+function sigState(){
+  const last=(state.view==="close"?DAYS:HIST)[(state.view==="close"?DAYS:HIST).length-1];if(!last||!D)return null;
   let R=(D.daily||[]).filter(r=>r[0]>=20180101&&r[0]<=last.n);
   // each time a light comes on: the day each level was first reached (a jump reaches the ones below it the same day),
   // the highest level, and the reset (null while on)
@@ -671,6 +671,11 @@ function renderSignals(){
   const SG=[["tbub",t("sigBubble"),latch("tbub",r=>up(r[6],[.841345,.97725,.99865]),r=>r[6]<=.5),["CAPE +1σ","CAPE +2σ","CAPE +3σ"]],
     ["sell","SELL",latch("sell",r=>up(r[7],[.8,.85,.9]),r=>r[7]<=.5),["80","85","90"]],
     ["buy","BUY",latch("buy",r=>dn(r[7],[.075,.05,.025]),r=>r[7]>=.5),["7.5","5","2.5"]]];
+  return{SG,R};
+}
+function renderSignals(){
+  const box=$("sig"),hb=$("sigh");box.hidden=hb.hidden=!(state.view==="close"&&state.tab==="mri");if(box.hidden||!D)return;
+  const st=sigState();if(!st)return;const{SG,R}=st;
   const C=["#4CAF50","#FF9800","#F44336"],ds=n=>{const x=String(n);return`${x.slice(0,4)}/${+x.slice(4,6)}/${+x.slice(6,8)}`};
   // left: what it is based on; right: the last event (the day it came on, or the day it was reset)
   box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i></h2>`+SG.map(([key,name,E,th])=>{const e=E[E.length-1],on=e&&e.off==null,lv=on?e.lv:0;
@@ -741,12 +746,14 @@ function renderTop(){
   const UT={skew:ut("skew"),vix:ut("vix"),cape:ut("spx")};
   const PK={skew:"sr",vix:"vr",cape:"cr"};
   const dch=(k,v)=>{if(!prev||prev[PK[k]]==null)return"";const dd=(v-prev[PK[k]])*100;return`${t("chg")} ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`};
+  // the technical bubble's level now (its lights stay on until reset), for the SELL tags on the CAPE bar
+  const bub=(sigState()||{SG:[]}).SG.find(x=>x[0]==="tbub"),be=bub&&bub[2][bub[2].length-1],bubLv=be&&be.off==null?be.lv:0;
   const row=(k,name,raw,v)=>`<div class="ind">
     <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
     <div class="sub">${UT[k]||""}<span class="dc">${dch(k,v)}</span></div>
     <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}<span style="left:50%">Neutral</span></div>
     <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}</div>
-    <div class="sig${k==="cape"?" wt":""}">${SIG.map(([x,a,b,c],i)=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small>${k==="cape"&&i>=2?`<em class="stg">SELL</em>`:""}</div>`).join("")}</div>
+    <div class="sig${k==="cape"?" wt":""}">${SIG.map(([x,a,b,c],i)=>`<div style="left:${x}%;color:${COL[c]}"><b>${a}</b><small>${b}</small>${k==="cape"&&i>=2?`<em class="stg${bubLv>=i-1?" on":""}">SELL</em>`:""}</div>`).join("")}</div>
   </div>`;
     // during the session SKEW is estimated from the option quotes (Cboe publishes it after the close)
   const ls=D.live&&D.live.skew&&D.live.skew.date===last.n?D.live.skew:null;
@@ -989,7 +996,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v128";
+const APP_VER="mri-v129";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
