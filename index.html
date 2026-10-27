@@ -129,6 +129,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sig .tlv b{display:block;font-family:var(--f-body);font-stretch:100%;font-weight:600;font-size:10.5px;color:var(--muted)}
 #sig .tln small{display:block;font-weight:600;font-size:11px;color:var(--muted);margin-top:3px}
 #sig .tln .sk{font-style:normal;font-weight:800;font-size:9.5px;letter-spacing:.06em;color:#fff;background:#F44336;border-radius:4px;padding:1px 5px;margin-right:5px}
+#sig .tln .sk.buy{background:#4CAF50}
 #sigh .seg{margin-bottom:8px}
 #sigh .snote{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.5}
 #sigh .shs{overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -685,7 +686,7 @@ function renderSignals(){
   // left: what it is based on; right: the last event (the day it came on, or the day it was reset)
   box.innerHTML=`<h2><i class="h2t">${t("sigTitle")}</i></h2>`+SG.map(([key,name,E,th])=>{const e=E[E.length-1],on=e&&e.off==null,lv=on?e.lv:0;
     const ev=!e?"–":on?`<b>${t("sigOnAt")}</b>${ds(R[e.on][0])}`:`<b>${t("sigReset")}</b>${ds(R[e.off][0])}`;
-    return`<div class="tl"><div class="tln">${name}<small>${key==="tbub"?`<em class="sk">SELL</em>${t("sigCape")}`:"MRI"}</small></div><div class="tlh">${C.map((c,i)=>`<i class="${i<lv?"on":""}" style="--c:${c}"><small>${key==="tbub"?`Lv. ${i+1}`:th[i]}</small></i>`).join("")}</div><div class="tlv">${ev}</div></div>`}).join("");
+    return`<div class="tl"><div class="tln">${name}<small>${key==="buy"?`<em class="sk buy">BUY</em>`:`<em class="sk">SELL</em>`}${key==="tbub"?t("sigCape"):"MRI"}</small></div><div class="tlh">${C.map((c,i)=>`<i class="${i<lv?"on":""}" style="--c:${c}"><small>${key==="tbub"?`Lv. ${i+1}`:th[i]}</small></i>`).join("")}</div><div class="tlv">${ev}</div></div>`}).join("");
   // history: one signal at a time, newest first, in a scrolling list
   const k=SG.some(x=>x[0]===state.sigk)?state.sigk:"tbub",[,,E,th]=SG.find(x=>x[0]===k),L=R.length-1;
   const pc=v=>`${v>=0?"+":"−"}${Math.abs(v*100).toFixed(1)}%`;
@@ -1003,7 +1004,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v114";
+const APP_VER="mri-v115";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
