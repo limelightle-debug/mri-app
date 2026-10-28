@@ -1,25 +1,19 @@
-"""One-off probe: which sources answer for gold, WTI, copper and bitcoin from GitHub Actions."""
-import json, time, requests
+"""One-off probe (2): raw Nasdaq commodity answers, stooq, Cboe ETFs."""
+import json, requests
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 NH = {"User-Agent": UA, "Accept": "application/json, text/plain, */*", "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}
 out = {}
-def tryit(name, url, headers, pick):
+def get(name, url, headers, n=700):
     try:
         r = requests.get(url, headers=headers, timeout=30)
-        out[name] = {"status": r.status_code, "val": pick(r.json()) if r.ok else r.text[:200]}
+        out[name] = f"{r.status_code} " + r.text[:n]
     except Exception as e:
-        out[name] = {"err": str(e)[:200]}
-def yh(j):
-    m = j["chart"]["result"][0]["meta"]
-    return {k: m.get(k) for k in ("symbol", "regularMarketPrice", "chartPreviousClose", "previousClose", "regularMarketTime", "currency")}
-for s in ["GC=F", "CL=F", "HG=F", "BTC-USD", "^TNX", "^IRX", "2YY=F", "JPY=X", "DX-Y.NYB", "^FVX", "^TYX"]:
-    for host in ["query1", "query2"]:
-        tryit(f"yahoo:{host}:{s}", f"https://{host}.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(s)}?range=5d&interval=1d", {"User-Agent": UA}, yh)
-def nq(j):
-    p = (j.get("data") or {}).get("primaryData") or {}
-    return {k: p.get(k) for k in ("lastSalePrice", "netChange", "percentageChange", "lastTradeTimestamp")}
-for s, c in [("GC:CMX", "commodities"), ("CL:NMX", "commodities"), ("HG:CMX", "commodities"), ("BTC", "crypto")]:
-    tryit(f"nasdaq:{s}", f"https://api.nasdaq.com/api/quote/{requests.utils.quote(s)}/info?assetclass={c}", NH, nq)
-tryit("coinbase:BTC", "https://api.coinbase.com/v2/prices/BTC-USD/spot", {"User-Agent": UA}, lambda j: j)
-tryit("fred:DGS10", "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10", {"User-Agent": UA}, lambda j: j)
+        out[name] = "ERR " + str(e)[:200]
+for s in ["GC:CMX", "CL:NMX", "HG:CMX", "SI:CMX"]:
+    get(f"nasdaq-info:{s}", f"https://api.nasdaq.com/api/quote/{s}/info?assetclass=commodities", NH, 1200)
+get("nasdaq-summary:GC", "https://api.nasdaq.com/api/quote/GC:CMX/summary?assetclass=commodities", NH)
+for s in ["gc.f", "cl.f", "hg.f", "btcusd", "10usy.b", "2usy.b", "usdjpy", "dx.f"]:
+    get(f"stooq:{s}", f"https://stooq.com/q/l/?s={s}&f=sd2t2ohlcp&h&e=csv", {"User-Agent": UA}, 300)
+for s in ["GLD", "USO", "CPER", "IBIT", "_TNX", "_IRX", "_FVX", "_TYX"]:
+    get(f"cboe:{s}", f"https://cdn.cboe.com/api/global/delayed_quotes/quotes/{s}.json", {"User-Agent": UA}, 400)
 open("data/probe_cmdty.json", "w").write(json.dumps(out, indent=1, ensure_ascii=False))
