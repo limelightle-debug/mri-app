@@ -21,5 +21,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           timeout 120 python scripts/update_markets.py --force || echo "failed ($?)"
-          git add data/markets.json
+          timeout 180 python scripts/update_curve.py || echo "curve failed ($?)"
+          git add data/markets.json data/curve.json
           git commit -q -m "data: markets" && timeout 120 git pull -q --rebase origin main && timeout 120 git push -q || true
