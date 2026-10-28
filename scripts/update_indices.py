@@ -75,19 +75,51 @@ def fetch(sources):
     return None, errs
 
 
+def qday(t):
+    """yyyymmdd of a quote's trade time: Cboe "2026-10-27T16:14:59" or Nasdaq "Oct 27, 2026 ..."."""
+    t = str(t or "")
+    try:
+        return int(t[:10].replace("-", "")) if t[:4].isdigit() else int(datetime.strptime(" ".join(t.split()[:3]), "%b %d, %Y").strftime("%Y%m%d"))
+    except ValueError:
+        return None
+
+
+def settle(q, k, hist, old_items):
+    """Change against our own record of the previous session's close.
+
+    Cboe rolls prev_day_close to the latest close some hours after the session (both then read the same),
+    so the source's previous close is trusted only when it differs from the price."""
+    day = qday(q.get("time"))
+    h = hist.setdefault(k, {})
+    if day:
+        before = [int(d) for d in h if int(d) < day]
+        oldq = old_items.get(k)
+        if before:
+            q["prev"] = h[str(max(before))]
+        elif abs(q["prev"] - q["price"]) < 1e-9 and oldq and qday(oldq.get("time")) == day and oldq.get("prev"):
+            q["prev"] = oldq["prev"]
+        h[str(day)] = q["price"]
+        for d in sorted(h)[:-10]:
+            del h[d]
+    q["pct"] = round((q["price"] / q["prev"] - 1) * 100, 2) if q.get("prev") else None
+    return q
+
+
 def main():
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
+    hist = old.get("hist", {})
+    old_items = {x["k"]: x for x in old.get("indices", []) + old.get("sectors", [])}
     out = {"indices": [], "sectors": [], "errors": []}
     for k, ja, en, src in INDICES:
         q, errs = fetch(src)
         out["errors"] += errs
         if q:
-            out["indices"].append({"k": k, "ja": ja, "en": en, **q})
+            out["indices"].append({"k": k, "ja": ja, "en": en, **settle(q, k, hist, old_items)})
     for t, ja, en in SECTORS:
         q, errs = fetch([("cboe", t, 1), ("nasdaq", t, "etf", 1)])
         out["errors"] += errs
         if q:
-            out["sectors"].append({"k": t, "ja": ja, "en": en, **q})
+            out["sectors"].append({"k": t, "ja": ja, "en": en, **settle(q, t, hist, old_items)})
     if not out["indices"] and not out["sectors"]:
         print("no data:", *out["errors"], sep="\n", file=sys.stderr)
         sys.exit(1)
@@ -95,7 +127,8 @@ def main():
     for part in ("indices", "sectors"):
         have = {x["k"] for x in out[part]}
         out[part] += [x for x in old.get(part, []) if x["k"] not in have]
-    same = all(old.get(p) == out[p] for p in ("indices", "sectors"))
+    out["hist"] = hist
+    same = all(old.get(p) == out[p] for p in ("indices", "sectors", "hist"))
     if same and old:
         return
     out["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
