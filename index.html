@@ -572,7 +572,7 @@ const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+ ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"7.5以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
@@ -583,7 +583,7 @@ const T={
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
    note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
- en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+ en:{loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 7.5 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
@@ -837,16 +837,22 @@ function renderAna(){renderDist();renderChart()}
 function anaDays(){return(D.daily||[]).filter(r=>r[0]>=20180101&&r[7]!=null).map(r=>({n:r[0],m:r[7],spx:r[8]}))}
 function renderDist(){
   const A=anaDays().filter(r=>!hasLive()||r.n!==liveDay()),el=$("dchart");if(!A.length){el.innerHTML="";return}
-  $("dscale").innerHTML=[["lin","scLin"],["log","scLog"]].map(([k,l])=>`<button type="button" data-dsc="${k}" aria-pressed="${k===state.dsc}">${t(l)}</button>`).join("");
-  // linear: 20 bins of 5 points; log: 20 bins of equal ratio from 2 to 100 (MRI has never been below 2)
-  const LOG=state.dsc==="log",LO=Math.log(2),HI=Math.log(100),NB=20;
-  const u=v=>LOG?(Math.log(Math.max(2,Math.min(100,v)))-LO)/(HI-LO):Math.max(0,Math.min(1,v/100)),edge=i=>LOG?Math.exp(LO+(HI-LO)*i/NB):i*100/NB;
-  const vals=A.map(r=>r.m*100),N=vals.length,cnt=Array(NB).fill(0);
+  $("dscale").innerHTML=[["lin","scLin"],["log","scLog"],["bc","scBC"]].map(([k,l])=>`<button type="button" data-dsc="${k}" aria-pressed="${k===state.dsc}">${t(l)}</button>`).join("");
+  // linear: 20 bins of 5 points; log: 20 bins of equal ratio from 2 to 100 (MRI has never been below 2);
+  // Box-Cox: 20 equal bins of MRI^λ, λ chosen so the histogram is as symmetric as it gets (log is λ=0, linear λ=1)
+  const vals=A.map(r=>r.m*100),N=vals.length,NB=20;
+  const skew=a=>{const n=a.length,m=a.reduce((x,y)=>x+y,0)/n,sd=Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/n);return a.reduce((x,y)=>x+((y-m)/sd)**3,0)/n};
+  let lam=1;if(state.dsc==="bc"){let best=1/0;for(let l=.2;l<=4.001;l+=.05){const k=Math.abs(skew(vals.map(v=>v**l)));if(k<best){best=k;lam=l}}}
+  if(state.dsc==="log")lam=0;
+  const LOG=lam===0,LO=Math.log(2),HI=Math.log(100);
+  const u=v=>LOG?(Math.log(Math.max(2,Math.min(100,v)))-LO)/(HI-LO):(Math.max(0,Math.min(100,v))/100)**lam,edge=i=>LOG?Math.exp(LO+(HI-LO)*i/NB):100*(i/NB)**(1/lam);
+  const tv=v=>LOG?Math.log(v):lam===1?v:(v**lam-1)/lam;
+  const cnt=Array(NB).fill(0);
   vals.forEach(v=>cnt[Math.min(NB-1,Math.floor(u(v)*NB))]++);
   const now=ALL[ALL.length-1].mri*100;
   const W=Math.max(300,el.clientWidth),PH=W<560?Math.round(W*.5):240,ML=2,MR=30,MT=18,MB=22,PW=W-ML-MR,H=MT+PH+MB;
   const x=v=>ML+PW*u(v),top=Math.max(...cnt)/N*100,ymax=Math.ceil(top/2)*2,y=v=>MT+PH-PH*v/ymax;
-  const fmt=v=>LOG?(v<10?v.toFixed(1):Math.round(v)):Math.round(v);
+  const fmt=v=>lam!==1&&v<10?v.toFixed(1):Math.round(v);
   let g="",p="";
   for(let v=0;v<=ymax;v+=ymax>10?4:2)g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".5"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;
   (LOG?[2,5,10,20,50,100]:[0,20,40,60,80,100]).forEach((v,j,a)=>{g+=`<text class="ax" x="${x(v)}" y="${H-6}" text-anchor="${j===0?"start":j===a.length-1?"end":"middle"}">${v}</text>`});
@@ -862,7 +868,8 @@ function renderDist(){
   $("dread").innerHTML=`<div class="rrow"><span>${ci!=null?t("distBin",fmt(edge(ci)),fmt(edge(ci+1)),pct(cnt[ci]/N),cnt[ci]):t("distPos",pct(below))}</span></div>`;
   const srt=vals.slice().sort((a,b)=>a-b),med=N%2?srt[(N-1)/2]:(srt[N/2-1]+srt[N/2])/2,mean=vals.reduce((a,b)=>a+b,0)/N;
   $("dstats").innerHTML=`<div><span>${t("distMean")}</span><b>${mean.toFixed(1)}</b></div><div><span>${t("distMed")}</span><b>${med.toFixed(1)}</b></div>`
-    +`<div><span>${t("distHi")}</span><b style="color:${COL.hot}">${pct(vals.filter(v=>v>=80).length/N)}%</b></div><div><span>${t("distLo")}</span><b style="color:${COL.cold}">${pct(vals.filter(v=>v<=7.5).length/N)}%</b></div>`;
+    +`<div><span>${t("distHi")}</span><b style="color:${COL.hot}">${pct(vals.filter(v=>v>=80).length/N)}%</b></div><div><span>${t("distLo")}</span><b style="color:${COL.cold}">${pct(vals.filter(v=>v<=7.5).length/N)}%</b></div>`
+    +`<div><span>${t("distSkew")}</span><b>${skew(vals.map(tv)).toFixed(2)}</b></div><div><span>${t("distLam")}</span><b>${lam.toFixed(2)}</b></div>`;
 }
 
 /* ---------- monthly candles ---------- */
@@ -1006,7 +1013,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v131";
+const APP_VER="mri-v132";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
