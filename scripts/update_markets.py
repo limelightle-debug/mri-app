@@ -28,8 +28,6 @@ ITEMS = [
     ("dxy", ".DXY", "ドルインデックス", "Dollar index", "", 2),
     ("eurjpy", "EURJPY=", "ユーロ円", "EUR/JPY", "円", 2),
     ("gbpjpy", "GBPJPY=", "ポンド円", "GBP/JPY", "円", 2),
-    ("audjpy", "AUDJPY=", "豪ドル円", "AUD/JPY", "円", 2),
-    ("chfjpy", "CHFJPY=", "スイスフラン円", "CHF/JPY", "円", 2),
 ]
 URL = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
        "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
