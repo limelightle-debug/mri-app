@@ -855,6 +855,8 @@ function renderDist(){
   const fmt=v=>lam!==1&&v<10?v.toFixed(1):Math.round(v);
   let g="",p="";
   for(let v=0;v<=ymax;v+=ymax>10?4:2)g+=`<line class="grid" x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" opacity=".5"/><text class="ax" x="${W}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;
+  // light green at BUY (8) and below, light red at SELL (80) and above, behind the bars
+  [[ML,x(8),"#4CAF50","BUY","start",ML+3],[x(80),ML+PW,"#F44336","SELL","end",ML+PW-3]].forEach(([a,b,c,l,an,tx])=>{g+=`<rect x="${a.toFixed(1)}" y="${MT}" width="${(b-a).toFixed(1)}" height="${PH}" fill="${c}" opacity=".16"/><text x="${tx.toFixed(1)}" y="${MT+13}" text-anchor="${an}" style="fill:${c};font:800 10px var(--f-tick);letter-spacing:.06em">${l}</text>`});
   (LOG?[2,5,10,20,50,100]:[0,20,40,60,80,100]).forEach((v,j,a)=>{g+=`<text class="ax" x="${x(v)}" y="${H-6}" text-anchor="${j===0?"start":j===a.length-1?"end":"middle"}">${v}</text>`});
   const ci=state.dci!=null&&state.dci<NB?state.dci:null;
   cnt.forEach((c,i)=>{const share=c/N*100,lv=level((edge(i)+edge(i+1))/200);
@@ -1013,7 +1015,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v133";
+const APP_VER="mri-v134";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
