@@ -1,0 +1,139 @@
+{
+ "yahoo:query1:GC=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:GC=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:CL=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:CL=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:HG=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:HG=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:BTC-USD": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:BTC-USD": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:^TNX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:^TNX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:^IRX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:^IRX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:2YY=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:2YY=F": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:JPY=X": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:JPY=X": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:DX-Y.NYB": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:DX-Y.NYB": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:^FVX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:^FVX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query1:^TYX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "yahoo:query2:^TYX": {
+  "status": 429,
+  "val": "Too Many Requests\r\n"
+ },
+ "nasdaq:GC:CMX": {
+  "status": 200,
+  "val": {
+   "lastSalePrice": null,
+   "netChange": null,
+   "percentageChange": null,
+   "lastTradeTimestamp": null
+  }
+ },
+ "nasdaq:CL:NMX": {
+  "status": 200,
+  "val": {
+   "lastSalePrice": null,
+   "netChange": null,
+   "percentageChange": null,
+   "lastTradeTimestamp": null
+  }
+ },
+ "nasdaq:HG:CMX": {
+  "status": 200,
+  "val": {
+   "lastSalePrice": null,
+   "netChange": null,
+   "percentageChange": null,
+   "lastTradeTimestamp": null
+  }
+ },
+ "nasdaq:BTC": {
+  "status": 200,
+  "val": {
+   "lastSalePrice": "$79,925.20",
+   "netChange": "-470.30",
+   "percentageChange": "-0.58%",
+   "lastTradeTimestamp": "Oct 27, 2026 7:33 AM ET "
+  }
+ },
+ "coinbase:BTC": {
+  "status": 200,
+  "val": {
+   "data": {
+    "amount": "80796.415",
+    "base": "BTC",
+    "currency": "USD"
+   }
+  }
+ },
+ "fred:DGS10": {
+  "err": "HTTPSConnectionPool(host='fred.stlouisfed.org', port=443): Read timed out. (read timeout=30)"
+ }
+}
