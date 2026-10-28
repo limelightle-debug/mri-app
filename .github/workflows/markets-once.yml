@@ -1,0 +1,25 @@
+name: Markets once
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Fetch now (outside the session window too) and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          timeout 120 python scripts/update_markets.py --force || echo "failed ($?)"
+          git add data/markets.json
+          git commit -q -m "data: markets" && timeout 120 git pull -q --rebase origin main && timeout 120 git push -q || true

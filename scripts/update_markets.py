@@ -1,4 +1,4 @@
-"""Commodities, Treasury yields and the yen for the institute's morning paper: data/markets.json.
+"""Commodities, Treasury yields, the dollar index and the cross-yen rates for the institute's morning paper: data/markets.json.
 
 One request to CNBC's quote service. Futures reopen at 18:00 ET, so the file keeps the snapshot taken
 between 9:30 and 18:00 ET on weekdays (after 18:00 the quotes are the next session's); bitcoin trades
@@ -25,6 +25,11 @@ ITEMS = [
     ("us10y", "US10Y", "米10年債", "US 10Y", "%", 3),
     ("us2y", "US2Y", "米2年債", "US 2Y", "%", 3),
     ("usdjpy", "JPY=", "ドル円", "USD/JPY", "円", 2),
+    ("dxy", ".DXY", "ドルインデックス", "Dollar index", "", 2),
+    ("eurjpy", "EURJPY=", "ユーロ円", "EUR/JPY", "円", 2),
+    ("gbpjpy", "GBPJPY=", "ポンド円", "GBP/JPY", "円", 2),
+    ("audjpy", "AUDJPY=", "豪ドル円", "AUD/JPY", "円", 2),
+    ("chfjpy", "CHFJPY=", "スイスフラン円", "CHF/JPY", "円", 2),
 ]
 URL = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
        "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
