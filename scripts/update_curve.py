@@ -1,7 +1,7 @@
 """The US Treasury yield curve for the institute's morning paper: data/curve.json.
 
 Source: the Treasury's daily par yield curve (home.treasury.gov), 1 month to 30 years. Keeps the latest
-day's curve, the curves a month and a year earlier, and the 10Y-2Y spread day by day for the last 5 years.
+day's curve, the curves 3 and 6 months earlier, and the 10Y-2Y and 10Y-3M spreads day by day for the last 5 years.
 Writes only when the latest day changes.
 """
 import csv
@@ -52,7 +52,7 @@ def main():
     days = sorted(rows)
     last = days[-1]
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
-    if old.get("date") == last.isoformat():
+    if old.get("date") == last.isoformat() and "m3" in old:
         return
 
     def on_or_before(d):
@@ -64,9 +64,11 @@ def main():
         "date": last.isoformat(),
         "tenors": [[k, yrs] for _, k, yrs in TENORS],
         "now": snap(last),
-        "m1": snap(on_or_before(last - timedelta(days=30))),
-        "y1": snap(on_or_before(last - timedelta(days=365))),
-        "spread": [[d.strftime("%Y%m%d"), round(rows[d]["10Y"] - rows[d]["2Y"], 2)] for d in days],
+        "m3": snap(on_or_before(last - timedelta(days=91))),
+        "m6": snap(on_or_before(last - timedelta(days=182))),
+        # day by day: [date, 10Y-2Y, 10Y-3M]
+        "spread": [[d.strftime("%Y%m%d"), round(rows[d]["10Y"] - rows[d]["2Y"], 2),
+                    round(rows[d]["10Y"] - rows[d]["3M"], 2) if "3M" in rows[d] else None] for d in days],
         "source": "U.S. Treasury daily par yield curve",
         "updatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
