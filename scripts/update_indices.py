@@ -8,6 +8,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -91,9 +92,16 @@ def settle(q, k, hist, old_items):
     so the source's previous close is trusted only when it differs from the price."""
     day = qday(q.get("time"))
     h = hist.setdefault(k, {})
+    # a session's close is fixed once taken after the session: later quotes (after hours, or the source
+    # rolling its previous close overnight) never change it
+    oldq = old_items.get(k)
+    if day and oldq and oldq.get("final") and qday(oldq.get("time")) == day:
+        return oldq
+    now = datetime.now(ZoneInfo("America/New_York"))
+    nowd = int(now.strftime("%Y%m%d"))
+    q["final"] = bool(day) and (nowd > day or now.hour * 60 + now.minute >= 16 * 60 + 15)
     if day:
         before = [int(d) for d in h if int(d) < day]
-        oldq = old_items.get(k)
         if before:
             q["prev"] = h[str(max(before))]
         elif abs(q["prev"] - q["price"]) < 1e-9 and oldq and qday(oldq.get("time")) == day and oldq.get("prev"):
