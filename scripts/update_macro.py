@@ -100,7 +100,12 @@ def gdp():
 
 
 def gdpnow():
-    import openpyxl
+    try:
+        import openpyxl
+    except ImportError:  # a loop started before the workflow installed it
+        import subprocess
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "openpyxl"], check=True, timeout=120)
+        import openpyxl
     r = requests.get("https://www.atlantafed.org/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/"
                      "GDPTrackingModelDataAndForecasts.xlsx", headers={"User-Agent": UA}, timeout=120)
     r.raise_for_status()
