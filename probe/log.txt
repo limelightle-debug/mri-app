@@ -1,0 +1,9 @@
+bls.json 200 29234 0.489217
+curl: (28) Operation timed out after 60001 milliseconds with 0 bytes received
+fred11.csv 000 0 60.001360
+fred11.csv fail
+curl: (92) HTTP/2 stream 1 was not closed cleanly: INTERNAL_ERROR (err 2)
+fred2.csv 000 0 0.096631
+fred2.csv fail
+bea.html 200 42203 0.289038
+beaapi.json 200 515 0.217284
