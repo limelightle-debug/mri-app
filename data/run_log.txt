@@ -1,2 +1,4 @@
-2026-10-29T13:39:57Z 09:39 ET mode=open run=40881499244
+2026-10-29T13:45:17Z 09:45 ET mode=open run=40881499244
+error: RuntimeError: cannot compute SPXW 2026-11-27 16:00:00-05:00
+skew_calc failed (1)
 updated: 4269 days 20091102..20261029, MRI 0.5959 (VIX 16.99 SKEW 148.48 CAPE 40.693)
