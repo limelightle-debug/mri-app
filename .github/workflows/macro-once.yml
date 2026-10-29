@@ -13,6 +13,7 @@ jobs:
       - run: pip install -q requests
       - run: |
           python scripts/update_liquidity.py 2> /tmp/liq.err || true
+          mkdir -p probe; curl -sSL -m 120 -A "Mozilla/5.0" -o /tmp/h6.zip https://www.federalreserve.gov/releases/h6/data/FRB_h6_xml.zip; unzip -l /tmp/h6.zip > probe/h6zip.txt; unzip -o -q /tmp/h6.zip -d /tmp/h6x; for f in /tmp/h6x/*; do echo "== $f" >> probe/h6zip.txt; head -c 3000 "$f" >> probe/h6zip.txt; echo >> probe/h6zip.txt; grep -o 'SERIES_NAME="[^"]*"' "$f" | head -40 >> probe/h6zip.txt; done
           mkdir -p probe; cp /tmp/liq.err probe/ || true
           python scripts/update_macro.py --force || true
           mkdir -p probe; cp -r /tmp/macro_debug/* probe/ 2>/dev/null || true
