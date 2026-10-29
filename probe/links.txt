@@ -1,8 +1,0 @@
-href="/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/GDPTrackingModelDataAndForecasts.xlsx"
-href="/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/GDPNowcastDataReleaseDates.xlsx"
-href="https://www.frbatlanta.org/-/media/Documents/cqer/researchcq/gdpnow/GDPTrackingModelDataAndForecasts.xlsx?la=en&amp;hash=DE4A6EB66372475C6C2F19BDAF791C0D"
-href="https://www.frbatlanta.org/-/media/Documents/cqer/researchcq/gdpnow/GDPTrackingModelDataAndForecasts.xlsx?la=en&amp;hash=DE4A6EB66372475C6C2F19BDAF791C0D"
-href="https://www.frbatlanta.org/-/media/Documents/cqer/researchcq/gdpnow/GDPTrackingModelDataAndForecasts.xlsx?la=en&amp;hash=DE4A6EB66372475C6C2F19BDAF791C0D"
-href="/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/GDPTrackingModelDataAndForecasts.xlsx"
-href="/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/GDPTrackingModelDataAndForecasts.xlsx"
-href="/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/GDPNowcastDataReleaseDates.xlsx"
