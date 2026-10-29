@@ -655,6 +655,7 @@ function renderStatus(){
 
 /* ---------- MRI and the three indicators ---------- */
 function renderViews(){
+  if(EMBED){embedTabs();return}
   const el=$("views"),live=hasLive();el.hidden=state.tab!=="mri";
   const c=live?ALL[ALL.length-2]:ALL[ALL.length-1],md=s=>`${+s.slice(5,7)}/${+s.slice(8,10)}`;
   const tm=live?fmtTime(new Date(D.updatedAt),{hour:"2-digit",minute:"2-digit"}):t("paused");
@@ -934,7 +935,13 @@ function renderMonthly(){
   $("mread").innerHTML=`<div class="rrow"><b>${b.m}</b><span>${t("mOpen")} <b>${f(b.o)}</b></span><span>${t("mHigh")} <b>${f(b.h)}</b></span><span>${t("mLow")} <b>${f(b.l)}</b></span><span>${t("mClose")} <b style="color:${b.c>=b.o?COL.cold:COL.hot}">${f(b.c)}</b></span></div><div class="rrow">${(v=>v!=null?`<span style="color:${SPC}">${ovName} <b style="color:inherit">${v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b></span>`:tq&&!TQ?`<span style="color:var(--muted)">${ovName} …</span>`:"")(ov(b))}</div>`;
 }
 
+// embedded in the institute's app: one row, 確定値 / リアルタイム / 分析 / 算出方法 (the MRI tab is the two views)
+const EMBED=document.documentElement.classList.contains("embed");
+function embedTabs(){const v=state.tab==="mri"?(state.view==="close"?"close":"live"):null;
+  $("tabs").innerHTML=[["close","confirmed","view"],["live","realtime","view"],["ana","tabAna","tab"],["method","tabMethod","tab"]].map(([k,l,a])=>`<button type="button" data-${a}="${k}" aria-pressed="${a==="view"?v===k:state.tab===k}">${t(l)}</button>`).join("");
+  $("views").hidden=true}
 function renderTabs(){
+  if(EMBED){embedTabs();$("t-mri").hidden=state.tab!=="mri";$("t-ana").hidden=state.tab!=="ana";$("t-method").hidden=state.tab!=="method";return}
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===state.tab));
   $("t-mri").hidden=state.tab!=="mri";$("t-ana").hidden=state.tab!=="ana";$("t-method").hidden=state.tab!=="method";
   if(D)$("views").hidden=state.tab!=="mri";
@@ -1019,7 +1026,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v136";
+const APP_VER="mri-v137";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -1043,7 +1050,7 @@ async function load(){
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
   const tb=e.target.closest("[data-tab]");if(tb){state.tab=tb.dataset.tab;store.set("tab",state.tab);state.ci=null;renderTabs();if(D&&state.tab==="ana")renderAna();window.scrollTo(0,0);return}
-  const vw=e.target.closest("[data-view]");if(vw){state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();return}
+  const vw=e.target.closest("[data-view]");if(vw){if(EMBED&&state.tab!=="mri"){state.tab="mri";store.set("tab","mri");renderTabs();window.scrollTo(0,0)}state.view=vw.dataset.view;store.set("view",state.view);state.ci=null;pickView();renderTop();renderSched();return}
   const r=e.target.closest("[data-range]");if(r){state.range=r.dataset.range;store.set("range",state.range);state.ci=null;renderChart();return}
   const sk=e.target.closest("[data-sigk]");if(sk){state.sigk=sk.dataset.sigk;store.set("sigk",state.sigk);renderSignals();return}
   const mo=e.target.closest("[data-mover]");if(mo){state.mover=mo.dataset.mover;store.set("mover",state.mover);renderMonthly();return}
@@ -1100,6 +1107,7 @@ setInterval(()=>{if(document.visibilityState==="visible")load()},60*1000);
 setInterval(()=>{if(D)renderStatus()},60*1000);
 $("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;try{localStorage.setItem("lang",LANG)}catch(e){}applyLang();if(D)renderAll()});
 applyLang();readColors();renderTabs();load();
+if(EMBED)renderTabs();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
 </body>
