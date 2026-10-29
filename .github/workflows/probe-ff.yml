@@ -1,0 +1,24 @@
+name: probe-ff
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p probe; UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+          g(){ n=$1; shift; curl -sSL -m 40 -A "$UA" -H "Accept: application/json, text/plain, */*" -o probe/$n -w "$n %{http_code} %{size_download}\n" "$@" >> probe/log.txt 2>>probe/log.txt || echo "$n fail" >> probe/log.txt; }
+          g cme.json "https://www.cmegroup.com/CmeWS/mvc/Quotes/Future/305/G"
+          g cme2.json "https://www.cmegroup.com/CmeWS/mvc/quotes/v2/305?isProtected&_t=1"
+          g cnbc1.json "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=@FF.1|@FF.2|@FF.3|@ZQ.1|ZQZ26|@ZQZ26&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json"
+          g mpt.html "https://www.atlantafed.org/cenfis/market-probability-tracker"
+          grep -oiE 'href="[^"]*(xlsx|csv|json)[^"]*"' probe/mpt.html | head -20 > probe/mpt_links.txt || true
+          g qs.html "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?viewitemid=IntegratedFedWatchTool"
+          g barchart.html "https://www.barchart.com/futures/quotes/ZQZ26/overview"
+          g nasdaq.json -H "Origin: https://www.nasdaq.com" -H "Referer: https://www.nasdaq.com/" "https://api.nasdaq.com/api/quote/ZQZ26/info?assetclass=futures"
+          rm -f probe/mpt.html probe/qs.html probe/barchart.html
+          cat probe/log.txt
+          git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+          git add probe && git commit -qm "probe ff" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
