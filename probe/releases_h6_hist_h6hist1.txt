@@ -1,3 +1,0 @@
-Historical data tables for the H.6 statistical release are longer available on this webpage as of Tuesday, May 1, 2012. The data contained
-in the historical tables will continue to be available as preformatted data packages through the Data Download Program.
-http://www.federalreserve.gov/datadownload/Choose.aspx?rel=H.6 

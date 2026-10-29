@@ -101,11 +101,39 @@ def parse_h6(page):
     return hist
 
 
+def m2_history():
+    """Monthly M2 (seasonally adjusted, billions) from the H.6 data package (FRB_h6_xml.zip, SDMX XML)."""
+    import io
+    import zipfile
+    r = requests.get("https://www.federalreserve.gov/releases/h6/data/FRB_h6_xml.zip", headers={"User-Agent": UA}, timeout=120)
+    r.raise_for_status()
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    xml = "".join(z.read(n).decode("utf-8", "ignore") for n in z.namelist() if n.lower().endswith(".xml") and "struct" not in n.lower())
+    names = []
+    for m in re.finditer(r'<frb:Series([^>]*)>(.*?)</frb:Series>', xml, re.S):
+        attrs, body = m[1], m[2]
+        nm = (re.search(r'SERIES_NAME="([^"]+)"', attrs) or [None, ""])[1]
+        names.append(nm)
+        # M2, seasonally adjusted (the not seasonally adjusted series carry _N)
+        if re.fullmatch(r"M2\.M", nm) or (nm.startswith("M2") and "_N" not in nm and nm.endswith(".M") and "M2" == nm.split("_")[0].split(".")[0]):
+            obs = re.findall(r'TIME_PERIOD="(\d{4}-\d{2})(?:-\d{2})?"\s+OBS_VALUE="([-\d.]+)"', body)
+            obs += [(t, v) for v, t in re.findall(r'OBS_VALUE="([-\d.]+)"\s+TIME_PERIOD="(\d{4}-\d{2})', body)]
+            if obs:
+                print("M2 history from", nm, len(obs), file=sys.stderr)
+                return sorted([t, float(v)] for t, v in obs)
+    raise ValueError(f"M2 history: no SA M2 series among {[n for n in names if 'M2' in n][:10]}")
+
+
 def m2(old):
     new = parse_h6(get("https://www.federalreserve.gov/releases/h6/current/default.htm"))
     if len(new) < 13:
         raise ValueError("M2: under 13 months")
     hist = {h[0]: h for h in (old or {}).get("hist", [])}
+    if len(hist) < 36:  # once: five years from the data package
+        try:
+            hist.update({h[0]: h for h in m2_history() if h[0] >= f"{date.today().year - 5}-01"})
+        except Exception as e:  # noqa: BLE001
+            print(e, file=sys.stderr)
     hist.update({h[0]: h for h in new})  # the current table's months (revised) replace older readings
     hist = sorted(hist.values())[-60:]
     return {"month": new[-1][0], "hist": hist}

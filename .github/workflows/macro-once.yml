@@ -12,8 +12,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -q requests
       - run: |
-          mkdir -p probe; UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-          for u in releases/h6/ releases/h6/default.htm releases/h6/hist/default.htm releases/h6/hist/h6hist1.txt releases/h6/hist/h6hist2.txt releases/h6/h6hist.htm; do curl -sSL -m 60 -A "$UA" -o "probe/$(echo $u | tr / _)" -w "$u %{http_code} %{size_download}\n" "https://www.federalreserve.gov/$u" >> probe/log.txt || true; done
+          python scripts/update_liquidity.py 2> /tmp/liq.err || true
+          mkdir -p probe; cp /tmp/liq.err probe/ || true
           python scripts/update_macro.py --force || true
           mkdir -p probe; cp -r /tmp/macro_debug/* probe/ 2>/dev/null || true
           git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
