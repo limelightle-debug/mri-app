@@ -28,6 +28,11 @@ ITEMS = [
     ("dxy", ".DXY", "ドルインデックス", "Dollar index", "", 2),
     ("eurjpy", "EURJPY=", "ユーロ円", "EUR/JPY", "円", 2),
     ("gbpjpy", "GBPJPY=", "ポンド円", "GBP/JPY", "円", 2),
+    # bond ETFs for the realtime estimates of the real yield and the corporate bond spreads (MRI app)
+    ("tip", "TIP", "TIP（物価連動債）", "TIP", "ドル", 2),
+    ("ief", "IEF", "IEF（米国債7〜10年）", "IEF", "ドル", 2),
+    ("hyg", "HYG", "HYG（ハイイールド債）", "HYG", "ドル", 2),
+    ("lqd", "LQD", "LQD（投資適格債）", "LQD", "ドル", 2),
 ]
 URL = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
        "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
