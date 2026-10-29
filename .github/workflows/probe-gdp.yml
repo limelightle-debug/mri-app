@@ -1,0 +1,34 @@
+name: probe-gdp
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p probe; UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+          g(){ n=$1; shift; curl -sSL -m 90 -A "$UA" -o /tmp/$n -w "$n %{http_code} %{size_download} %{content_type}\n" "$@" >> probe/log.txt 2>>probe/log.txt || echo "$n fail" >> probe/log.txt; }
+          g q.txt "https://apps.bea.gov/national/Release/TXT/NipaDataQ.txt"
+          grep -E '^A191RL,' /tmp/q.txt | tail -8 > probe/gdp.txt || true
+          g gdpnow.html "https://www.atlantafed.org/cqer/research/gdpnow"
+          g gn.xlsx "https://www.atlantafed.org/-/media/documents/cqer/researchcq/gdpnow/GDPTrackingModelDataAndForecasts.xlsx"
+          g gn2.xlsx "https://www.atlantafed.org/-/media/Project/Atlanta/FRBA/Documents/cqer/researchcq/gdpnow/GDPTrackingModelDataAndForecasts.xlsx"
+          grep -oiE 'href="[^"]*(xlsx|csv|json)[^"]*"' /tmp/gdpnow.html | head -20 > probe/links.txt || true
+          grep -oiE 'Latest estimate[^<]{0,200}' /tmp/gdpnow.html | head -5 >> probe/links.txt || true
+          pip install -q openpyxl
+          for f in /tmp/gn.xlsx /tmp/gn2.xlsx; do python - "$f" >> probe/xlsx.txt 2>&1 <<'PY' || true
+          import sys, openpyxl
+          wb = openpyxl.load_workbook(sys.argv[1], read_only=True, data_only=True)
+          print(sys.argv[1], wb.sheetnames)
+          for ws in wb.worksheets[:6]:
+              print("==", ws.title)
+              for i, row in enumerate(ws.iter_rows(values_only=True)):
+                  if i > 6: break
+                  print([c for c in row[:12]])
+          PY
+          done
+          cat probe/log.txt
+          git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+          git add probe && git commit -qm "probe gdp" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
