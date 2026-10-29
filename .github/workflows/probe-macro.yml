@@ -10,11 +10,12 @@ jobs:
       - run: |
           mkdir -p probe; UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
           g(){ n=$1; shift; curl -sSL -m 60 -A "$UA" -o probe/$n -w "$n %{http_code} %{size_download} %{time_total}\n" "$@" >> probe/log.txt 2>>probe/log.txt || echo "$n fail" >> probe/log.txt; }
-          g bls.json -X POST -H "Content-Type: application/json" -d '{"seriesid":["CES0000000001","LNS14000000","CUUR0000SA0","CUUR0000SA0L1E","WPUFD4","WPUFD49104","JTS000000000000000JOR"],"startyear":"2023","endyear":"2026"}' https://api.bls.gov/publicAPI/v1/timeseries/data/
-          g fred11.csv --http1.1 "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCEPI,PCEPILFE&cosd=2024-01-01"
-          g fred2.csv "https://fred.stlouisfed.org/graph/fredgraph.csv?id=PCEPI&cosd=2024-01-01"
-          g bea.html "https://www.bea.gov/data/personal-consumption-expenditures-price-index"
-          g beaapi.json "https://apps.bea.gov/api/data?UserID=x&method=GetData&datasetname=NIPA&TableName=T20807&Frequency=M&Year=2026"
+          rm -f probe/*
+          g nipam.txt "https://apps.bea.gov/national/Release/TXT/NipaDataM.txt"
+          g reg.txt "https://apps.bea.gov/national/Release/TXT/SeriesRegister.txt"
+          ls -la probe; grep -E "^\"?(DPCERG|DPCCRG)" probe/nipam.txt | tail -6 > probe/pce.txt || true
+          grep -iE "price index" probe/reg.txt | grep -iE "personal consumption" | head -20 > probe/reg_pce.txt || true
+          head -3 probe/nipam.txt > probe/head.txt; rm -f probe/nipam.txt probe/reg.txt
           cat probe/log.txt
           git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
           git add probe && git commit -qm "probe macro sources" && git push -q
