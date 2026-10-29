@@ -34,6 +34,7 @@ ITEMS = [
     ("hyg", "HYG", "HYG（ハイイールド債）", "HYG", "ドル", 2),
     ("lqd", "LQD", "LQD（投資適格債）", "LQD", "ドル", 2),
 ]
+ETFS = {"tip", "ief", "hyg", "lqd"}
 URL = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
        "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
 
@@ -48,15 +49,21 @@ def num(x):
 def main(force=False):
     now = datetime.now(NY)
     m = now.hour * 60 + now.minute
-    if not force and OUT.exists() and (now.weekday() >= 5 or not (9 * 60 + 30 <= m < 18 * 60)):
-        return  # keep the close; outside the session window the futures quote the next session
-    r = requests.get(URL.format("|".join(s for _, s, *_ in ITEMS)), headers={"User-Agent": UA}, timeout=30)
+    # outside the session window the futures quote the next session, so only the bond ETFs are refreshed then:
+    # their last price stays at the regular close until the next open (so the close is there right after 16:00)
+    inwin = force or not OUT.exists() or (now.weekday() < 5 and 9 * 60 + 30 <= m < 18 * 60)
+    want = [x for x in ITEMS if inwin or x[0] in ETFS]
+    r = requests.get(URL.format("|".join(s for _, s, *_ in want)), headers={"User-Agent": UA}, timeout=30)
     r.raise_for_status()
     quotes = {q.get("symbol"): q for q in r.json()["FormattedQuoteResult"]["FormattedQuote"]}
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
     keep = {x["k"]: x for x in old.get("items", [])}
     items = []
     for k, sym, ja, en, unit, dec in ITEMS:
+        if not inwin and k not in ETFS:
+            if k in keep:
+                items.append(keep[k])
+            continue
         q = quotes.get(sym) or {}
         last, prev = num(q.get("last")), num(q.get("previous_day_closing"))
         if last is None:
