@@ -42,6 +42,7 @@ BLS = {
     "WPUFD49104": "core_ppi",         # final demand less foods, energy and trade services, NSA
     "WPSFD4": "ppi_sa",
     "JTS000000000000000JOR": "jolts", # job openings rate, SA
+    "CES0500000003": "ahe",           # average hourly earnings, total private, SA, dollars
 }
 PCE = {"DPCERG": "pce", "DPCCRG": "core_pce"}
 
@@ -170,7 +171,8 @@ def main():
     out = {k: old[k] for k in KEYS if k in old}
     for k, f in (("bls", bls), ("pce", pce), ("claims", claims), ("gdp", gdp), ("gdpnow", gdpnow)):
         last = checked.get(k)
-        short = k == "bls" and len((out.get("bls") or {}).get("jolts", [])) < 100  # ten years wanted (Beveridge curve)
+        have = out.get("bls") or {}
+        short = k == "bls" and (len(have.get("jolts", [])) < 100 or "ahe" not in have)  # ten years, every series
         if not force and not short and last and now - datetime.fromisoformat(last) < EVERY and k in out:
             continue
         checked[k] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
