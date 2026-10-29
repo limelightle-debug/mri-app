@@ -5,6 +5,9 @@
   PPI final demand and core, the JOLTS job openings rate. Months as "YYYY-MM".
 - pce: the PCE price index and core (excluding food and energy) from BEA's monthly flat file (NipaDataM.txt).
 - claims: weekly initial and continued jobless claims from the Labor Department.
+- gdp: real GDP, percent change at an annual rate, quarterly (BEA's NipaDataQ.txt, A191RL).
+- gdpnow: the Atlanta Fed's GDPNow for the quarter being tracked, each update (its workbook's CurrentQtrEvolution
+  sheet), and the track record (the last nowcast before BEA's advance estimate, and that estimate).
 
 FRED times out from GitHub's runners, so the sources are the agencies' own. Each is read at most every 3 hours
 (the BLS key-less API allows 25 requests a day); the time of each read is kept outside the repo. A failed source
@@ -82,6 +85,49 @@ def pce():
     return {k: sorted(v) for k, v in out.items()}
 
 
+def gdp():
+    r = requests.get("https://apps.bea.gov/national/Release/TXT/NipaDataQ.txt", headers={"User-Agent": UA}, timeout=120)
+    r.raise_for_status()
+    out = []
+    for line in r.text.splitlines():
+        if line.startswith("A191RL,"):
+            _, per, val = next(csv.reader([line]))
+            if per >= "2015Q1":
+                out.append([per[:4] + "-" + per[4:], float(val.replace(",", ""))])
+    if not out:
+        raise ValueError("GDP: no A191RL rows")
+    return sorted(out)
+
+
+def gdpnow():
+    import openpyxl
+    r = requests.get("https://www.atlantafed.org/-/media/Project/Atlanta/FRBA/Documents/research-and-data/data/gdpnow/"
+                     "GDPTrackingModelDataAndForecasts.xlsx", headers={"User-Agent": UA}, timeout=120)
+    r.raise_for_status()
+    wb = openpyxl.load_workbook(io.BytesIO(r.content), read_only=True, data_only=True)
+    evo, quarter = [], None
+    for row in wb["CurrentQtrEvolution"].iter_rows(min_row=2, values_only=True):
+        for i in range(0, len(row) - 2, 3):  # side by side blocks of (date, releases, GDP)
+            d, rel, v = row[i:i + 3]
+            if isinstance(d, datetime) and isinstance(v, (int, float)):
+                evo.append([d.strftime("%Y-%m-%d"), round(v, 2), str(rel or "").strip()])
+                m = re.search(r"(\d\d):Q([1-4])", str(rel or ""))
+                if m and "Initial" in str(rel):
+                    quarter = f"20{m[1]}-Q{m[2]}"
+    if not evo:
+        raise ValueError("GDPNow: no evolution rows")
+    evo.sort()
+    track = []
+    for row in wb["TrackRecord"].iter_rows(min_row=2, values_only=True):
+        q, now, adv = row[:3]
+        if isinstance(q, datetime) and isinstance(now, (int, float)) and isinstance(adv, (int, float)):
+            track.append([f"{q.year}-Q{(q.month - 1) // 3 + 1}", round(now, 2), round(adv, 2)])
+    if not quarter:  # the quarter after the last one in the track record
+        y, qn = map(int, sorted(track)[-1][0].split("-Q")) if track else (date.today().year, 0)
+        quarter = f"{y + qn // 4}-Q{qn % 4 + 1}"
+    return {"quarter": quarter, "evo": evo, "track": sorted(track)[-16:]}
+
+
 def claims():
     """National weekly claims from the Labor Department's weekly claims report (r539cy, an HTML table): rows of
     week, initial claims NSA, seasonal factor, SA, SA 4-week average, continued claims NSA, factor, SA, SA 4-week,
@@ -115,8 +161,9 @@ def main():
     except (OSError, ValueError):
         checked = {}
     force = "--force" in sys.argv
-    out = {k: old[k] for k in ("bls", "pce", "claims") if k in old}
-    for k, f in (("bls", bls), ("pce", pce), ("claims", claims)):
+    KEYS = ("bls", "pce", "claims", "gdp", "gdpnow")
+    out = {k: old[k] for k in KEYS if k in old}
+    for k, f in (("bls", bls), ("pce", pce), ("claims", claims), ("gdp", gdp), ("gdpnow", gdpnow)):
         last = checked.get(k)
         short = k == "bls" and len((out.get("bls") or {}).get("jolts", [])) < 100  # ten years wanted (Beveridge curve)
         if not force and not short and last and now - datetime.fromisoformat(last) < EVERY and k in out:
@@ -129,7 +176,7 @@ def main():
     CHECKED.write_text(json.dumps(checked))
     if not out:
         sys.exit(1)
-    if all(old.get(k) == out.get(k) for k in ("bls", "pce", "claims")):
+    if all(old.get(k) == out.get(k) for k in KEYS):
         return
     out["updatedAt"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     OUT.write_text(json.dumps(out, separators=(",", ":")))

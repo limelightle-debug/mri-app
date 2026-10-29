@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install requests
+      - run: pip install requests openpyxl
       - name: Update every 5 minutes in the session, every 15 overnight
         env:
           GH_TOKEN: ${{ github.token }}
