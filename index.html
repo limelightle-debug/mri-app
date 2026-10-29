@@ -37,6 +37,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);fo
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 /* in a frame iOS still reports the phone's top inset, so the sticky tabs would hang below the frame's top */
 html.embed body::before,html.embed .bar{display:none}html.embed .wrap{padding-top:0}html.embed .topfix{top:0}
+/* no rubber-band bounce in the frame: pulling down at the top would drag the tabs away from the institute's tabs */
+html.embed,html.embed body{overscroll-behavior:none}
 .wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
 .num{font-family:var(--f-tick);font-stretch:82%;font-variant-numeric:tabular-nums}
@@ -1027,7 +1029,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v138";
+const APP_VER="mri-v139";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
