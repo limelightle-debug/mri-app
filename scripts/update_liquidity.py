@@ -46,8 +46,8 @@ def n(s):
 CHG = r"([+-]\s*[\d,]+|0)"
 
 
-def fed():
-    t = text(get("https://www.federalreserve.gov/releases/h41/current/"))
+def parse_h41(page):
+    t = text(page)
     m = re.search(r"Week ended (\w+)\.? (\d+), (\d{4})", t)
     if not m:
         raise ValueError("no week in H.4.1")
@@ -62,6 +62,15 @@ def fed():
     return out
 
 
+def fed(old):
+    out = parse_h41(get("https://www.federalreserve.gov/releases/h41/current/"))
+    # weekly history [week, total assets, reserves] (millions), two years
+    hist = {h[0]: h for h in (old or {}).get("hist", [])}
+    hist[out["week"]] = [out["week"], out["total"][0], out["reserves"][0]]
+    out["hist"] = sorted(hist.values())[-110:]
+    return out
+
+
 def rrp(old):
     start = (date.today() - timedelta(days=400)).isoformat()
     j = json.loads(get(f"https://markets.newyorkfed.org/api/rp/reverserepo/propositions/search.json?startDate={start}"))
@@ -72,12 +81,14 @@ def rrp(old):
             days[d] = days.get(d, 0) + o["totalAmtAccepted"]  # a day with two operations counts both
     if not days:
         raise ValueError("no reverse repo operations")
-    hist = sorted([d, round(v / 1e9, 3)] for d, v in days.items())
+    keep = {h[0]: h[1] for h in (old or {}).get("hist", [])}
+    keep.update({d: round(v / 1e9, 3) for d, v in days.items()})
+    hist = sorted([d, v] for d, v in keep.items())[-560:]
     return {"date": hist[-1][0], "hist": hist}  # billions of dollars
 
 
-def m2():
-    t = text(get("https://www.federalreserve.gov/releases/h6/current/default.htm"))
+def parse_h6(page):
+    t = text(page)
     t = t[t.find("Table 1"):]
     rows = re.findall(r"(Jan|Feb|Mar|Apr|May|June|July|Aug|Sept|Oct|Nov|Dec)\.? (\d{4}) ([\d,.]+) ([\d,.]+)", t)
     hist, seen = [], set()
@@ -87,9 +98,17 @@ def m2():
             break  # the first table only
         seen.add(ym)
         hist.append([ym, float(v.replace(",", ""))])
-    if len(hist) < 13:
+    return hist
+
+
+def m2(old):
+    new = parse_h6(get("https://www.federalreserve.gov/releases/h6/current/default.htm"))
+    if len(new) < 13:
         raise ValueError("M2: under 13 months")
-    return {"month": hist[-1][0], "hist": hist}
+    hist = {h[0]: h for h in (old or {}).get("hist", [])}
+    hist.update({h[0]: h for h in new})  # the current table's months (revised) replace older readings
+    hist = sorted(hist.values())[-60:]
+    return {"month": new[-1][0], "hist": hist}
 
 
 def main():
@@ -100,7 +119,7 @@ def main():
     except (OSError, ValueError):
         checked = {}
     out = {k: old[k] for k in ("fed", "rrp", "m2") if k in old}
-    for k, f in (("fed", fed), ("rrp", lambda: rrp(old.get("rrp"))), ("m2", m2)):
+    for k, f in (("fed", lambda: fed(old.get("fed"))), ("rrp", lambda: rrp(old.get("rrp"))), ("m2", lambda: m2(old.get("m2")))):
         last = checked.get(k)
         if last and now - datetime.fromisoformat(last) < timedelta(hours=1) and k in out:
             continue

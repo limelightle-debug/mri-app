@@ -1,3 +1,0 @@
-%SeriesCode,Period,Value
-A015RC,1967M01,"22,068"
-A015RC,1967M02,"9,288"
