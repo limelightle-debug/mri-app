@@ -17,11 +17,11 @@ jobs:
           import sys, openpyxl
           wb = openpyxl.load_workbook(sys.argv[1], read_only=True, data_only=True)
           print(sys.argv[1], wb.sheetnames)
-          for ws in wb.worksheets[:12]:
+          for ws in [wb[n] for n in ('CurrentQtrEvolution','TrackingArchives','TrackRecord','Table')]:
               print("==", ws.title)
               for i, row in enumerate(ws.iter_rows(values_only=True)):
-                  if i > 8: break
-                  print([c for c in row[:12]])
+                  if i > 14: break
+                  print([c for c in row[:14]])
           PY
           done
           cat probe/log.txt
