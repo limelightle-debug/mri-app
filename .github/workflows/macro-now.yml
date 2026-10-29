@@ -14,6 +14,9 @@ jobs:
       - run: |
           python scripts/update_macro.py --force 2> /tmp/err.txt || true
           python scripts/update_fedwatch.py 2>> /tmp/err.txt || true
+          python scripts/backfill_liquidity.py 300 2>> /tmp/err.txt || true
+          python scripts/update_liquidity.py 2>> /tmp/err.txt || true
+          tail -20 /tmp/err.txt
           cat /tmp/err.txt
           git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
           git add data && git commit -qm "data: macro releases" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true

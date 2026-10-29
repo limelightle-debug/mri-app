@@ -26,8 +26,11 @@ def main():
     # H.4.1 comes out on Thursdays (a day earlier or later around holidays)
     t = date.today()
     thu = t - timedelta(days=(t.weekday() - 3) % 7)
-    for w in range(110):
+    have = set(hist)
+    for w in range(int(sys.argv[1]) if len(sys.argv) > 1 else 110):
         day = thu - timedelta(weeks=w)
+        if any(abs((date.fromisoformat(h) - day).days) <= 3 for h in have):
+            continue  # that week is already there
         for off in (0, -1, 1, -2):
             page = try_get(f"{BASE}/h41/{(day + timedelta(days=off)).strftime('%Y%m%d')}/")
             if page and "Week ended" in page:

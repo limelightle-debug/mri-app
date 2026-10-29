@@ -5,6 +5,9 @@
   from the week before and from a year before. Millions of dollars.
 - rrp: the overnight reverse repo facility, the New York Fed's daily operation results (amount accepted).
 - m2: M2 from the H.6 release (monthly, seasonally adjusted, billions of dollars).
+- money: the strain on the plumbing (『金利の重力』 第十七章). SOFR against the interest paid on reserves (IORB, the top
+  of the target range less 0.10), day by day from the New York Fed; SOFR above IORB means cash is getting scarce.
+  And the Fed's repo operations (the standing repo facility), the amount taken.
 
 FRED times out from GitHub's runners, so the sources are the Fed's own pages. Each source is read at most once an
 hour (the time of each read is kept outside the repo, so a check alone makes no commit); a failed one keeps the
@@ -67,12 +70,13 @@ def fed(old):
     # weekly history [week, total assets, reserves] (millions), two years
     hist = {h[0]: h for h in (old or {}).get("hist", [])}
     hist[out["week"]] = [out["week"], out["total"][0], out["reserves"][0]]
-    out["hist"] = sorted(hist.values())[-110:]
+    out["hist"] = sorted(hist.values())[-300:]
     return out
 
 
 def rrp(old):
-    start = (date.today() - timedelta(days=400)).isoformat()
+    have = (old or {}).get("hist", [])
+    start = "2021-01-01" if not have or have[0][0] > "2021-02-01" else (date.today() - timedelta(days=400)).isoformat()
     j = json.loads(get(f"https://markets.newyorkfed.org/api/rp/reverserepo/propositions/search.json?startDate={start}"))
     days = {}
     for o in j.get("repo", {}).get("operations", []):
@@ -83,8 +87,39 @@ def rrp(old):
         raise ValueError("no reverse repo operations")
     keep = {h[0]: h[1] for h in (old or {}).get("hist", [])}
     keep.update({d: round(v / 1e9, 3) for d, v in days.items()})
-    hist = sorted([d, v] for d, v in keep.items())[-560:]
+    hist = sorted([d, v] for d, v in keep.items())[-1600:]
     return {"date": hist[-1][0], "hist": hist}  # billions of dollars
+
+
+def nyfed(path):
+    return json.loads(get("https://markets.newyorkfed.org/api/" + path))
+
+
+def money(old):
+    """SOFR less IORB by day (IORB = the day's target range top less 0.10, from the EFFR records), and repo
+    operations taken (billions)."""
+    start = (date.today() - timedelta(days=760)).isoformat()
+    end = date.today().isoformat()
+    sofr = {x["effectiveDate"]: float(x["percentRate"]) for x in
+            nyfed(f"rates/secured/sofr/search.json?startDate={start}&endDate={end}").get("refRates", [])}
+    top = {x["effectiveDate"]: float(x["targetRateTo"]) for x in
+           nyfed(f"rates/unsecured/effr/search.json?startDate={start}&endDate={end}").get("refRates", [])
+           if x.get("targetRateTo") is not None}
+    if not sofr or not top:
+        raise ValueError("SOFR or EFFR records missing")
+    spread = [[d, round(sofr[d], 3), round(sofr[d] - (top[d] - 0.10), 3)] for d in sorted(sofr) if d in top]
+    repo = {}
+    for path in (f"rp/repo/all/results/search.json?startDate={start}&endDate={end}",
+                 f"rp/repo/propositions/search.json?startDate={start}"):
+        try:
+            for o in nyfed(path).get("repo", {}).get("operations", []):
+                if o.get("operationType") == "Repo" and o.get("totalAmtAccepted") is not None:
+                    repo[o["operationDate"]] = repo.get(o["operationDate"], 0) + o["totalAmtAccepted"] / 1e9
+            if repo:
+                break
+        except Exception as e:  # noqa: BLE001
+            print("repo:", path, e, file=sys.stderr)
+    return {"spread": spread, "repo": sorted([d, round(v, 3)] for d, v in repo.items())}
 
 
 def parse_h6(page):
@@ -146,8 +181,10 @@ def main():
         checked = json.loads(CHECKED.read_text())
     except (OSError, ValueError):
         checked = {}
-    out = {k: old[k] for k in ("fed", "rrp", "m2") if k in old}
-    for k, f in (("fed", lambda: fed(old.get("fed"))), ("rrp", lambda: rrp(old.get("rrp"))), ("m2", lambda: m2(old.get("m2")))):
+    KEYS = ("fed", "rrp", "m2", "money")
+    out = {k: old[k] for k in KEYS if k in old}
+    for k, f in (("fed", lambda: fed(old.get("fed"))), ("rrp", lambda: rrp(old.get("rrp"))), ("m2", lambda: m2(old.get("m2"))),
+                 ("money", lambda: money(old.get("money")))):
         last = checked.get(k)
         if last and now - datetime.fromisoformat(last) < timedelta(hours=1) and k in out:
             continue
@@ -159,11 +196,12 @@ def main():
     CHECKED.write_text(json.dumps(checked))
     if not out:
         sys.exit(1)
-    if all(old.get(k) == out.get(k) for k in ("fed", "rrp", "m2")):
+    if all(old.get(k) == out.get(k) for k in KEYS):
         return
     out["updatedAt"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     OUT.write_text(json.dumps(out, separators=(",", ":")))
-    print({k: (out[k].get("week") or out[k].get("date") or out[k].get("month")) for k in ("fed", "rrp", "m2") if k in out})
+    print({k: (out[k].get("week") or out[k].get("date") or out[k].get("month")) for k in ("fed", "rrp", "m2") if k in out},
+          "spread", (out.get("money") or {}).get("spread", [])[-1:], "repo days", len((out.get("money") or {}).get("repo", [])))
 
 
 if __name__ == "__main__":
