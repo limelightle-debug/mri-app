@@ -1064,7 +1064,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v142";
+const APP_VER="mri-v143";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -1149,5 +1149,7 @@ applyLang();readColors();renderTabs();load();
 if(EMBED)renderTabs();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
+<script src="../fear-index/suite.js"></script>
+<script>window.Suite&&Suite.mount({hide:["#app","#views"],after:"#app"})</script>
 </body>
 </html>

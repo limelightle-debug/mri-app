@@ -416,7 +416,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v105";
+const APP_VER="vix-v106";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -802,5 +802,7 @@ applyLang();load();setInterval(()=>{if(!document.hidden)load()},60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
+<script src="../../fear-index/suite.js"></script>
+<script>window.Suite&&Suite.mount({hide:["#app"],after:"#app"})</script>
 </body>
 </html>
