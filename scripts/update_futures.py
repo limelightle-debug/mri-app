@@ -4,7 +4,7 @@ One request to CNBC's quote service: the E-mini S&P 500, Nasdaq 100, Dow and Rus
 semiconductor ETF SOXX's pre-market quote (no SOX future trades). The change is against the previous session's
 settlement (CNBC's change and change_pct). Read on weekdays from 4:00 to 9:35 ET, when the evening edition can use
 it; the file keeps the last pre-open snapshot through the day. The quotes of markets.json's items (commodity
-futures, the dollar, cross-yen rates, 2Y and 10Y yields, bitcoin) are taken in the same request, under "markets",
+futures, the dollar, cross-yen rates, 2Y and 10Y yields, bitcoin) and the 3M and 30Y yields are taken in the same request, under "markets",
 so the evening edition can show them as they stand before the open (markets.json keeps the regular session). Writes only when a value changed.
 """
 import json
@@ -30,6 +30,8 @@ ITEMS = [
     ("RUT", "@RTY.1", "ラッセル2000先物", "Russell 2000 futures"),
     ("SOX", "SOXX", "半導体ETF（寄り前）", "Semiconductor ETF (pre-market)"),
 ]
+# the rest of the yield curve before the open (markets.json carries only the 2Y and 10Y): key, CNBC symbol
+CURVE = [("us3m", "US3M"), ("us30y", "US30Y")]
 URL = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
        "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
 
@@ -47,7 +49,7 @@ def main(force=False):
     if not force and not (now.weekday() < 5 and 4 * 60 <= m <= 9 * 60 + 35):
         return
     mk = [x for x in MKT if x[0] not in ETFS]
-    r = requests.get(URL.format("|".join([x[1] for x in ITEMS] + [x[1] for x in mk])), headers={"User-Agent": UA},
+    r = requests.get(URL.format("|".join([x[1] for x in ITEMS] + [x[1] for x in mk] + [x[1] for x in CURVE])), headers={"User-Agent": UA},
                      timeout=40)
     r.raise_for_status()
     qs = r.json()["FormattedQuoteResult"]["FormattedQuote"]
@@ -70,7 +72,7 @@ def main(force=False):
     if len(items) < 3:
         sys.exit(f"futures: only {[i['key'] for i in items]}")
     markets = {}
-    for key, sym, ja, en, unit, dec in mk:
+    for key, sym in [(x[0], x[1]) for x in mk] + CURVE:
         q = by.get(sym)
         if q and num(q.get("last")) is not None:
             markets[key] = {"price": num(q.get("last")), "chg": num(q.get("change")), "pct": num(q.get("change_pct")),
