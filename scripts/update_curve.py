@@ -81,8 +81,22 @@ def infl(rows, today):
     return with_m3(s, ["real10", "be10"]) if s else None
 
 
-def oas(today):
-    r = requests.get(FRED.format(d=(today - timedelta(days=200)).isoformat()), headers={"User-Agent": UA}, timeout=60)
+def oas(today, old):
+    # FRED is slow from GitHub's runners at times: short timeouts, two tries, and at most one check an hour
+    # (the series moves once a day); between checks the last values stay
+    now = datetime.now(timezone.utc)
+    if old and old.get("checked") and now - datetime.fromisoformat(old["checked"]) < timedelta(hours=1):
+        return old
+    r = None
+    for _ in range(2):
+        try:
+            r = requests.get(FRED.format(d=(today - timedelta(days=200)).isoformat()), headers={"User-Agent": UA},
+                             timeout=(10, 45))
+            break
+        except requests.RequestException as e:
+            err = e
+    if r is None:
+        raise err
     r.raise_for_status()
     s = {}
     for row in csv.reader(io.StringIO(r.text)):
@@ -92,7 +106,11 @@ def oas(today):
             s[date.fromisoformat(row[0])] = (float(row[1]), float(row[2]))
         except ValueError:  # "." or empty on holidays
             continue
-    return with_m3(s, ["hy", "ig"]) if s else None
+    if not s:
+        return None
+    out = with_m3(s, ["hy", "ig"])
+    out["checked"] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    return out
 
 
 def main():
@@ -125,7 +143,7 @@ def main():
                     round(rows[d]["10Y"] - rows[d]["3M"], 2) if "3M" in rows[d] else None] for d in days],
         "source": "U.S. Treasury daily par yield curve",
     }
-    for k, f in (("infl", lambda: infl(rows, today)), ("oas", lambda: oas(today))):
+    for k, f in (("infl", lambda: infl(rows, today)), ("oas", lambda: oas(today, old.get("oas")))):
         try:
             v = f()
         except Exception as e:  # noqa: BLE001
