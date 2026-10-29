@@ -986,13 +986,14 @@ function renderSched(){
 // realtime: the MRI through the current session (one point per update), against the previous close
 // realtime estimates of the 10Y real yield, breakeven and OAS: the last official values (curve.json) plus today's
 // bond ETF moves (markets.json). Durations are approximate: TIP 6.6, IEF 7.0, HYG 3.1, LQD 8.2.
-let MK=null,CV=null;
+let MK=null,CV=null,OASD=null;
 async function loadRates(){
-  const g=f=>fetch(`data/${f}?ts=${Date.now()}`,{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
-  [MK,CV]=await Promise.all([g("markets.json"),g("curve.json")]);renderEst();
+  const g=f=>fetch(`${f}?ts=${Date.now()}`,{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+  // the OAS comes from the institute's app (its morning run reads FRED); the yields from this app's data
+  [MK,CV,OASD]=await Promise.all([g("data/markets.json"),g("data/curve.json"),g("../fear-index/data/oas.json")]);renderEst();
 }
 function renderEst(){
-  const box=$("rest"),I=CV&&CV.infl,O=CV&&CV.oas,it={};(MK&&MK.items||[]).forEach(x=>it[x.k]=x);
+  const box=$("rest"),I=CV&&CV.infl,O=OASD&&OASD.date?OASD:CV&&CV.oas,it={};(MK&&MK.items||[]).forEach(x=>it[x.k]=x);
   box.hidden=!(state.view!=="close"&&(I||O));if(box.hidden)return;
   const day=x=>x&&String(x.time||"").slice(0,10),mday=day(it.tip)||day(it.us10y);
   const DUR={tip:6.6,ief:7,hyg:3.1,lqd:8.2},pct=k=>it[k]&&it[k].pct!=null?it[k].pct:null;
@@ -1063,7 +1064,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v141";
+const APP_VER="mri-v142";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

@@ -159,7 +159,8 @@ def main():
                     round(rows[d]["10Y"] - rows[d]["3M"], 2) if "3M" in rows[d] else None] for d in days],
         "source": "U.S. Treasury daily par yield curve",
     }
-    for k, f in (("infl", lambda: infl(rows, today, old.get("infl"))), ("oas", lambda: oas(today, old.get("oas")))):
+    # the OAS moved to the institute's app (fear-index data/oas.json): FRED times out from GitHub's runners
+    for k, f in (("infl", lambda: infl(rows, today, old.get("infl"))),):
         try:
             v = f()
         except Exception as e:  # noqa: BLE001
