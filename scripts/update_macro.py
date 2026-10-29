@@ -46,7 +46,7 @@ PCE = {"DPCERG": "pce", "DPCCRG": "core_pce"}
 def bls():
     y = date.today().year
     r = requests.post("https://api.bls.gov/publicAPI/v1/timeseries/data/",
-                      json={"seriesid": list(BLS), "startyear": str(y - 4), "endyear": str(y)},
+                      json={"seriesid": list(BLS), "startyear": str(y - 9), "endyear": str(y)},  # 10 years (the key-less limit)
                       headers={"User-Agent": UA}, timeout=60)
     r.raise_for_status()
     j = r.json()
@@ -118,7 +118,8 @@ def main():
     out = {k: old[k] for k in ("bls", "pce", "claims") if k in old}
     for k, f in (("bls", bls), ("pce", pce), ("claims", claims)):
         last = checked.get(k)
-        if not force and last and now - datetime.fromisoformat(last) < EVERY and k in out:
+        short = k == "bls" and len((out.get("bls") or {}).get("jolts", [])) < 100  # ten years wanted (Beveridge curve)
+        if not force and not short and last and now - datetime.fromisoformat(last) < EVERY and k in out:
             continue
         checked[k] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
         try:
