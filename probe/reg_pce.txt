@@ -1,0 +1,9 @@
+A135RG,"Personal consumption expenditures","Fisher Price Index","Level",0,T70204A:3,NONE
+AB61RG,"Personal consumption expenditures","Fisher Price Index","Level",0,T70204B:5|U70204:5,NONE
+BPCERO,"Personal consumption expenditures","Fisher Price Index","Percent change, year ago",0,T10111:39|T20311:32|T20811:32,NONE
+DPCERG,"Personal consumption expenditures","Fisher Price Index","Level",0,T10104:2|T10504:2|T10604:2|T20304:1|T20404:1|T20504:1|T20804:1|U20304:1|U20304:29|U20404:1,NONE
+DPCERGM,"Personal consumption expenditures (PCE)","Fisher Price Index","Percent change",0,T20807:1|T20808:1,NONE
+DPCERV,"Personal consumption expenditures","Fisher Price Index","Percent change, annual rate",0,T10107:2|T10607:2|T20307:1|T20308:1|T20407:1|T20408:1,NONE
+NC000349,"Personal consumption expenditures","Fisher Price Index","Level",0,T80104:2,NONE
+QQ12434,"Personal consumption expenditures","Fixed Weighted Price Index","Level",0,RfFwpLvl:2,NONE
+QQ12438,"Personal consumption expenditures","Fixed Weighted Price Index","Percent change, annual rate",0,RfFwpPct:2,NONE
