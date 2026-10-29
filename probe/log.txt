@@ -1,0 +1,4 @@
+q.txt 200 35414945 text/plain
+gdpnow.html 200 1243371 text/html; charset=utf-8
+gn.xlsx 200 48277 text/html; charset=utf-8
+gn2.xlsx 200 48277 text/html; charset=utf-8
