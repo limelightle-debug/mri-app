@@ -2,7 +2,7 @@
 
 One request to CNBC's quote service: the E-mini S&P 500, Nasdaq 100, Dow and Russell 2000 front contracts, and the
 semiconductor ETF SOXX's pre-market quote (no SOX future trades). The change is against the previous session's
-settlement (CNBC's change and change_pct). Read on weekdays from 4:00 to 9:35 ET, when the evening edition can use
+settlement (CNBC's change and change_pct). Read on weekdays from 4:00 ET until the 9:30 open, when the evening edition can use
 it; the file keeps the last pre-open snapshot through the day. The quotes of markets.json's items (commodity
 futures, the dollar, cross-yen rates, 2Y and 10Y yields, bitcoin) and the 3M and 30Y yields are taken in the same request, under "markets",
 so the evening edition can show them as they stand before the open (markets.json keeps the regular session). Writes only when a value changed.
@@ -46,7 +46,7 @@ def num(x):
 def main(force=False):
     now = datetime.now(NY)
     m = now.hour * 60 + now.minute
-    if not force and not (now.weekday() < 5 and 4 * 60 <= m <= 9 * 60 + 35):
+    if not force and not (now.weekday() < 5 and 4 * 60 <= m < 9 * 60 + 30):  # frozen at the open
         return
     mk = [x for x in MKT if x[0] not in ETFS]
     r = requests.get(URL.format("|".join([x[1] for x in ITEMS] + [x[1] for x in mk] + [x[1] for x in CURVE])), headers={"User-Agent": UA},
@@ -77,11 +77,20 @@ def main(force=False):
         if q and num(q.get("last")) is not None:
             markets[key] = {"price": num(q.get("last")), "chg": num(q.get("change")), "pct": num(q.get("change_pct")),
                             "time": q.get("last_time")}
+    # the realtime MRI as it stands before the open (update_mri runs first in the workflow): the live row, the last
+    # confirmed row and the time, so the evening edition shows the reading its article was written on
+    mri = None
+    mf = OUT.parent / "mri.json"
+    if mf.exists():
+        md = json.loads(mf.read_text())
+        rows = [r for r in md.get("daily", []) if r[7] is not None]
+        if str(md.get("liveDay")) == now.strftime("%Y%m%d") and len(rows) > 1 and rows[-1][0] == md["liveDay"]:
+            mri = {"row": rows[-1], "prev": rows[-2], "at": md.get("updatedAt")}
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
-    if old.get("items") == items and old.get("markets") == markets:
+    if old.get("items") == items and old.get("markets") == markets and (old.get("mri") or {}).get("row") == (mri or {}).get("row"):
         return
     out = {"updatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "day": now.strftime("%Y-%m-%d"),
-           "items": items, "markets": markets}
+           "items": items, "markets": markets, "mri": mri}
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
     print({i["key"]: (i["price"], i["pct"], i["time"]) for i in items})
 
