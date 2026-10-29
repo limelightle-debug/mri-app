@@ -165,6 +165,8 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"{k}: {e}", file=sys.stderr)
             v = old.get(k)  # keep the last good one
+            if k == "oas" and v:  # a failed try also waits an hour, so timeouts do not slow every pass
+                v = dict(v, checked=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00"))
         if v:
             out[k] = v
     if {k: v for k, v in old.items() if k != "updatedAt"} == out:
