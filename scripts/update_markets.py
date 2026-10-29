@@ -28,6 +28,11 @@ ITEMS = [
     ("dxy", ".DXY", "ドルインデックス", "Dollar index", "", 2),
     ("eurjpy", "EURJPY=", "ユーロ円", "EUR/JPY", "円", 2),
     ("gbpjpy", "GBPJPY=", "ポンド円", "GBP/JPY", "円", 2),
+    ("audjpy", "AUDJPY=", "豪ドル円", "AUD/JPY", "円", 2),
+    ("eurusd", "EUR=", "ユーロドル", "EUR/USD", "", 4),
+    ("silver", "@SI.1", "銀", "Silver", "ドル", 2),
+    ("natgas", "@NG.1", "天然ガス", "Natural gas", "ドル", 3),
+    ("eth", "ETH.CM=", "イーサリアム", "Ethereum", "ドル", 0),
     # bond ETFs for the realtime estimates of the real yield and the corporate bond spreads (MRI app)
     ("tip", "TIP", "TIP（物価連動債）", "TIP", "ドル", 2),
     ("ief", "IEF", "IEF（米国債7〜10年）", "IEF", "ドル", 2),
