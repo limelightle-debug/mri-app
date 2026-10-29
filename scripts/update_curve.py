@@ -5,8 +5,9 @@ day's curve, the curves 3 and 6 months earlier, and the 10Y-2Y and 10Y-3M spread
 Also, each with its value 3 months earlier:
 - infl: the 10-year real yield (the Treasury's daily par real yield curve) and the 10-year breakeven inflation,
   the nominal 10-year par yield minus the real one (as FRED's T10YIE: DGS10 - DFII10)
+  (with the real yield day by day for 5 years)
 - oas: the ICE BofA option-adjusted spreads of US high yield and investment grade corporate bonds (FRED
-  BAMLH0A0HYM2, BAMLC0A0CM; posted a day later)
+  BAMLH0A0HYM2, BAMLC0A0CM; posted a day later), with high yield day by day for the 3 years FRED keeps
 Either of those failing leaves it out (the curve still updates). Writes only when something changes.
 """
 import csv
@@ -71,14 +72,24 @@ def with_m3(series, keys):
     return out
 
 
-def infl(rows, today):
+def infl(rows, today, old):
+    # the 10-year real yield day by day for 5 years ("hist", for the chart): kept from the last run, so only the
+    # current year (and the last one in January) is downloaded again
+    hist = {datetime.strptime(d, "%Y%m%d").date(): v for d, v in (old or {}).get("hist", [])}
+    first = today.year - 5 if not hist else (today.year - 1 if today.month == 1 else today.year)
     real = {}
-    for y in (today.year - 1, today.year):
+    for y in range(first, today.year + 1):
         real.update(real10(y))
     if not real:
         raise ValueError("no 10-year real yields (column '10 YR')")
-    s = {d: (v, round(rows[d]["10Y"] - v, 2)) for d, v in real.items() if d in rows}
-    return with_m3(s, ["real10", "be10"]) if s else None
+    hist.update(real)
+    s = {d: (v, round(rows[d]["10Y"] - v, 2)) for d, v in hist.items() if d in rows}
+    if not s:
+        return None
+    out = with_m3(s, ["real10", "be10"])
+    start = today - timedelta(days=5 * 365 + 2)
+    out["hist"] = [[d.strftime("%Y%m%d"), v] for d, v in sorted(hist.items()) if d >= start]
+    return out
 
 
 def oas(today, old):
@@ -90,7 +101,7 @@ def oas(today, old):
     r = None
     for _ in range(2):
         try:
-            r = requests.get(FRED.format(d=(today - timedelta(days=200)).isoformat()), headers={"User-Agent": UA},
+            r = requests.get(FRED.format(d=(today - timedelta(days=3 * 365)).isoformat()), headers={"User-Agent": UA},
                              timeout=(10, 45))
             break
         except requests.RequestException as e:
@@ -109,6 +120,8 @@ def oas(today, old):
     if not s:
         return None
     out = with_m3(s, ["hy", "ig"])
+    # high yield OAS day by day ("hist", for the chart; FRED keeps 3 years of the ICE series)
+    out["hist"] = [[d.strftime("%Y%m%d"), v[0]] for d, v in sorted(s.items())]
     out["checked"] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
     return out
 
@@ -143,7 +156,7 @@ def main():
                     round(rows[d]["10Y"] - rows[d]["3M"], 2) if "3M" in rows[d] else None] for d in days],
         "source": "U.S. Treasury daily par yield curve",
     }
-    for k, f in (("infl", lambda: infl(rows, today)), ("oas", lambda: oas(today, old.get("oas")))):
+    for k, f in (("infl", lambda: infl(rows, today, old.get("infl"))), ("oas", lambda: oas(today, old.get("oas")))):
         try:
             v = f()
         except Exception as e:  # noqa: BLE001
