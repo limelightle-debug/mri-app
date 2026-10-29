@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>
+// embedded in the institute's app (fear-index, MRI tab): no own header, and links leave the frame
+if(/[?&]embed\b/.test(location.search)){document.documentElement.classList.add("embed");
+  document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.target)a.target="_top"},true)}
+</script>
 <title>Market Risk Index</title>
 <meta name="description" content="VIX・SKEW・シラーPEから算出するマーケットリスク指数（MRI）の最新値と日足チャート">
 <link rel="manifest" href="manifest.webmanifest">
@@ -30,6 +35,7 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+html.embed body::before,html.embed .bar{display:none}html.embed .wrap{padding-top:0}
 .wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
 .num{font-family:var(--f-tick);font-stretch:82%;font-variant-numeric:tabular-nums}
@@ -1013,7 +1019,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v135";
+const APP_VER="mri-v136";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
