@@ -1,0 +1,9 @@
+curl: (92) HTTP/2 stream 1 was not closed cleanly: INTERNAL_ERROR (err 2)
+fred.csv 000 0 0.119632
+fred.csv fail
+h41.html 200 682916 0.117430
+h6.html 200 120937 0.083062
+rrp.json 200 5811 0.177330
+rrp2.json 400 0 0.138797
+ddp41.html 200 86777 0.102471
+ddp6.html 200 85186 0.085610
