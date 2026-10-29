@@ -1,0 +1,18 @@
+name: futures-now
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - run: |
+          python scripts/update_futures.py --force --dump 2> data/futures_debug.txt || true
+          head -c 3000 data/futures_debug.txt
+          git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+          git add data && git commit -qm "data: futures" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true

@@ -66,6 +66,7 @@ jobs:
             timeout 240 python scripts/update_vix.py > /dev/null 2>> $log || echo "update_vix failed ($?)" >> $log
             timeout 120 python scripts/update_indices.py > /dev/null 2>> $log || echo "update_indices failed ($?)" >> $log
             timeout 120 python scripts/update_markets.py > /dev/null 2>> $log || echo "update_markets failed ($?)" >> $log
+            timeout 60 python scripts/update_futures.py > /dev/null 2>> $log || echo "update_futures failed ($?)" >> $log
             timeout 180 python scripts/update_curve.py > /dev/null 2>> $log || echo "update_curve failed ($?)" >> $log
             timeout 180 python scripts/update_liquidity.py > /dev/null 2>> $log || echo "update_liquidity failed ($?)" >> $log
             timeout 180 python scripts/update_macro.py > /dev/null 2>> $log || echo "update_macro failed ($?)" >> $log
