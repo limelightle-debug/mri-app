@@ -60,15 +60,17 @@ def real10(y):
 
 
 def with_m3(series, keys):
-    """{date: (v1, v2)} -> the latest day's values and those on or before 3 months earlier."""
+    """{date: (v1, v2)} -> the latest day's values, the day before's (_d1) and those on or before 3 months earlier."""
     days = sorted(series)
     last = days[-1]
+    d1 = series[days[-2]] if len(days) > 1 else None
     prev = [d for d in days if d <= last - timedelta(days=91)]
     m3 = series[prev[-1]] if prev else None
     out = {"date": last.isoformat()}
     for i, k in enumerate(keys):
         out[k] = series[last][i]
         out[k + "_m3"] = m3[i] if m3 else None
+        out[k + "_d1"] = d1[i] if d1 else None
     return out
 
 
@@ -149,6 +151,7 @@ def main():
         "date": last.isoformat(),
         "tenors": [[k, yrs] for _, k, yrs in TENORS],
         "now": snap(last),
+        "prev": snap(days[-2]),  # the day before, for the day's changes
         "m3": snap(on_or_before(last - timedelta(days=91))),
         "m6": snap(on_or_before(last - timedelta(days=182))),
         # day by day: [date, 10Y-2Y, 10Y-3M]
