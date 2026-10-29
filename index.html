@@ -36,9 +36,9 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 /* in a frame iOS still reports the phone's top inset, so the sticky tabs would hang below the frame's top */
-#rest .est{margin-top:4px}#rest .er{display:grid;grid-template-columns:minmax(0,1fr) auto 64px;align-items:baseline;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+#rest .est{margin-top:4px}#rest .er{display:grid;grid-template-columns:minmax(0,1fr) auto 58px;align-items:baseline;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
 #rest .note{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.6}#rest .er:first-child{border-top:0}#rest .ek{font-size:13.5px;color:var(--ink2)}#rest .ev{font-family:var(--f-tick);font-stretch:82%;font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
-#rest .ec{font-family:var(--f-tick);font-stretch:85%;font-size:13px;font-weight:600;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+#rest .ec{text-align:right}#rest .ec em{font-style:normal;font-size:10.5px;font-weight:700;color:#ffb547;border:1px solid #ffb54766;border-radius:999px;padding:1px 7px;white-space:nowrap}
 html.embed body::before,html.embed .bar{display:none}html.embed .wrap{padding-top:0}html.embed .topfix{top:0}
 /* no rubber-band bounce in the frame: pulling down at the top would drag the tabs away from the institute's tabs */
 html.embed,html.embed body{overscroll-behavior:none}
@@ -585,8 +585,8 @@ const $=id=>document.getElementById(id);
 /* ---------- language (日本語 / English) ---------- */
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
- ja:{estTitle:"金利の推定",estSub:"リアルタイム",estReal:"10年実質金利",estBe:"10年インフレ期待",estHy:"OAS ハイイールド",estIg:"OAS 投資適格",estOff:"公式値",
-  estNote:(a,b)=>`推定：前日までの公式値（実質金利・インフレ期待 ${a}、OAS ${b}）に、今日の ETF の値動きを足したもの。実質金利は TIP、OAS は HYG・LQD から IEF（国債）の動きを除いて、それぞれのデュレーションで割って求める。TIP は満期がまちまちで10年ではないので、目安として見る。`,
+ ja:{estTitle:"金利の推定",estSub:"リアルタイム",estReal:"10年実質金利",estBe:"10年インフレ期待",estHy:"OAS ハイイールド",estIg:"OAS 投資適格",estTag:"推定値",
+  estNote:(a,b)=>`推定値は、最新の公式値（実質金利・インフレ期待 ${a}、OAS ${b}）に今日の ETF の値動きを足したもので、その日の公式値が出たら置き換わる。実質金利は TIP、OAS は HYG・LQD から IEF（国債）の動きを除いて、それぞれのデュレーションで割って求める。TIP は満期がまちまちで10年ではないので、目安として見る。`,
   loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"8以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
@@ -598,8 +598,8 @@ const T={
          ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
    note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
- en:{estTitle:"Rates estimate",estSub:"Realtime",estReal:"10Y real yield",estBe:"10Y breakeven",estHy:"OAS high yield",estIg:"OAS inv. grade",estOff:"official",
-  estNote:(a,b)=>`Estimate: the last official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
+ en:{estTitle:"Rates estimate",estSub:"Realtime",estReal:"10Y real yield",estBe:"10Y breakeven",estHy:"OAS high yield",estIg:"OAS inv. grade",estTag:"estimate",
+  estNote:(a,b)=>`Estimates are the latest official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves, replaced once the day's official value is out. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
   loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 8 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
@@ -1005,8 +1005,9 @@ function renderEst(){
   if(O){const on=newer(O);rows.push(["estHy",O.hy,on?cr("hyg"):null]);rows.push(["estIg",O.ig,on?cr("lqd"):null])}
   const md=d=>d?`${+d.slice(5,7)}/${+d.slice(8,10)}`:"-";
   const tm=it.tip&&it.tip.time?fmtTime(new Date(it.tip.time),{hour:"2-digit",minute:"2-digit"}):"";
+  // one value per row: the estimate, marked as such, until the official value for the day comes in and replaces it
   box.innerHTML=`<h2><i class="h2t">${t("estTitle")}</i> <span>${t("estSub")}${tm?" "+tm:""}</span></h2><div class="est">${rows.map(([k,b,d])=>
-    `<div class="er"><span class="ek">${t(k)}</span><span class="ev">${(b+(d||0)).toFixed(2)}%</span><span class="ec">${d==null?t("estOff"):`${d>=.005?"+":d<=-.005?"−":"±"}${Math.abs(d).toFixed(2)}`}</span></div>`).join("")}</div>
+    `<div class="er"><span class="ek">${t(k)}</span><span class="ev">${(b+(d||0)).toFixed(2)}%</span><span class="ec">${d==null?"":`<em>${t("estTag")}</em>`}</span></div>`).join("")}</div>
     <p class="note">${t("estNote",I?md(I.date):"-",O?md(O.date):"-")}</p>`;
 }
 function renderIntra(){
@@ -1062,7 +1063,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v140";
+const APP_VER="mri-v141";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
