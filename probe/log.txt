@@ -1,0 +1,7 @@
+cme.json 403 602
+cme2.json 403 602
+cnbc1.json 200 2907
+mpt.html 200 3379474
+qs.html 200 5853
+barchart.html 202 0
+nasdaq.json 200 163
