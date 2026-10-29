@@ -30,6 +30,15 @@ DEBUG = Path("/tmp/macro_debug")
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 EVERY = timedelta(hours=3)
+# releases come out at 8:30 and 10:00 ET: from 8:31 to 10:30 on weekdays every source is read every 10 minutes, so the
+# numbers are in before the 9:30 open (BLS allows 25 key-less requests a day; this window uses at most 12)
+RUSH = timedelta(minutes=10)
+
+
+def rush_hour(now):
+    from zoneinfo import ZoneInfo
+    t = now.astimezone(ZoneInfo("America/New_York"))
+    return t.weekday() < 5 and (8 * 60 + 31) <= t.hour * 60 + t.minute <= (10 * 60 + 30)
 
 BLS = {
     "CES0000000001": "payrolls",      # all employees, total nonfarm, SA, thousands
@@ -173,7 +182,8 @@ def main():
         last = checked.get(k)
         have = out.get("bls") or {}
         short = k == "bls" and (len(have.get("jolts", [])) < 100 or "ahe" not in have)  # ten years, every series
-        if not force and not short and last and now - datetime.fromisoformat(last) < EVERY and k in out:
+        every = RUSH if rush_hour(now) else EVERY
+        if not force and not short and last and now - datetime.fromisoformat(last) < every and k in out:
             continue
         checked[k] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
         try:
