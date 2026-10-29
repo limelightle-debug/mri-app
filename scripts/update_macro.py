@@ -11,6 +11,7 @@ FRED times out from GitHub's runners, so the sources are the agencies' own. Each
 keeps its last good data. Writes the file only when something changed.
 """
 import csv
+import html
 import io
 import json
 import re
@@ -82,41 +83,26 @@ def pce():
 
 
 def claims():
-    """National weekly claims (seasonally adjusted) from the Labor Department's weekly claims report."""
+    """National weekly claims from the Labor Department's weekly claims report (r539cy, an HTML table): rows of
+    week, initial claims NSA, seasonal factor, SA, SA 4-week average, continued claims NSA, factor, SA, SA 4-week,
+    insured unemployment rate NSA and SA, covered employment. Keeps [week, initial SA, continued SA]."""
     y = date.today().year
-    url = "https://oui.doleta.gov/unemploy/wkclaims/report.asp"
-    form = {"level": "nation", "strtdate": str(y - 3), "enddate": str(y), "filetype": "csv", "final": "Submit"}
-    r = requests.post(url, data=form, headers={"User-Agent": UA, "Referer": "https://oui.doleta.gov/unemploy/claims.asp"},
-                      timeout=60)
+    form = {"level": "nation", "strtdate": str(y - 3), "enddate": str(y), "filetype": "html", "final": "Submit"}
+    r = requests.post("https://oui.doleta.gov/unemploy/wkclaims/report.asp", data=form,
+                      headers={"User-Agent": UA, "Referer": "https://oui.doleta.gov/unemploy/claims.asp"}, timeout=60)
     r.raise_for_status()
-    DEBUG.mkdir(exist_ok=True)
-    (DEBUG / "claims.txt").write_text(r.text[:20000])
-    rows = list(csv.reader(io.StringIO(r.text)))
-    head = next((i for i, x in enumerate(rows) if any("Week" in c for c in x)), None)
-    if head is None:
-        raise ValueError(f"claims: no header in {r.text[:200]!r}")
-    cols = [c.strip().lower() for c in rows[head]]
-
-    def col(*names):
-        for i, c in enumerate(cols):
-            if all(n in c for n in names):
-                return i
-        raise ValueError(f"claims: no column {names} in {cols}")
-    iw, iic, icc = col("week"), col("initial", "sa"), col("continued", "sa")
-    if "nsa" in cols[iic]:
-        iic = next(i for i, c in enumerate(cols) if "initial" in c and "sa" in c and "nsa" not in c)
-    if "nsa" in cols[icc]:
-        icc = next(i for i, c in enumerate(cols) if "continued" in c and "sa" in c and "nsa" not in c)
+    rows = {}
+    for d, k, v in re.findall(r'<td headers="(\d\d/\d\d/\d{4}) (\w+)"[^>]*>([^<]*)', r.text):
+        rows.setdefault(d, {})[k] = v.strip().replace(",", "")
+    num = lambda v: float(v) if v and re.fullmatch(r"\d+(\.\d+)?", v) else None
     out = []
-    for x in rows[head + 1:]:
-        if len(x) <= max(iw, iic, icc):
-            continue
-        m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", x[iw].strip())
-        if not m:
-            continue
-        num = lambda s: float(s.replace(",", "")) if s.strip().replace(",", "").replace(".", "").isdigit() else None
-        out.append([f"{m[3]}-{int(m[1]):02d}-{int(m[2]):02d}", num(x[iic]), num(x[icc])])
+    for d, x in rows.items():
+        ic = num(x.get("sa_initial_claims"))
+        if ic:
+            out.append([f"{d[6:]}-{d[:2]}-{d[3:5]}", ic, num(x.get("sa_continued_claims"))])
     if not out:
+        DEBUG.mkdir(exist_ok=True)
+        (DEBUG / "claims.txt").write_text(r.text[:20000])
         raise ValueError("claims: no rows")
     return sorted(out)
 
