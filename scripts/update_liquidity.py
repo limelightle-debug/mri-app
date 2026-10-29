@@ -110,12 +110,12 @@ def m2_history():
     z = zipfile.ZipFile(io.BytesIO(r.content))
     xml = "".join(z.read(n).decode("utf-8", "ignore") for n in z.namelist() if n.lower().endswith(".xml") and "struct" not in n.lower())
     names = []
-    for m in re.finditer(r'<frb:Series([^>]*)>(.*?)</frb:Series>', xml, re.S):
+    for m in re.finditer(r'<\w+:Series\s([^>]*)>(.*?)</\w+:Series>', xml, re.S):
         attrs, body = m[1], m[2]
         nm = (re.search(r'SERIES_NAME="([^"]+)"', attrs) or [None, ""])[1]
         names.append(nm)
         # M2, seasonally adjusted (the not seasonally adjusted series carry _N)
-        if re.fullmatch(r"M2\.M", nm) or (nm.startswith("M2") and "_N" not in nm and nm.endswith(".M") and "M2" == nm.split("_")[0].split(".")[0]):
+        if nm == "M2.M":  # M2, monthly, seasonally adjusted
             obs = re.findall(r'TIME_PERIOD="(\d{4}-\d{2})(?:-\d{2})?"\s+OBS_VALUE="([-\d.]+)"', body)
             obs += [(t, v) for v, t in re.findall(r'OBS_VALUE="([-\d.]+)"\s+TIME_PERIOD="(\d{4}-\d{2})', body)]
             if obs:
