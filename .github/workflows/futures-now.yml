@@ -12,7 +12,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -q requests
       - run: |
-          python scripts/update_futures.py --force --dump 2> data/futures_debug.txt || true
-          head -c 3000 data/futures_debug.txt
+          python scripts/update_futures.py --force --dump 2> /tmp/futures_debug.txt || true
+          grep -A3 RTY /tmp/futures_debug.txt | head -20
           git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
           git add data && git commit -qm "data: futures" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true

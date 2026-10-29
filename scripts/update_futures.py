@@ -27,7 +27,7 @@ ITEMS = [
     ("SPX", "@SP.1", "S&P500先物", "S&P 500 futures"),
     ("NDX", "@ND.1", "ナスダック100先物", "Nasdaq 100 futures"),
     ("DJI", "@DJ.1", "ダウ先物", "Dow futures"),
-    ("RUT", "@TFS.1", "ラッセル2000先物", "Russell 2000 futures"),
+    ("RUT", "@RTY.1", "ラッセル2000先物", "Russell 2000 futures"),
     ("SOX", "SOXX", "半導体ETF（寄り前）", "Semiconductor ETF (pre-market)"),
 ]
 URL = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
