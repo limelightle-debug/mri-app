@@ -224,6 +224,7 @@ table.acct td.m{font-size:11px;min-width:0}table.acct td.ac{font-family:var(--f-
 table.acct tr.ex td.ac{color:var(--s3)}table.acct tr.z td.ac{color:#fff}
 table.acct sup{font-size:8px;color:var(--muted);margin-left:1px}
 table.acct th:nth-child(1){text-align:left}table.acct th:nth-child(2){text-align:right}
+.accavg{display:flex;align-items:baseline;gap:8px;background:var(--chip);border-radius:8px;padding:6px 10px;margin:0 0 8px}.accavg b{font-family:var(--f-tick);font-stretch:82%;font-size:26px;color:var(--s1);line-height:1}.accavg span{font-size:11px;color:var(--muted);font-weight:700}
 .accq{margin:10px 0 2px;text-align:center;font-weight:700;font-size:13px;color:var(--ink)}
 table.ev{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
 table.ev th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px}
@@ -462,7 +463,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v112";
+const APP_VER="vix-v113";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -880,6 +881,8 @@ function accPanel(){
   const rows=A.map(a=>`<tr class="${a.acc<0?"ex":a.acc===0?"z":a.acc>5?"ex":""}"><td class="m">${nm(a)}</td><td class="d">${sd(a.bot)}${a.star?"<sup>*</sup>":""}</td><td>${Math.round(a.lo).toLocaleString("en-US")}${a.low?"<sup>**</sup>":""}</td><td class="d">${sd(a.buy)}</td><td class="ac">${acc(a.acc)}</td></tr>`).join("");
   return `<section class="panel acc"><h2><b>${ja?"シグナル精度":"Signal accuracy"}</b><span>${ja?"『VIXの声を聴け』図3-6をアプリで計算":"the book's fig. 3-6, on the app's data"}</span></h2>
     <div class="accsum"><div><b>${n}</b><small>${ja?`観測（${NOTES.notes.length}イベント）`:`waves (${NOTES.notes.length} events)`}</small></div><div class="g"><b>${same}</b><small>${ja?"ボトム当日":"on the bottom"}</small></div><div class="g"><b>${w5}</b><small>${ja?"5営業日以内":"within 5 days"}</small></div><div class="r"><b>${ex+late}</b><small>${ja?"異例":"exceptions"}</small></div></div>
+    ${(()=>{const P=A.filter(a=>a.acc>=0).map(a=>a.acc).sort((x,y)=>x-y);if(!P.length)return"";const avg=P.reduce((x,y)=>x+y,0)/P.length,med=P.length%2?P[(P.length-1)/2]:(P[P.length/2-1]+P[P.length/2])/2;
+      return `<div class="accavg"><b>${avg.toFixed(1)}</b><span>${ja?`営業日後　ボトム後に出た${P.length}回の平均（中央値${med}日）`:`trading days after the bottom, on average over the ${P.length} waves after it (median ${med})`}</span></div>`})()}
     <div class="ntw"><table class="nt acct"><thead><tr><th>${ja?"イベント・波":"Event, wave"}</th><th>${ja?"ボトム":"Bottom"}</th><th>S&P${ja?"安値":" low"}</th><th>${ja?"買いシグナル":"Buy signal"}</th><th>${ja?"精度":"Accuracy"}</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="pnote">${ja?"ボトムは波の開始日から終了までのS&P500の最安値の日（開始前の安値は数えない）。精度は買いシグナルがボトムの何営業日後か（前なら何日前）。* 波の開始日＝ボトム　** 複数波のイベント内の最安値。各イベントのノートと同じ計算（VIX日足高値はCboe）。異例はリーマンショックの第1波と第2波で、恐怖が新しい破綻で何度も上書きされた。このルールは、恐怖が単一の波として減衰する局面で最も精度を発揮する。":"Bottom: the S&P 500's lowest low from the wave's start to its end (a low before the start does not count). Accuracy: trading days from the bottom to the buy signal (before it, if negative). * the bottom was the wave's first day  ** the lowest low of an event of several waves. The same calculation as the notes (VIX daily highs from Cboe). The exceptions are Lehman's first and second waves, when new failures kept overwriting the fear. The rule is most accurate when fear fades as a single wave."}</p>
     <p class="accq">${ja?"高い確率の判断を、生き残れる規模で繰り返す。":"Repeat high-probability decisions at a size you can survive."}</p></section>`;
