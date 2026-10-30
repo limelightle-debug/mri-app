@@ -14,4 +14,4 @@ jobs:
       - run: |
           (python scripts/update_hyg.py --force; python scripts/update_spx_daily.py --force; python scripts/build_vix_notes.py) > data/fill_log.txt 2>&1 || true; tail -20 data/fill_log.txt
           git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
-          git add data/hyg.json data/spx_daily.json data/vix_notes.json data/fill_log.txt && git commit -qm "data: HYG" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true
+          git add -A data && git commit -qm "data: HYG" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true
