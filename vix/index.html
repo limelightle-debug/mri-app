@@ -463,7 +463,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v113";
+const APP_VER="vix-v114";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -823,8 +823,8 @@ function noteChart(n,W){
   const vs=R.flatMap(r=>[r[1],r[2],r[3]]).filter(v=>v!=null).concat(n.sig.slice(0,2));
   const lo=Math.floor(Math.min(...vs)/10)*10,hi=Math.ceil(Math.max(...vs)/10)*10;
   const x=i=>ML+(k<2?PW/2:i/(k-1)*PW),y=v=>MT+(hi-v)/(hi-lo)*PH;
-  const ps=R.map(r=>r[5]).filter(v=>v!=null).map(v=>v*100);
-  const pst=ps.length?((Math.max(...ps)-Math.min(...ps))>30?10:5):5;
+  const ps=R.flatMap(r=>[r[5],r[10]]).filter(v=>v!=null).map(v=>v*100);
+  const pr=ps.length?Math.max(...ps)-Math.min(...ps):0,pst=pr>120?40:pr>60?20:pr>30?10:5;
   const plo=ps.length?Math.floor(Math.min(0,...ps)/pst)*pst:-10,phi=ps.length?Math.ceil(Math.max(0,...ps)/pst)*pst:0;
   const yp=v=>MT+(phi-v)/((phi-plo)||1)*PH;
   const line=(j,c,w,dash,sc)=>{let d="",on=false;R.forEach((r,i)=>{if(r[j]==null){on=false;return}const yy=sc?yp(r[j]*100):y(r[j]);d+=`${on?"L":"M"}${x(i).toFixed(1)},${yy.toFixed(1)}`;on=true});return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""}/>`};
@@ -834,23 +834,23 @@ function noteChart(n,W){
   const mk=R.map((r,i)=>r[8].some(m=>m[0]==="buy")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="4" fill="#b59bff" stroke="#fff" stroke-width="1"/>`:r[8].some(m=>m[0]==="start")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="3.5" fill="#ffe873"/>`:"").join("");
   const ix=[0,Math.floor((k-1)/2),k-1].filter((v,i,a)=>a.indexOf(v)===i);
   const xl=ix.map(i=>`<text x="${x(i)}" y="${H-3}" text-anchor="${i===0?"start":i===k-1?"end":"middle"}" font-size="9" fill="#8a8aa6">${fmtD(R[i][0])}</text>`).join("");
-  const key=`<g font-size="9"><text x="${ML+2}" y="${MT+8}" fill="#f2f2f7">VIX</text><text x="${ML+24}" y="${MT+8}" fill="#3DFF6E">5${LANG==="ja"?"日":"d"}</text><text x="${ML+44}" y="${MT+8}" fill="#FF3B5C">10${LANG==="ja"?"日":"d"}</text><text x="${ML+68}" y="${MT+8}" fill="#00E5FF">S&amp;P500${LANG==="ja"?"（右）":" (right)"}</text></g>`;
+  const key=`<g font-size="9"><text x="${ML+2}" y="${MT+8}" fill="#f2f2f7">VIX</text><text x="${ML+24}" y="${MT+8}" fill="#3DFF6E">5${LANG==="ja"?"日":"d"}</text><text x="${ML+44}" y="${MT+8}" fill="#FF3B5C">10${LANG==="ja"?"日":"d"}</text><text x="${ML+68}" y="${MT+8}" fill="#00E5FF">S&amp;P500</text>${n.lev?`<text x="${ML+112}" y="${MT+8}" fill="#ff7ad9">${n.lev}</text>`:""}<text x="${ML+(n.lev?146:112)}" y="${MT+8}" fill="#8a8aa6">${LANG==="ja"?"（右軸）":"(right)"}</text></g>`;
   return `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}${th(n.sig[0],"#3DFF6E","+1σ")}${th(n.sig[1],"#FFB020","+2σ")}${th(n.sig[2],"#FF3B5C","+3σ")}
-    ${ps.length?line(5,"#00E5FF",1.4,"",true):""}${line(1,"#f2f2f7",1.3)}${line(2,"#3DFF6E",1.6)}${line(3,"#FF3B5C",1.6)}${mk}${xl}${key}</svg>`;
+    ${ps.length?line(5,"#00E5FF",1.4,"",true):""}${n.lev?line(10,"#ff7ad9",1.2,"3 2",true):""}${line(1,"#f2f2f7",1.3)}${line(2,"#3DFF6E",1.6)}${line(3,"#FF3B5C",1.6)}${mk}${xl}${key}</svg>`;
 }
 function noteBody(n,el){
   const ja=LANG==="ja",f=v=>v==null?"":v.toFixed(2),fm=String(n.sigFrom);
   const rows=n.rows.map(r=>{
-    const [d,h,l5,l10,lo,pc,wc,ec,ms,hl]=r;
+    const [d,h,l5,l10,lo,pc,wc,ec,ms,hl,lv]=r;
     const hc=h>=n.sig[2]?"h3":h>=n.sig[1]?"h2":h>=n.sig[0]?"h1":"";
     const tr=ms.some(m=>m[0]==="buy")?"by":ms.some(m=>m[0]==="start")?"st":ms.some(m=>m[0]==="wend"||m[0]==="end")?"ok":"";
     const c=wc!=null?`<td class="c">${wc}</td>`:ec!=null?`<td class="c e">${ec}</td>`:`<td class="c"></td>`;
-    return `<tr class="${tr}">${c}<td class="d">${fmtD(d)}</td><td class="${hc}">${f(h)}</td><td class="${hl.includes("l5")?"y":""}">${f(l5)}</td><td class="${hl.includes("l10")?"y":""}">${f(l10)}</td><td class="${d===n.bottom?"bt":""}">${lo==null?"":Math.round(lo).toLocaleString("en-US")}</td><td class="${pc<0?"neg":""}">${pc==null?"":(pc>=0?"":"−")+Math.abs(pc*100).toFixed(1)+"%"}</td><td class="m">${ms.map(m=>markText(m,n.waves)).join("<br>")}</td></tr>`}).join("");
+    return `<tr class="${tr}">${c}<td class="d">${fmtD(d)}</td><td class="${hc}">${f(h)}</td><td class="${hl.includes("l5")?"y":""}">${f(l5)}</td><td class="${hl.includes("l10")?"y":""}">${f(l10)}</td><td class="${d===n.bottom?"bt":""}">${lo==null?"":Math.round(lo).toLocaleString("en-US")}</td><td class="${pc<0?"neg":""}">${pc==null?"":(pc>=0?"":"−")+Math.abs(pc*100).toFixed(1)+"%"}</td>${n.lev?`<td class="${lv<0?"neg":""}">${lv==null?"":(lv>=0?"":"−")+Math.abs(lv*100).toFixed(0)+"%"}</td>`:""}<td class="m">${ms.map(m=>markText(m,n.waves)).join("<br>")}</td></tr>`}).join("");
   return `<div class="nsig"><div class="k1">+1σ<b>${n.sig[0].toFixed(2)}</b></div><div class="k2">+2σ<b>${n.sig[1].toFixed(2)}</b></div><div class="k3">+3σ<b>${n.sig[2].toFixed(2)}</b></div></div>
     <div class="nfrom">${ja?`${fm.slice(0,4)}年${+fm.slice(4)}月時点（イベント前月）`:`As of ${fm.slice(0,4)}-${fm.slice(4)} (the month before the event)`}</div>
     <div class="nchart">${noteChart(n,Math.max(260,(el.clientWidth||360)-20))}</div>
-    <div class="ntw"><table class="nt"><thead><tr><th></th><th>${ja?"日付":"Date"}</th><th>${ja?"VIX高値":"VIX H"}</th><th>${ja?"5日":"5d"}</th><th>${ja?"10日":"10d"}</th><th>S&P${ja?"安値":" L"}</th><th>${ja?"騰落":"Chg"}</th><th>${ja?"メモ":"Note"}</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="pnote">${ja?"VIX高値は日足高値。5日・10日はその線形加重移動平均（直近ほど重い）。左の白い数字は買いシグナル後に+2σを下回った日数（5で波の終了）、赤は+1σを下回った日数（10でイベント終了）。騰落は表の最初の日のS&P500安値から。色は +1σ緑、+2σオレンジ、+3σ赤、減衰した移動平均は黄、イベント開始後のS&P500の最安値は紫。『VIXの声を聴け』第十章のルール。":"VIX H is the daily high; 5d and 10d its linearly weighted moving averages (the latest heaviest). White counts on the left: days below +2σ after the buy signal (5 ends the wave); red: days below +1σ (10 ends the event). Chg is from the first row's S&P 500 low. Colours: +1σ green, +2σ orange, +3σ red; a falling average yellow; the S&P 500's lowest low magenta. The rules of chapter 10 of the book."}</p>`;
+    <div class="ntw"><table class="nt"><thead><tr><th></th><th>${ja?"日付":"Date"}</th><th>${ja?"VIX高値":"VIX H"}</th><th>${ja?"5日":"5d"}</th><th>${ja?"10日":"10d"}</th><th>S&P${ja?"安値":" L"}</th><th>${ja?"騰落":"Chg"}</th>${n.lev?`<th>${n.lev}</th>`:""}<th>${ja?"メモ":"Note"}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="pnote">${ja?"VIX高値は日足高値。5日・10日はその線形加重移動平均（直近ほど重い）。左の白い数字は買いシグナル後に+2σを下回った日数（5で波の終了）、赤は+1σを下回った日数（10でイベント終了）。騰落は表の最初の日のS&P500安値から。TQQQ（TQQQが無かった時代はTECL、2008年12月より前は無し）も同じく最初の日の安値からの騰落。色は +1σ緑、+2σオレンジ、+3σ赤、減衰した移動平均は黄、イベント開始後のS&P500の最安値は紫。『VIXの声を聴け』第十章のルール。":"VIX H is the daily high; 5d and 10d its linearly weighted moving averages (the latest heaviest). White counts on the left: days below +2σ after the buy signal (5 ends the wave); red: days below +1σ (10 ends the event). Chg is from the first row's S&P 500 low; TQQQ (TECL before TQQQ began, none before Dec 2008) likewise from its first low in the table. Colours: +1σ green, +2σ orange, +3σ red; a falling average yellow; the S&P 500's lowest low magenta. The rules of chapter 10 of the book."}</p>`;
 }
 function noteCard(n,i,open){
   const ja=LANG==="ja",pk=Math.max(...n.rows.map(r=>r[1])),s=String(n.start),e=n.end?String(n.end):"";

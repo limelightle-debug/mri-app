@@ -16,6 +16,8 @@ from zoneinfo import ZoneInfo
 import requests
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "spx_daily.json"
+LEV_OUT = OUT.parent / "lev_daily.json"  # TQQQ and TECL daily lows and closes, for the notes
+LEV = ["TQQQ", "TECL"]
 NY = ZoneInfo("America/New_York")
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -60,6 +62,46 @@ def yf_hist():
             if a == a and b == b}
 
 
+def yf_lev():
+    import yfinance as yf
+    out = {}
+    for sym in LEV:
+        df = yf.download(sym, start="2008-01-01", auto_adjust=True, progress=False)
+        lo, cl = df["Low"], df["Close"]
+        if hasattr(lo, "columns"):
+            lo, cl = lo.iloc[:, 0], cl.iloc[:, 0]
+        out[sym] = [[int(t.strftime("%Y%m%d")), round(float(a), 4), round(float(b), 4)] for t, a, b in zip(df.index, lo, cl)
+                    if a == a and b == b]
+    return out
+
+
+def cnbc_lev():
+    url = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=" + "|".join(LEV) +
+           "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
+    qs = requests.get(url, headers={"User-Agent": UA}, timeout=40).json()["FormattedQuoteResult"]["FormattedQuote"]
+    num = lambda x: float(str(x).replace(",", ""))
+    out = {}
+    for q in qs:
+        d = (q.get("last_time") or "")[:10].replace("-", "")
+        if d.isdigit() and len(d) == 8:
+            out[q["symbol"]] = (int(d), [round(num(q["low"]), 4), round(num(q["last"]), 4)])
+    return out
+
+
+def update_lev(backfill):
+    old = json.loads(LEV_OUT.read_text()) if LEV_OUT.exists() else {}
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if backfill or not old.get("series"):
+        ser = yf_lev()
+    else:
+        ser = {k: list(v) for k, v in old["series"].items()}
+        for sym, (d, v) in cnbc_lev().items():
+            ser[sym] = sorted([r for r in ser.get(sym, []) if r[0] != d] + [[d] + v])
+    if ser != old.get("series"):
+        LEV_OUT.write_text(json.dumps({"updatedAt": now, "note": "adjusted prices (yfinance) for the history; CNBC for the latest day",
+                                       "cols": ["date", "low", "close"], "series": ser}, separators=(",", ":")))
+
+
 def cnbc_today():
     url = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=.SPX"
            "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
@@ -72,6 +114,12 @@ def cnbc_today():
 
 def main(force=False, backfill=False):
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
+    fresh = old.get("checkedAt") and time.time() - datetime.fromisoformat(old["checkedAt"].replace("Z", "+00:00")).timestamp() < 1800
+    if backfill or force or not fresh or not LEV_OUT.exists():
+        try:
+            update_lev(backfill or not LEV_OUT.exists())
+        except Exception as e:  # noqa: BLE001
+            print(f"lev_daily: {type(e).__name__}: {e}", file=sys.stderr)
     if not backfill and old.get("hist"):
         if not force and old.get("checkedAt") and time.time() - datetime.fromisoformat(
                 old["checkedAt"].replace("Z", "+00:00")).timestamp() < 1800:

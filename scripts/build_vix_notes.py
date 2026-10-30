@@ -1,7 +1,8 @@
 """The VIX app's event notes (data/vix_notes.json): for each VIX event, the day-by-day table the institute keeps in
 its workbook and posted during the 2025 event. From 9 trading days before the start to the event's end:
 the VIX daily high, its 5-day and 10-day linearly weighted moving averages (weights 1..n, the latest heaviest),
-the S&P 500's low and its change from the first row's low, and the notes of 『VIXの声を聴け』 chapter 10:
+the S&P 500's low and its change from the first row's low, the same change for TQQQ (TECL before TQQQ began;
+none before 2008-12), and the notes of 『VIXの声を聴け』 chapter 10:
   start          the first day whose high passes +2 sigma (as of the month before the start)
   5d decline     the day the 5-day LWMA starts the fall that leads to the signal (a fall that turns up again first
                  does not count)
@@ -49,7 +50,7 @@ def lwma(v, i, n):
     return sum(a * b for a, b in zip(w, v[i - n + 1:i + 1])) / sum(w)
 
 
-def note(ym, ev, months, dl, hi, spx):
+def note(ym, ev, months, dl, hi, spx, lev=None):
     by_m = {r[0]: r for r in months}
     pr = by_m.get(add_months(ym, -1), by_m[ym])
     t1, t2, t3 = (10 ** (pr[4] + k * pr[5]) for k in (1, 2, 3))
@@ -65,6 +66,19 @@ def note(ym, ev, months, dl, hi, spx):
         d = dl[i]
         lo = spx.get(d)
         rows.append({"d": d, "h": H[i], "l5": L5[i], "l10": L10[i], "lo": lo, "n": None, "k": "", "m": [], "hl": []})
+    # a 3x leveraged ETF's low beside the index: TQQQ, or TECL where TQQQ did not trade yet (from 2008-12)
+    sym, L = None, {}
+    for cand in ("TQQQ", "TECL"):
+        ser = (lev or {}).get(cand) or []
+        if ser and ser[0][0] <= days[-1]:
+            sym, L = cand, {r[0]: r[1] for r in ser}
+            if ser[0][0] <= days[0]:
+                break
+    if sym == "TECL" and (lev or {}).get("TQQQ") and lev["TQQQ"][0][0] <= days[0]:
+        sym, L = "TQQQ", {r[0]: r[1] for r in lev["TQQQ"]}
+    lb = next((L[r["d"]] for r in rows if r["d"] in L), None)
+    for r in rows:
+        r["lv"] = None if r["d"] not in L or lb is None else L[r["d"]] / lb - 1
     base = next((r["lo"] for r in rows if r["lo"] is not None), None)
     for r in rows:
         r["pct"] = None if r["lo"] is None or base is None else r["lo"] / base - 1
@@ -114,12 +128,12 @@ def note(ym, ev, months, dl, hi, spx):
     out_rows = []
     for r in rows:
         out_rows.append([r["d"], rnd(r["h"]), rnd(r["l5"]), rnd(r["l10"]), rnd(r["lo"]), rnd(r["pct"], 4),
-                         r["n"], r.get("e"), r["m"], r["hl"]])
+                         r["n"], r.get("e"), r["m"], r["hl"], rnd(r["lv"], 4)])
     nm = NAMES.get(str(ym), [f"VIXイベント {ym // 100}", f"VIX event {ym // 100}"])
     return {"ym": ym, "name": nm[0], "en": nm[1], "year": s // 10000, "start": s, "end": e, "active": e is None,
             "sig": [round(t1, 2), round(t2, 2), round(t3, 2)], "sigFrom": add_months(ym, -1), "bottom": bottom,
             "waves": wave, "cols": ["date", "vixHigh", "lwma5", "lwma10", "spxLow", "spxChg", "waveCount", "endCount",
-                                    "marks", "highlight"], "rows": out_rows}
+                                    "marks", "highlight", "levChg"], "lev": sym, "rows": out_rows}
 
 
 def main(rebuild=False):
@@ -127,6 +141,8 @@ def main(rebuild=False):
     highs = json.loads((DATA / "vix_daily.json").read_text())["high"]
     hi = {d: h for d, h in highs}
     dl = sorted(hi)
+    lf = DATA / "lev_daily.json"
+    lev = json.loads(lf.read_text())["series"] if lf.exists() else {}
     sp = DATA / "spx_daily.json"
     spx = {r[0]: r[1] for r in json.loads(sp.read_text())["hist"]} if sp.exists() else {}
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
@@ -140,8 +156,8 @@ def main(rebuild=False):
         ev = vix["eventInfo"][key]
         if ev["day"] not in hi:
             continue
-        n = note(ym, ev, vix["months"], dl, hi, spx)
-        if not n["active"] and spx and all(r[4] is not None for r in n["rows"]):
+        n = note(ym, ev, vix["months"], dl, hi, spx, lev)
+        if not n["active"] and spx and lev and all(r[4] is not None for r in n["rows"]):
             n["frozenAt"] = now  # an ended event's note with its full table: kept as it is from now on
         notes.append(n)
     out = {"updatedAt": now, "notes": notes}
