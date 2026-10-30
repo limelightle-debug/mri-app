@@ -215,6 +215,16 @@ table.nt tr.st td.d{background:#ffe0332e;color:#ffe873;font-weight:700}
 table.nt tr.by td{background:#9b7bff24}table.nt tr.by td.d{color:#cdbbff;font-weight:700}
 table.nt tr.ok td.d{background:#3DFF6E24;color:#9dffb6;font-weight:700}
 table.nt th:nth-child(2),table.nt th:last-child{text-align:left}
+.accsum{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:2px 0 8px}
+.accsum div{background:var(--chip);border-radius:8px;padding:7px 4px;text-align:center}
+.accsum b{display:block;font-family:var(--f-tick);font-stretch:82%;font-size:26px;line-height:1.05}
+.accsum small{display:block;font-size:10px;color:var(--muted);font-weight:700}
+.accsum .g b{color:var(--s1)}.accsum .r b{color:var(--s3)}
+table.acct td.m{font-size:11px;min-width:0}table.acct td.ac{font-family:var(--f-body);font-size:11px;font-weight:700;color:var(--s1)}
+table.acct tr.ex td.ac{color:var(--s3)}table.acct tr.z td.ac{color:#fff}
+table.acct sup{font-size:8px;color:var(--muted);margin-left:1px}
+table.acct th:nth-child(1){text-align:left}table.acct th:nth-child(2){text-align:right}
+.accq{margin:10px 0 2px;text-align:center;font-weight:700;font-size:13px;color:var(--ink)}
 table.ev{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
 table.ev th{font-size:11px;font-weight:700;color:var(--muted);text-align:right;padding:4px 6px}
 table.ev td{text-align:right;padding:7px 6px;border-top:1px solid var(--line);font-family:var(--f-tick);font-stretch:85%;font-size:14px;color:var(--ink2);cursor:pointer}
@@ -452,7 +462,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v109";
+const APP_VER="vix-v110";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -846,12 +856,45 @@ function noteCard(n,i,open){
   const span=`${s.slice(0,4)}/${+s.slice(4,6)}/${+s.slice(6)} – ${e?`${e.slice(0,4)}/${+e.slice(4,6)}/${+e.slice(6)}`:(ja?"進行中":"ongoing")}`;
   return `<section class="panel ncard${open?" open":""}" data-ym="${n.ym}"><div class="nhead"><span class="nn">${i}</span><span class="nt"><b>${ja?n.name:n.en} ${n.year}${n.active?`<i class="live">${ja?"進行中":"LIVE"}</i>`:""}</b><small>${span}${n.waves>1?(ja?`　${n.waves}波`:`  ${n.waves} waves`):""}</small></span><span class="np" style="color:${pk>=n.sig[2]?"var(--s3)":"var(--s2)"}">${pk.toFixed(2)}</span><span class="chev">›</span></div>${open?`<div class="nbody">${noteBody(n,$("notes"))}</div>`:""}</section>`;
 }
+
+// the signal's record as published in 『VIXの声を聴け』 (figure 3-6): 12 events, 17 waves observed
+// [event (ja, en), wave start, bottom day, S&P 500 low, buy signal, accuracy (trading days; negative = before)]
+// star: the wave's start was the bottom day; low: the lowest low of the event
+const ACC=[
+ ["アジア通貨危機","Asian Financial Crisis","1997/10/28","1997/10/28",855,"1997/11/04",5,1,0],
+ ["LTCMショック","LTCM Shock","1998/09/10","1998/09/09",939,"1998/09/15",4,0,0],
+ ["LTCMショック 第2波","LTCM Shock, wave 2","1998/10/08","1998/10/08",923,"1998/10/13",3,1,1],
+ ["同時多発テロ","September 11","2001/09/21","2001/09/21",944,"2001/09/26",3,1,0],
+ ["ITバブル崩壊","Dot-com Bust","2002/07/23","2002/07/24",775,"2002/07/30",4,0,0],
+ ["リーマンショック","Lehman Shock","2008/09/29","2008/11/20",747,"2008/10/21",-22,0,0],
+ ["リーマンショック 第2波","Lehman, wave 2","2009/01/12","2009/03/06",666,"2009/01/26",-28,0,1],
+ ["リーマンショック 第3波","Lehman, wave 3","2009/03/20","2009/03/23",766,"2009/03/26",4,0,0],
+ ["欧州ソブリン危機","European Debt Crisis","2010/05/20","2010/05/25",1040,"2010/05/27",2,0,0],
+ ["米国債格下げショック","US Downgrade","2011/08/08","2011/08/10",1101,"2011/08/15",3,0,0],
+ ["米国債格下げ 第2波","US Downgrade, wave 2","2011/10/04","2011/10/05",1074,"2011/10/06",1,0,1],
+ ["チャイナショック","China Shock","2015/08/24","2015/08/24",1867,"2015/08/31",5,1,0],
+ ["ボラゲドン","Volmageddon","2018/02/06","2018/02/09",2532,"2018/02/13",2,0,0],
+ ["コロナショック","COVID-19 Shock","2020/02/28","2020/03/23",2191,"2020/03/23",0,0,1],
+ ["コロナショック 第2波","COVID-19, wave 2","2020/04/21","2020/04/21",2727,"2020/04/27",4,1,0],
+ ["円キャリー崩壊","Yen Carry Unwind","2024/08/05","2024/08/05",5119,"2024/08/09",4,1,0],
+ ["世界関税ショック","World Tariff Shock","2025/04/07","2025/04/07",4835,"2025/04/14",5,1,0]];
+function accPanel(){
+  const ja=LANG==="ja",n=ACC.length,same=ACC.filter(a=>a[6]===0).length,w5=ACC.filter(a=>a[6]>=1&&a[6]<=5).length,ex=n-same-w5;
+  const sd=d=>d.slice(2);
+  const acc=v=>v===0?(ja?"当日":"Same day"):v>0?(ja?`${v}日後`:`${v}d after`):(ja?`${-v}日前`:`${-v}d before`);
+  const rows=ACC.map(a=>`<tr class="${a[6]<0?"ex":a[6]===0?"z":""}"><td class="m">${ja?a[0]:a[1]}</td><td class="d">${sd(a[3])}${a[7]?"<sup>*</sup>":""}</td><td>${a[4].toLocaleString("en-US")}${a[8]?"<sup>**</sup>":""}</td><td class="d">${sd(a[5])}</td><td class="ac">${acc(a[6])}</td></tr>`).join("");
+  return `<section class="panel acc"><h2><b>${ja?"シグナル精度":"Signal accuracy"}</b><span>${ja?"『VIXの声を聴け』図3-6":"from the book, fig. 3-6"}</span></h2>
+    <div class="accsum"><div><b>${n}</b><small>${ja?"観測（12イベント）":"waves (12 events)"}</small></div><div class="g"><b>${same}</b><small>${ja?"ボトム当日":"on the bottom"}</small></div><div class="g"><b>${w5}</b><small>${ja?"5営業日以内":"within 5 days"}</small></div><div class="r"><b>${ex}</b><small>${ja?"異例（早すぎ）":"too early"}</small></div></div>
+    <div class="ntw"><table class="nt acct"><thead><tr><th>${ja?"イベント・波":"Event, wave"}</th><th>${ja?"ボトム":"Bottom"}</th><th>S&P${ja?"安値":" low"}</th><th>${ja?"買いシグナル":"Buy signal"}</th><th>${ja?"精度":"Accuracy"}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="pnote">${ja?"* 波の開始日＝ボトム観測日　** 同イベント内の最安値。精度は買いシグナルがボトムの何営業日後か。異例の2回はリーマンショックの第1波と第2波（22日前、28日前）で、恐怖が新しい破綻で何度も上書きされた。このルールは、恐怖が単一の波として減衰する局面で最も精度を発揮する。":"* the wave's start was the bottom day  ** the event's lowest low. Accuracy: trading days from the bottom to the buy signal. The two exceptions are Lehman's first and second waves (22 and 28 days early), when new failures kept overwriting the fear. The rule is most accurate when fear fades as a single wave."}</p>
+    <p class="accq">${ja?"高い確率の判断を、生き残れる規模で繰り返す。":"Repeat high-probability decisions at a size you can survive."}</p></section>`;
+}
 const openNotes=new Set();
 function renderNotes(){
   const el=$("notes");if(!el)return;
   if(!NOTES){el.innerHTML=`<section class="panel"><div class="pnote">${t("loading")||"…"}</div></section>`;return}
   const L=[...NOTES.notes].map((n,i)=>[n,i+1]).reverse();
-  el.innerHTML=L.map(([n,i])=>noteCard(n,i,openNotes.has(n.ym)||n.active)).join("");
+  el.innerHTML=accPanel()+L.map(([n,i])=>noteCard(n,i,openNotes.has(n.ym)||n.active)).join("");
 }
 function renderLiveNote(){
   const el=$("livenote");if(!el)return;const n=NOTES&&NOTES.notes.find(x=>x.active);
