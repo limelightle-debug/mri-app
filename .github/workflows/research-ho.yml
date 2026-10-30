@@ -1,0 +1,22 @@
+name: research-ho
+on:
+  push:
+    branches: [research-ho]
+    paths: ["research/ho/breadth.py", ".github/workflows/research-ho.yml"]
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q yfinance pandas numpy
+      - run: python research/ho/breadth.py 2> research/ho/log.txt || (tail -30 research/ho/log.txt; exit 1)
+      - run: |
+          tail -5 research/ho/log.txt
+          git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+          git add research/ho && git commit -qm "research: breadth" && git push -q origin research-ho
