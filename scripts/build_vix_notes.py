@@ -3,8 +3,9 @@ its workbook and posted during the 2025 event. From 9 trading days before the st
 the VIX daily high, its 5-day and 10-day linearly weighted moving averages (weights 1..n, the latest heaviest),
 the S&P 500's low and its change from the first row's low, and the notes of 『VIXの声を聴け』 chapter 10:
   start          the first day whose high passes +2 sigma (as of the month before the start)
-  5d decline     the first day the 5-day LWMA falls (the fear's momentum is fading)
-  buy signal     then the first day the 10-day LWMA falls, or the 5-day crosses below the 10-day
+  5d decline     the day the 5-day LWMA starts the fall that leads to the signal (a fall that turns up again first
+                 does not count)
+  buy signal     on a later day, the first day the 10-day LWMA falls or the 5-day is below the 10-day
   wave end       after the signal, the 5th day in a row whose high stays below +2 sigma (counted 1-5)
   next wave      a high above +2 sigma again after a wave ended: the same rules again
   event end      the 10th day in a row whose high stays below +1 sigma (counted 1-10), as in vix.json
@@ -77,8 +78,12 @@ def note(ym, ev, months, dl, hi, spx):
         if state == "rise":
             if L5[i] is not None and L5[i - 1] is not None and L5[i] < L5[i - 1]:
                 r["m"].append(["d5", wave]); r["hl"].append("l5"); state = "fade"
-                if L10[i] is not None and L10[i - 1] is not None and (L10[i] < L10[i - 1] or L5[i] < L10[i]):
-                    r["m"].append(["buy", wave, "d10" if L10[i] < L10[i - 1] else "x"]); r["hl"].append("l10"); state, cnt = "wait", 0
+                # the signal comes on a later day than the 5-day's first fall (as in 2020: both fell on 3/20, the
+                # signal was the cross on 3/23)
+        elif state == "fade" and L5[i] > L5[i - 1]:
+            # the 5-day turned up again before the signal: that fall was not the fade (2020: 3/4), wait for the next
+            j = max(k for k in range(i0, i) if ["d5", wave] in R(k)["m"])
+            R(j)["m"].remove(["d5", wave]); R(j)["hl"].remove("l5"); state = "rise"
         elif state == "fade":
             if L10[i] is not None and L10[i - 1] is not None and (L10[i] < L10[i - 1] or L5[i] < L10[i]):
                 r["m"].append(["buy", wave, "d10" if L10[i] < L10[i - 1] else "x"]); r["hl"].append("l10"); state, cnt = "wait", 0
