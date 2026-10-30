@@ -4,12 +4,14 @@
   CPI and core CPI (not seasonally adjusted, for the change on a year; seasonally adjusted, for the month),
   PPI final demand and core, the JOLTS job openings rate. Months as "YYYY-MM".
 - pce: the PCE price index and core (excluding food and energy) from BEA's monthly flat file (NipaDataM.txt).
-- claims: weekly initial and continued jobless claims from the Labor Department.
+- claims: weekly initial and continued jobless claims, seasonally adjusted: FRED's ICSA and CCSA (the Labor
+  Department's own numbers, out each Thursday), with the department's weekly report as the fallback.
 - gdp: real GDP, percent change at an annual rate, quarterly (BEA's NipaDataQ.txt, A191RL).
 - gdpnow: the Atlanta Fed's GDPNow for the quarter being tracked, each update (its workbook's CurrentQtrEvolution
   sheet), and the track record (the last nowcast before BEA's advance estimate, and that estimate).
 
-FRED times out from GitHub's runners, so the sources are the agencies' own. Each is read at most every 3 hours
+FRED answers GitHub's runners only without a browser User-Agent (with one it never replies), so FRED is read
+with requests' own; the other sources are the agencies' own. Each is read at most every 3 hours
 (the BLS key-less API allows 25 requests a day); the time of each read is kept outside the repo. A failed source
 keeps its last good data. Writes the file only when something changed.
 """
@@ -143,7 +145,52 @@ def gdpnow():
     return {"quarter": quarter, "evo": evo, "track": sorted(track)[-16:]}
 
 
+FREDCSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={ids}&cosd={d}"
+
+
+def fred_csv(ids, since):
+    """FRED's graph CSV for several series: {date: [values]} (None for a missing value). No browser User-Agent:
+    FRED does not answer one from GitHub's runners."""
+    r = requests.get(FREDCSV.format(ids=",".join(ids), d=since.isoformat()), timeout=(10, 60))
+    r.raise_for_status()
+    out = {}
+    for row in csv.reader(io.StringIO(r.text)):
+        if not row or not row[0][:1].isdigit():
+            continue
+        vals = []
+        for v in row[1:]:
+            try:
+                vals.append(float(v))
+            except ValueError:  # "." or empty
+                vals.append(None)
+        out[row[0]] = vals
+    return out
+
+
 def claims():
+    """Weekly claims, seasonally adjusted, [week, initial, continued], 3 years: FRED (ICSA, CCSA) first, the Labor
+    Department's report when FRED fails or is behind it."""
+    rows = []
+    try:
+        s = fred_csv(["ICSA", "CCSA"], date.today() - timedelta(days=3 * 365 + 7))
+        rows = [[d, v[0], v[1] if len(v) > 1 else None] for d, v in sorted(s.items()) if v and v[0]]
+    except Exception as e:  # noqa: BLE001
+        print(f"claims (FRED): {e}", file=sys.stderr)
+    try:
+        dol = claims_dol()
+    except Exception as e:  # noqa: BLE001
+        if not rows:
+            raise
+        print(f"claims (DOL): {e}", file=sys.stderr)
+        dol = []
+    if dol and (not rows or dol[-1][0] > rows[-1][0]):
+        return dol
+    if not rows:
+        raise ValueError("claims: no rows")
+    return rows
+
+
+def claims_dol():
     """National weekly claims from the Labor Department's weekly claims report (r539cy, an HTML table): rows of
     week, initial claims NSA, seasonal factor, SA, SA 4-week average, continued claims NSA, factor, SA, SA 4-week,
     insured unemployment rate NSA and SA, covered employment. Keeps [week, initial SA, continued SA]."""

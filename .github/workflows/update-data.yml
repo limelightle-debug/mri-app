@@ -73,6 +73,7 @@ jobs:
             timeout 180 python scripts/update_curve.py > /dev/null 2>> $log || echo "update_curve failed ($?)" >> $log
             timeout 180 python scripts/update_liquidity.py > /dev/null 2>> $log || echo "update_liquidity failed ($?)" >> $log
             timeout 180 python scripts/update_macro.py > /dev/null 2>> $log || echo "update_macro failed ($?)" >> $log
+            timeout 90 python scripts/update_oas.py > /dev/null 2>> $log || echo "update_oas failed ($?)" >> $log
             timeout 120 python scripts/update_fedwatch.py > /dev/null 2>> $log || echo "update_fedwatch failed ($?)" >> $log
             cat $log
             git add data/
