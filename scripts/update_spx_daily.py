@@ -1,6 +1,8 @@
 """S&P 500 daily lows and closes since 1990 (data/spx_daily.json) for the VIX app's event notes, whose table
-carries the index's low each day of an event (as the institute's workbook does). Yahoo's chart service; stooq
-if it fails. Reads at most every 3 hours (`--force` reads now); writes only when the series changed.
+carries the index's low each day of an event (as the institute's workbook does).
+The history is filled once with yfinance (`--backfill`; Yahoo refuses plain requests from GitHub's runners); after
+that each run takes the day's low and last from CNBC's quote for .SPX and puts it on the latest row (ET date).
+Reads at most every 30 minutes (`--force` reads now); writes only when the series changed.
 """
 import csv
 import io
@@ -48,13 +50,48 @@ def stooq():
     return out
 
 
-def main(force=False):
+def yf_hist():
+    import yfinance as yf  # only for the backfill
+    df = yf.download("^GSPC", start="1990-01-01", auto_adjust=False, progress=False)
+    lo, cl = df["Low"], df["Close"]
+    if hasattr(lo, "columns"):
+        lo, cl = lo.iloc[:, 0], cl.iloc[:, 0]
+    return {t.strftime("%Y%m%d"): [round(float(a), 2), round(float(b), 2)] for t, a, b in zip(df.index, lo, cl)
+            if a == a and b == b}
+
+
+def cnbc_today():
+    url = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=.SPX"
+           "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
+    q = requests.get(url, headers={"User-Agent": UA}, timeout=40).json()["FormattedQuoteResult"]["FormattedQuote"][0]
+    num = lambda x: float(str(x).replace(",", ""))
+    t = q.get("last_time") or ""
+    d = t[:10].replace("-", "")
+    return d, [round(num(q["low"]), 2), round(num(q["last"]), 2)]
+
+
+def main(force=False, backfill=False):
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
-    if not force and old.get("checkedAt") and time.time() - datetime.fromisoformat(
-            old["checkedAt"].replace("Z", "+00:00")).timestamp() < 3 * 3600:
+    if not backfill and old.get("hist"):
+        if not force and old.get("checkedAt") and time.time() - datetime.fromisoformat(
+                old["checkedAt"].replace("Z", "+00:00")).timestamp() < 1800:
+            return
+        try:
+            d, v = cnbc_today()
+        except Exception as e:  # noqa: BLE001
+            sys.exit(f"spx_daily: CNBC: {type(e).__name__}: {e}")
+        if not d.isdigit() or len(d) != 8:
+            sys.exit(f"spx_daily: CNBC: no date ({d})")
+        hist = [r for r in old["hist"] if r[0] != int(d)] + [[int(d)] + v]
+        hist.sort()
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        out = {**old, "checkedAt": now, "hist": hist}
+        if hist != old["hist"]:
+            out["updatedAt"] = now
+        OUT.write_text(json.dumps(out, separators=(",", ":")))
         return
     got, src, errs = None, None, []
-    for name, fn in (("Yahoo", yahoo), ("stooq", stooq)):
+    for name, fn in (("yfinance", yf_hist), ("Yahoo", yahoo), ("stooq", stooq)):
         try:
             d = fn()
             if len(d) >= 5000:
@@ -74,4 +111,4 @@ def main(force=False):
 
 
 if __name__ == "__main__":
-    main(force="--force" in sys.argv)
+    main(force="--force" in sys.argv, backfill="--backfill" in sys.argv)
