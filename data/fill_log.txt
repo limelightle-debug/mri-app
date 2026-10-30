@@ -1,0 +1,2 @@
+CNBC 657 ['20261029', 77.58]
+spx_daily: Yahoo: HTTPError: 429 Client Error: Too Many Requests for url: https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=631152000&period2=1793353200&interval=1d&includePrePost=false; stooq: only 0 days
