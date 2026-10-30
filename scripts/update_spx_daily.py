@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 import requests
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "spx_daily.json"
-LEV_OUT = OUT.parent / "lev_daily.json"  # TQQQ and TECL daily lows and closes, for the notes
+LEV_OUT = OUT.parent / "lev_daily.json"  # TQQQ, TECL and the Nasdaq 100 daily lows and closes, for the notes
 LEV = ["TQQQ", "TECL"]
 NY = ZoneInfo("America/New_York")
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -65,12 +65,13 @@ def yf_hist():
 def yf_lev():
     import yfinance as yf
     out = {}
-    for sym in LEV:
-        df = yf.download(sym, start="2008-01-01", auto_adjust=True, progress=False)
+    # the Nasdaq 100 itself too, for an estimated TQQQ (3x its daily moves) before TQQQ began in 2010
+    for sym in LEV + ["^NDX"]:
+        df = yf.download(sym, start="1990-01-01" if sym == "^NDX" else "2008-01-01", auto_adjust=True, progress=False)
         lo, cl = df["Low"], df["Close"]
         if hasattr(lo, "columns"):
             lo, cl = lo.iloc[:, 0], cl.iloc[:, 0]
-        out[sym] = [[int(t.strftime("%Y%m%d")), round(float(a), 4), round(float(b), 4)] for t, a, b in zip(df.index, lo, cl)
+        out[sym.replace("^", "")] = [[int(t.strftime("%Y%m%d")), round(float(a), 4), round(float(b), 4)] for t, a, b in zip(df.index, lo, cl)
                     if a == a and b == b]
     return out
 

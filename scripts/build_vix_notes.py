@@ -1,8 +1,8 @@
 """The VIX app's event notes (data/vix_notes.json): for each VIX event, the day-by-day table the institute keeps in
 its workbook and posted during the 2025 event. From 9 trading days before the start to the event's end:
 the VIX daily high, its 5-day and 10-day linearly weighted moving averages (weights 1..n, the latest heaviest),
-the S&P 500's low and its change from the first row's low, the same change for TQQQ (TECL before TQQQ began;
-none before 2008-12), and the notes of 『VIXの声を聴け』 chapter 10:
+the S&P 500's low and its change from the first row's low, the same change for TQQQ (before TQQQ
+began, an estimate from 3x the Nasdaq 100's daily moves, marked TQQQ*), and the notes of 『VIXの声を聴け』 chapter 10:
   start          the first day whose high passes +2 sigma (as of the month before the start)
   5d decline     the day the 5-day LWMA starts the fall that leads to the signal (a fall that turns up again first
                  does not count)
@@ -66,16 +66,26 @@ def note(ym, ev, months, dl, hi, spx, lev=None):
         d = dl[i]
         lo = spx.get(d)
         rows.append({"d": d, "h": H[i], "l5": L5[i], "l10": L10[i], "lo": lo, "n": None, "k": "", "m": [], "hl": []})
-    # a 3x leveraged ETF's low beside the index: TQQQ, or TECL where TQQQ did not trade yet (from 2008-12)
+    # TQQQ's low beside the index; before TQQQ began (2010-02), an estimate: 3x the Nasdaq 100's daily moves less a
+    # 0.95% yearly fee, its low taken as 3x the index's fall from the previous close to the day's low
+    tq = {r[0]: r[1] for r in (lev or {}).get("TQQQ", [])}
+    nd = (lev or {}).get("NDX", [])
     sym, L = None, {}
-    for cand in ("TQQQ", "TECL"):
-        ser = (lev or {}).get(cand) or []
-        if ser and ser[0][0] <= days[-1]:
-            sym, L = cand, {r[0]: r[1] for r in ser}
-            if ser[0][0] <= days[0]:
-                break
-    if sym == "TECL" and (lev or {}).get("TQQQ") and lev["TQQQ"][0][0] <= days[0]:
-        sym, L = "TQQQ", {r[0]: r[1] for r in lev["TQQQ"]}
+    if tq and min(tq) <= days[0]:
+        sym, L = "TQQQ", tq
+    elif nd:
+        sym = "TQQQ*"
+        nl, nc = {r[0]: r[1] for r in nd}, {r[0]: r[2] for r in nd}
+        ndays = sorted(nc)
+        k0 = next((k for k, d in enumerate(ndays) if d >= days[0]), None)
+        if k0:
+            v, fee = 1.0, 0.0095 / 252
+            for k in range(k0, len(ndays)):
+                d, pc = ndays[k], nc[ndays[k - 1]]
+                if d > days[-1]:
+                    break
+                L[d] = v * (1 + 3 * (nl[d] / pc - 1) - fee)
+                v *= 1 + 3 * (nc[d] / pc - 1) - fee
     lb = next((L[r["d"]] for r in rows if r["d"] in L), None)
     for r in rows:
         r["lv"] = None if r["d"] not in L or lb is None else L[r["d"]] / lb - 1

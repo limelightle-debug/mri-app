@@ -464,7 +464,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v115";
+const APP_VER="vix-v116";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -853,7 +853,7 @@ function noteBody(n,el){
     <div class="nfrom">${ja?`${fm.slice(0,4)}年${+fm.slice(4)}月時点（イベント前月）`:`As of ${fm.slice(0,4)}-${fm.slice(4)} (the month before the event)`}</div>
     <div class="nchart">${noteChart(n,Math.max(260,(el.clientWidth||360)-20))}</div>
     <div class="ntw"><table class="nt"><thead><tr><th></th><th>${ja?"日付":"Date"}</th><th>${ja?"VIX高値":"VIX H"}</th><th>${ja?"5日":"5d"}</th><th>${ja?"10日":"10d"}</th><th>S&P${ja?"安値":" L"}</th><th>${ja?"騰落":"Chg"}</th>${n.lev?`<th>${n.lev}</th>`:""}</tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="pnote">${ja?"VIX高値は日足高値。5日・10日はその線形加重移動平均（直近ほど重い）。左の白い数字は買いシグナル後に+2σを下回った日数（5で波の終了）、赤は+1σを下回った日数（10でイベント終了）。騰落は表の最初の日のS&P500安値から。TQQQ（TQQQが無かった時代はTECL、2008年12月より前は無し）も同じく最初の日の安値からの騰落。色は +1σ緑、+2σオレンジ、+3σ赤、減衰した移動平均は黄、イベント開始後のS&P500の最安値は紫。『VIXの声を聴け』第十章のルール。":"VIX H is the daily high; 5d and 10d its linearly weighted moving averages (the latest heaviest). White counts on the left: days below +2σ after the buy signal (5 ends the wave); red: days below +1σ (10 ends the event). Chg is from the first row's S&P 500 low; TQQQ (TECL before TQQQ began, none before Dec 2008) likewise from its first low in the table. Colours: +1σ green, +2σ orange, +3σ red; a falling average yellow; the S&P 500's lowest low magenta. The rules of chapter 10 of the book."}</p>`;
+    <p class="pnote">${ja?"VIX高値は日足高値。5日・10日はその線形加重移動平均（直近ほど重い）。左の白い数字は買いシグナル後に+2σを下回った日数（5で波の終了）、赤は+1σを下回った日数（10でイベント終了）。騰落は表の最初の日のS&P500安値から。TQQQも同じく最初の日の安値からの騰落。TQQQ*はTQQQ上場（2010年2月）前の推定で、ナスダック100の日々の値動きの3倍から年0.95%の経費を引いたもの。色は +1σ緑、+2σオレンジ、+3σ赤、減衰した移動平均は黄、イベント開始後のS&P500の最安値は紫。『VIXの声を聴け』第十章のルール。":"VIX H is the daily high; 5d and 10d its linearly weighted moving averages (the latest heaviest). White counts on the left: days below +2σ after the buy signal (5 ends the wave); red: days below +1σ (10 ends the event). Chg is from the first row's S&P 500 low; TQQQ likewise from its first low in the table; TQQQ* is an estimate before TQQQ began (Feb 2010): 3x the Nasdaq 100's daily moves less a 0.95% yearly fee. Colours: +1σ green, +2σ orange, +3σ red; a falling average yellow; the S&P 500's lowest low magenta. The rules of chapter 10 of the book."}</p>`;
 }
 function noteCard(n,i,open){
   const ja=LANG==="ja",pk=Math.max(...n.rows.map(r=>r[1])),s=String(n.start),e=n.end?String(n.end):"";
