@@ -192,6 +192,18 @@ table.bts tr.avg td{border-top:1px solid var(--line);font-weight:700}
 .nstat.up{border-color:#FF3B5C88}.nstat.up p{color:#ff9aab}.nstat.d5{border-color:#ffe87388}.nstat.d5 p{color:#ffe873}.nstat.by{border-color:#b59bff;background:#9b7bff24}.nstat.by p{color:#cdbbff}.nstat.ok{border-color:#3DFF6E66}.nstat.ok p{color:#9dffb6}
 .simbar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-radius:10px;background:#FF3B5C22;border:1px solid #FF3B5C66;font-size:12px;font-weight:700}
 .simbar span{flex:1}.simbar button{appearance:none;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:6px 10px;font:700 13px/1 var(--f-body);cursor:pointer}
+.fest{position:relative;overflow:hidden;margin-top:10px;border-radius:16px;padding:18px 14px 14px;text-align:center;color:#fff;
+  background:radial-gradient(120% 140% at 50% 0%,#ff3b5c 0%,#b3122e 45%,#3a0410 100%);border:1px solid #ff6b85;animation:festglow 1.6s ease-in-out infinite}
+.fest::before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent 0 20deg,#fff2 20deg 30deg,transparent 30deg 60deg,#fff1 60deg 70deg,transparent 70deg 110deg,#fff2 110deg 120deg,transparent 120deg 160deg,#fff1 160deg 170deg,transparent 170deg 200deg,#fff2 200deg 210deg,transparent 210deg 250deg,#fff1 250deg 260deg,transparent 260deg 300deg,#fff2 300deg 310deg,transparent 310deg);animation:festspin 14s linear infinite;pointer-events:none}
+.fest>*{position:relative}
+.fest .fx{font-weight:900;font-size:30px;letter-spacing:.04em;line-height:1.1;text-shadow:0 0 18px #ffb3c1,0 2px 0 #5a0010}
+.fest .fs{margin-top:8px;font-size:13px;font-weight:800;color:#ffe2e7}
+.fest .fq{margin-top:6px;font-size:11px;font-weight:700;color:#ffc2cd;opacity:.9}
+.fest.m3{background:radial-gradient(120% 140% at 50% 0%,#ffcf3b 0%,#ff3b5c 40%,#3a0410 100%)}
+@keyframes festglow{0%,100%{box-shadow:0 0 0 1px #ff3b5c55,0 0 18px #ff3b5c66}50%{box-shadow:0 0 0 1px #ff3b5caa,0 0 34px #ff3b5ccc}}
+@keyframes festspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.fest,.fest::before{animation:none}}
+@media (max-width:360px){.fest .fx{font-size:26px}}
 .evsub{margin-top:10px}
 .ncard{padding:0;overflow:hidden}
 .nhead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
@@ -471,7 +483,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v117";
+const APP_VER="vix-v118";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -927,17 +939,26 @@ function applySim(){
   const ds=src.rows.map(r=>r[0]);if(!SIMQ.d||!ds.includes(SIMQ.d))SIMQ.d=src.start;
   const d=SIMQ.d,rows=src.rows.filter(r=>r[0]<=d).map(r=>[...r.slice(0,8),r[8].filter(m=>m[0]!=="end"||r[0]<=d),...r.slice(9)]);
   const done=src.end&&d>=src.end;
-  NOTES.sim={...src,rows,active:!done,end:done?src.end:null,_ds:ds};
+  let w=1;rows.forEach(r=>r[8].forEach(m=>{if(m[0]==="start")w=m[1]}));
+  NOTES.sim={...src,rows,waves:w,active:!done,end:done?src.end:null,_ds:ds};
 }
 function simBar(){
   if(!NOTES||!NOTES.sim)return"";const n=NOTES.sim,ja=LANG==="ja",i=n._ds.indexOf(SIMQ.d);
   return `<div class="simbar"><button type="button" data-sim="-1"${i<=0?" disabled":""}>◀</button><span>${ja?`シミュレーション　${ja?n.name:n.en} ${n.year}　${fmtD(SIMQ.d)}`:`Simulation  ${n.en} ${n.year}  ${fmtD(SIMQ.d)}`}</span><button type="button" data-sim="1"${i>=n._ds.length-1?" disabled":""}>▶</button></div>`;
 }
+
+// the festival banner: while an event is on (or replayed), the top of 現況 says so in large letters
+function festBanner(n){
+  const ja=LANG==="ja",R=n.rows,si=R.findIndex(r=>r[0]===n.start),day=si>=0?R.length-si:1;
+  let w=1;R.forEach(r=>r[8].forEach(m=>{if(m[0]==="start")w=m[1]}));
+  const pk=Math.max(...R.slice(Math.max(si,0)).map(r=>r[1])),M3=pk>=n.sig[2];
+  return `<div class="fest${M3?" m3":""}"><div class="fx">${ja?"VIXイベント開催中！":"VIX EVENT IS ON!"}</div><div class="fs">${ja?`${n.name} ${n.year}　開催${day}日目　第${w}波${M3?"　+3σ到達":""}`:`${n.en} ${n.year}  day ${day}  wave ${w}${M3?"  +3σ reached":""}`}</div><div class="fq">${ja?"恐怖を制するものは相場を制す":"Who masters fear masters the market"}</div></div>`;
+}
 function renderLiveNote(){
   const el=$("livenote");if(!el)return;
-  if(NOTES&&NOTES.sim){const n=NOTES.sim;el.innerHTML=simBar()+noteCard({...n,active:true},NOTES.notes.findIndex(x=>x.ym===n.ym)+1,true);return}
+  if(NOTES&&NOTES.sim){const n=NOTES.sim;el.innerHTML=simBar()+(n.active?festBanner(n):"")+noteCard({...n,active:n.active},NOTES.notes.findIndex(x=>x.ym===n.ym)+1,true);return}
   const n=NOTES&&NOTES.notes.find(x=>x.active);
-  el.innerHTML=n?noteCard(n,NOTES.notes.indexOf(n)+1,true):"";
+  el.innerHTML=n?festBanner(n)+noteCard(n,NOTES.notes.indexOf(n)+1,true):"";
 }
 function renderEvSub(){$("ev-map").hidden=state.evsub!=="map";$("ev-note").hidden=state.evsub!=="note";
   document.querySelectorAll("#evsub [data-sub]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sub===state.evsub));if(state.evsub==="note")renderNotes()}
