@@ -185,6 +185,13 @@ table.bts td:first-child{font-family:var(--f-body);font-size:12px;color:var(--in
 table.bts tr.avg td{border-top:1px solid var(--line);font-weight:700}
 /* events */
 /* event notes: the workbook's event table (『VIXの声を聴け』 ch. 10) */
+.nstat{margin:10px 0 2px;border-radius:10px;padding:9px 11px;border:1px solid var(--line);background:#0006}
+.nstat .nsh{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted);font-weight:700}
+.nstat .nsh b{font-family:var(--f-tick);font-stretch:82%;font-size:22px;color:var(--ink)}.nstat .nsh b.z1{color:#9dffb6}.nstat .nsh b.z2{color:#ffd27a}.nstat .nsh b.z3{color:#ff9aab}
+.nstat p{margin:4px 0 0;font-size:13.5px;font-weight:700;line-height:1.45}
+.nstat.up{border-color:#FF3B5C88}.nstat.up p{color:#ff9aab}.nstat.d5{border-color:#ffe87388}.nstat.d5 p{color:#ffe873}.nstat.by{border-color:#b59bff;background:#9b7bff24}.nstat.by p{color:#cdbbff}.nstat.ok{border-color:#3DFF6E66}.nstat.ok p{color:#9dffb6}
+.simbar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-radius:10px;background:#FF3B5C22;border:1px solid #FF3B5C66;font-size:12px;font-weight:700}
+.simbar span{flex:1}.simbar button{appearance:none;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:6px 10px;font:700 13px/1 var(--f-body);cursor:pointer}
 .evsub{margin-top:10px}
 .ncard{padding:0;overflow:hidden}
 .nhead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
@@ -464,7 +471,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v116";
+const APP_VER="vix-v117";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -839,6 +846,21 @@ function noteChart(n,W){
   return `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}${th(n.sig[0],"#3DFF6E","+1σ")}${th(n.sig[1],"#FFB020","+2σ")}${th(n.sig[2],"#FF3B5C","+3σ")}
     ${ps.length?line(5,"#00E5FF",1.4,"",true):""}${n.lev?line(10,"#ff7ad9",1.2,"3 2",true):""}${line(1,"#f2f2f7",1.3)}${line(2,"#3DFF6E",1.6)}${line(3,"#FF3B5C",1.6)}${mk}${xl}${key}</svg>`;
 }
+
+// where an ongoing event stands, from its latest row: the stage of the current wave and the counts
+function noteStatus(n){
+  const ja=LANG==="ja",R=n.rows,last=R[R.length-1];
+  let ws=0;R.forEach((r,i)=>{if(r[8].some(m=>m[0]==="start"))ws=i});
+  const w=(R[ws][8].find(m=>m[0]==="start")||[0,1])[1],seg=R.slice(ws),has=k=>seg.find(r=>r[8].some(m=>m[0]===k));
+  const d5=has("d5"),buy=has("buy"),we=has("wend"),wj=ja?`第${w}波`:`Wave ${w}`;
+  let st,cls;
+  if(we){st=last[7]!=null?(ja?`${wj} 終了。イベント終了まで +1σ未達 ${last[7]}／10日`:`${wj} ended. Below +1σ ${last[7]}/10 days to the event's end`):(ja?`${wj} 終了。次の波を監視中`:`${wj} ended. Watching for another wave`);cls="ok"}
+  else if(buy){st=ja?`${wj} 買いシグナル点灯（${fmtD(buy[0])}）。波の終了まで +2σ未達 ${last[6]??0}／5日`:`${wj} buy signal on ${fmtD(buy[0])}. Below +2σ ${last[6]??0}/5 days to the wave's end`;cls="by"}
+  else if(d5){st=ja?`5日LWMAが減衰（${fmtD(d5[0])}）。10日の減衰かクロスを待つ`:`5d LWMA falling since ${fmtD(d5[0])}. Waiting for the 10d to fall or the cross`;cls="d5"}
+  else{st=ja?`恐怖が上昇中。5日LWMAの減衰を待つ`:`Fear still rising. Waiting for the 5d LWMA to fall`;cls="up"}
+  const h=last[1],z=h>=n.sig[2]?3:h>=n.sig[1]?2:h>=n.sig[0]?1:0;
+  return `<div class="nstat ${cls}"><div class="nsh"><span>${ja?`${fmtD(last[0])} 時点`:`As of ${fmtD(last[0])}`}</span><b class="z${z}">VIX ${h.toFixed(2)}</b></div><p>${st}</p></div>`;
+}
 function noteBody(n,el){
   const ja=LANG==="ja",f=v=>v==null?"":v.toFixed(2),fm=String(n.sigFrom);
   const rows=n.rows.map(r=>{
@@ -849,7 +871,7 @@ function noteBody(n,el){
     return `<tr class="${tr}">${c}<td class="d">${fmtD(d)}</td><td class="${hc}">${f(h)}</td><td class="${hl.includes("l5")?"y":""}">${f(l5)}</td><td class="${hl.includes("l10")?"y":""}">${f(l10)}</td><td class="${d===n.bottom?"bt":""}">${lo==null?"":Math.round(lo).toLocaleString("en-US")}</td><td class="${pc<0?"neg":""}">${pc==null?"":(pc>=0?"":"−")+Math.abs(pc*100).toFixed(1)+"%"}</td>${n.lev?`<td class="${lv<0?"neg":""}">${lv==null?"":(lv>=0?"":"−")+Math.abs(lv*100).toFixed(0)+"%"}</td>`:""}</tr>`
       // the note goes on its own line under the day, across the table (the table stays within a phone's width)
       +(ms.length?`<tr class="mr ${tr}"><td class="c"></td><td class="m" colspan="${n.lev?7:6}">${ms.map(m=>markText(m,n.waves)).join("　")}</td></tr>`:"")}).join("");
-  return `<div class="nsig"><div class="k1">+1σ<b>${n.sig[0].toFixed(2)}</b></div><div class="k2">+2σ<b>${n.sig[1].toFixed(2)}</b></div><div class="k3">+3σ<b>${n.sig[2].toFixed(2)}</b></div></div>
+  return (n.active?noteStatus(n):"")+`<div class="nsig"><div class="k1">+1σ<b>${n.sig[0].toFixed(2)}</b></div><div class="k2">+2σ<b>${n.sig[1].toFixed(2)}</b></div><div class="k3">+3σ<b>${n.sig[2].toFixed(2)}</b></div></div>
     <div class="nfrom">${ja?`${fm.slice(0,4)}年${+fm.slice(4)}月時点（イベント前月）`:`As of ${fm.slice(0,4)}-${fm.slice(4)} (the month before the event)`}</div>
     <div class="nchart">${noteChart(n,Math.max(260,(el.clientWidth||360)-20))}</div>
     <div class="ntw"><table class="nt"><thead><tr><th></th><th>${ja?"日付":"Date"}</th><th>${ja?"VIX高値":"VIX H"}</th><th>${ja?"5日":"5d"}</th><th>${ja?"10日":"10d"}</th><th>S&P${ja?"安値":" L"}</th><th>${ja?"騰落":"Chg"}</th>${n.lev?`<th>${n.lev}</th>`:""}</tr></thead><tbody>${rows}</tbody></table></div>
@@ -897,13 +919,29 @@ function renderNotes(){
   const L=[...NOTES.notes].map((n,i)=>[n,i+1]).reverse();
   el.innerHTML=accPanel()+L.map(([n,i])=>noteCard(n,i,openNotes.has(n.ym)||n.active)).join("");
 }
+
+// simulation: ?sim=202504 (&d=20250414) shows a past event's note as an ongoing one on that day, with day steps
+const SIMQ=(()=>{const q=new URLSearchParams(location.search),m=+q.get("sim");return m?{ym:m,d:+q.get("d")||0}:null})();
+function applySim(){
+  if(!SIMQ||!NOTES)return;const src=NOTES.notes.find(n=>n.ym===SIMQ.ym);if(!src)return;
+  const ds=src.rows.map(r=>r[0]);if(!SIMQ.d||!ds.includes(SIMQ.d))SIMQ.d=src.start;
+  const d=SIMQ.d,rows=src.rows.filter(r=>r[0]<=d).map(r=>[...r.slice(0,8),r[8].filter(m=>m[0]!=="end"||r[0]<=d),...r.slice(9)]);
+  const done=src.end&&d>=src.end;
+  NOTES.sim={...src,rows,active:!done,end:done?src.end:null,_ds:ds};
+}
+function simBar(){
+  if(!NOTES||!NOTES.sim)return"";const n=NOTES.sim,ja=LANG==="ja",i=n._ds.indexOf(SIMQ.d);
+  return `<div class="simbar"><button type="button" data-sim="-1"${i<=0?" disabled":""}>◀</button><span>${ja?`シミュレーション　${ja?n.name:n.en} ${n.year}　${fmtD(SIMQ.d)}`:`Simulation  ${n.en} ${n.year}  ${fmtD(SIMQ.d)}`}</span><button type="button" data-sim="1"${i>=n._ds.length-1?" disabled":""}>▶</button></div>`;
+}
 function renderLiveNote(){
-  const el=$("livenote");if(!el)return;const n=NOTES&&NOTES.notes.find(x=>x.active);
+  const el=$("livenote");if(!el)return;
+  if(NOTES&&NOTES.sim){const n=NOTES.sim;el.innerHTML=simBar()+noteCard({...n,active:true},NOTES.notes.findIndex(x=>x.ym===n.ym)+1,true);return}
+  const n=NOTES&&NOTES.notes.find(x=>x.active);
   el.innerHTML=n?noteCard(n,NOTES.notes.indexOf(n)+1,true):"";
 }
 function renderEvSub(){$("ev-map").hidden=state.evsub!=="map";$("ev-note").hidden=state.evsub!=="note";
   document.querySelectorAll("#evsub [data-sub]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sub===state.evsub));if(state.evsub==="note")renderNotes()}
-async function loadNotes(){try{const r=await fetch("../data/vix_notes.json?ts="+Date.now(),{cache:"no-store"});if(r.ok){NOTES=await r.json();renderNotes();renderLiveNote()}}catch(e){}}
+async function loadNotes(){try{const r=await fetch("../data/vix_notes.json?ts="+Date.now(),{cache:"no-store"});if(r.ok){NOTES=await r.json();applySim();renderNotes();renderLiveNote()}}catch(e){}}
 function renderAll(){
   applyLang();renderTabs();renderEvSub();renderLiveNote();markScale();renderLatest();renderCycle();renderTop();renderLegend();renderChart();renderCandle();renderMap();renderEvents();renderByMonth();
   document.querySelectorAll("#range [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.r));
@@ -934,6 +972,8 @@ $("evchips").addEventListener("click",e=>{const b=e.target.closest("[data-m]");i
 $("evbody").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const m=+tr.dataset.m;state.pick=m;
   if(!rangeRows().some(r=>r.m===m)){state.r="all";store.set("vixRange","all")}renderAll();$("map").scrollIntoView({behavior:"smooth",block:"start"})});
 $("evsub").addEventListener("click",e=>{const b=e.target.closest("[data-sub]");if(!b||b.dataset.sub===state.evsub)return;state.evsub=b.dataset.sub;store.set("vixEvSub",state.evsub);renderEvSub();if(state.evsub==="map"&&D){renderChart();renderMap();renderEvents();renderByMonth()}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-sim]");if(!b||!NOTES||!NOTES.sim)return;const ds=NOTES.sim._ds,i=ds.indexOf(SIMQ.d)+ +b.dataset.sim;if(i<0||i>=ds.length)return;
+  SIMQ.d=ds[i];const q=new URLSearchParams(location.search);q.set("d",SIMQ.d);history.replaceState(null,"","?"+q);applySim();renderLiveNote()});
 document.addEventListener("click",e=>{const h=e.target.closest(".ncard .nhead");if(!h)return;const c=h.parentElement,ym=+c.dataset.ym;if(c.closest("#livenote"))return;
   if(openNotes.has(ym))openNotes.delete(ym);else openNotes.add(ym);renderNotes()});
 $("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;store.set("lang",LANG);D?renderAll():applyLang()});
