@@ -107,7 +107,8 @@ def note(ym, ev, months, dl, hi, spx):
             r.setdefault("e", k + 1)
     if e:
         R(i1)["m"].append(["end"])
-    lows = [(r["lo"], k) for k, r in enumerate(rows) if r["lo"] is not None]
+    # the bottom: the lowest low from the event's start on (a low in the days before it does not count)
+    lows = [(r["lo"], k) for k, r in enumerate(rows) if r["lo"] is not None and r["d"] >= s]
     bottom = rows[min(lows)[1]]["d"] if lows else None
     rnd = lambda v, n=2: None if v is None else round(v, n)
     out_rows = []
