@@ -452,7 +452,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v108";
+const APP_VER="vix-v109";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -807,18 +807,25 @@ function markText(m,waves){
 }
 const fmtD=d=>{const s=String(d);return LANG==="ja"?`${+s.slice(4,6)}/${+s.slice(6)}`:`${+s.slice(4,6)}/${+s.slice(6)}`};
 function noteChart(n,W){
-  const R=n.rows,H=150,ML=26,MR=8,MT=8,MB=16,PW=W-ML-MR,PH=H-MT-MB,k=R.length;
+  // VIX daily high and its 5/10-day LWMA on the left axis; the S&P 500 low's change from the first row on the right (%)
+  const R=n.rows,H=160,ML=26,MR=34,MT=8,MB=16,PW=W-ML-MR,PH=H-MT-MB,k=R.length;
   const vs=R.flatMap(r=>[r[1],r[2],r[3]]).filter(v=>v!=null).concat(n.sig.slice(0,2));
   const lo=Math.floor(Math.min(...vs)/10)*10,hi=Math.ceil(Math.max(...vs)/10)*10;
   const x=i=>ML+(k<2?PW/2:i/(k-1)*PW),y=v=>MT+(hi-v)/(hi-lo)*PH;
-  const line=(j,c,w,dash)=>{let d="",on=false;R.forEach((r,i)=>{if(r[j]==null){on=false;return}d+=`${on?"L":"M"}${x(i).toFixed(1)},${y(r[j]).toFixed(1)}`;on=true});return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""}/>`};
+  const ps=R.map(r=>r[5]).filter(v=>v!=null).map(v=>v*100);
+  const pst=ps.length?((Math.max(...ps)-Math.min(...ps))>30?10:5):5;
+  const plo=ps.length?Math.floor(Math.min(0,...ps)/pst)*pst:-10,phi=ps.length?Math.ceil(Math.max(0,...ps)/pst)*pst:0;
+  const yp=v=>MT+(phi-v)/((phi-plo)||1)*PH;
+  const line=(j,c,w,dash,sc)=>{let d="",on=false;R.forEach((r,i)=>{if(r[j]==null){on=false;return}const yy=sc?yp(r[j]*100):y(r[j]);d+=`${on?"L":"M"}${x(i).toFixed(1)},${yy.toFixed(1)}`;on=true});return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""}/>`};
   let g="";for(let v=lo;v<=hi;v+=hi-lo>60?20:10)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" stroke="#fff" stroke-opacity=".06"/><text x="${ML-4}" y="${y(v)+3}" text-anchor="end" font-size="9" fill="#8a8aa6">${v}</text>`;
-  const th=(v,c,l)=>v>=lo&&v<=hi?`<line x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" stroke="${c}" stroke-opacity=".7" stroke-dasharray="3 3"/><text x="${ML+PW}" y="${y(v)-3}" text-anchor="end" font-size="9" fill="${c}">${l}</text>`:"";
+  if(ps.length)for(let v=plo;v<=phi+1e-9;v+=pst)g+=`<text x="${ML+PW+4}" y="${yp(v)+3}" font-size="9" fill="#00E5FF" fill-opacity=".8">${v>0?"+":v<0?"−":""}${Math.abs(v)}%</text>`;
+  const th=(v,c,l)=>v>=lo&&v<=hi?`<line x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" stroke="${c}" stroke-opacity=".7" stroke-dasharray="3 3"/><text x="${ML+PW-2}" y="${y(v)-3}" text-anchor="end" font-size="9" fill="${c}">${l}</text>`:"";
   const mk=R.map((r,i)=>r[8].some(m=>m[0]==="buy")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="4" fill="#b59bff" stroke="#fff" stroke-width="1"/>`:r[8].some(m=>m[0]==="start")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="3.5" fill="#ffe873"/>`:"").join("");
   const ix=[0,Math.floor((k-1)/2),k-1].filter((v,i,a)=>a.indexOf(v)===i);
   const xl=ix.map(i=>`<text x="${x(i)}" y="${H-3}" text-anchor="${i===0?"start":i===k-1?"end":"middle"}" font-size="9" fill="#8a8aa6">${fmtD(R[i][0])}</text>`).join("");
+  const key=`<g font-size="9"><text x="${ML+2}" y="${MT+8}" fill="#f2f2f7">VIX</text><text x="${ML+24}" y="${MT+8}" fill="#3DFF6E">5${LANG==="ja"?"日":"d"}</text><text x="${ML+44}" y="${MT+8}" fill="#FF3B5C">10${LANG==="ja"?"日":"d"}</text><text x="${ML+68}" y="${MT+8}" fill="#00E5FF">S&amp;P500${LANG==="ja"?"（右）":" (right)"}</text></g>`;
   return `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}${th(n.sig[0],"#3DFF6E","+1σ")}${th(n.sig[1],"#FFB020","+2σ")}${th(n.sig[2],"#FF3B5C","+3σ")}
-    ${line(1,"#f2f2f7",1.3)}${line(2,"#3DFF6E",1.6)}${line(3,"#FF3B5C",1.6)}${mk}${xl}</svg>`;
+    ${ps.length?line(5,"#00E5FF",1.4,"",true):""}${line(1,"#f2f2f7",1.3)}${line(2,"#3DFF6E",1.6)}${line(3,"#FF3B5C",1.6)}${mk}${xl}${key}</svg>`;
 }
 function noteBody(n,el){
   const ja=LANG==="ja",f=v=>v==null?"":v.toFixed(2),fm=String(n.sigFrom);
