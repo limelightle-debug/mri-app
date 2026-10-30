@@ -24,7 +24,7 @@ if(/[?&]embed\b/.test(location.search)){document.documentElement.classList.add("
 <style>
 :root{
   /* the MRI's own navy palette and level colours (from the original app) */
-  --bg:#050506; --panel:#0e0e11; --ink:#f4f4f6; --ink2:#cfcfd6; --muted:#8c8c96; --line:#25252b; --chip:#17171b; --accent:#ff2d55;
+  --bg:#050506; --panel:#0e0e11; --ink:#f4f4f6; --ink2:#cfcfd6; --muted:#8c8c96; --line:#25252b; --chip:#17171b; --accent:#2ee6ff;
   --l1:#1a6b2a; --l2:#4CAF50; --l3:#FFC107; --l4:#FF5722; --l5:#B71C1C; --s1:#4CAF50; --s2:#FF9800;
   --hot:#ff3030; --warm:#ff9a1f; --cold:#13a445; --cold-l:#9fe8b6; --c-spx:#a46bff; --c-vix:#64b5f6; --c-skew:#ce93d8; --c-cape:#ffb74d;
   --f-tick:"Archivo","Helvetica Neue",Arial,sans-serif;
@@ -1064,7 +1064,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v145";
+const APP_VER="mri-v146";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
