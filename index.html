@@ -17,14 +17,14 @@ if(/[?&]embed\b/.test(location.search)){document.documentElement.classList.add("
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MRI">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a1a">
+<meta name="theme-color" content="#050506">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=LINE+Seed+JP:wght@400;700;800&display=swap">
 <style>
 :root{
   /* the MRI's own navy palette and level colours (from the original app) */
-  --bg:#0a0a1a; --panel:#111127; --ink:#f2f2f7; --ink2:#c4c4d4; --muted:#8a8aa6; --line:#2a2a4a; --chip:#1a1a36; --accent:#7fa8ff;
+  --bg:#050506; --panel:#0e0e11; --ink:#f4f4f6; --ink2:#cfcfd6; --muted:#8c8c96; --line:#25252b; --chip:#17171b; --accent:#ff2d55;
   --l1:#1a6b2a; --l2:#4CAF50; --l3:#FFC107; --l4:#FF5722; --l5:#B71C1C; --s1:#4CAF50; --s2:#FF9800;
   --hot:#ff3030; --warm:#ff9a1f; --cold:#13a445; --cold-l:#9fe8b6; --c-spx:#a46bff; --c-vix:#64b5f6; --c-skew:#ce93d8; --c-cape:#ffb74d;
   --f-tick:"Archivo","Helvetica Neue",Arial,sans-serif;
@@ -94,7 +94,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ann{position:relative;height:13px;margin:17px 0 2px}
 .ann span{position:absolute;transform:translateX(-50%);font-size:9px;color:var(--muted);font-style:italic;white-space:nowrap}
 .ann span.b{font-weight:700;color:var(--ink2);top:-22px;font-size:12.5px;letter-spacing:.02em}
-.track{position:relative;height:20px;background:#0c0c22;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.track{position:relative;height:20px;background:#09090b;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
 .track .fill{position:absolute;inset:0 auto 0 0;opacity:.85}
 .sig.wt{height:33px}.sig .stg:not(.on){opacity:.28}.sig .stg.on{box-shadow:0 0 6px 1px rgba(244,67,54,.8)}.sig .stg{display:inline-block;margin-top:2px;font-style:normal;font-family:var(--f-body);font-stretch:100%;font-weight:800;font-size:7px;line-height:1;letter-spacing:.04em;color:#fff;background:#F44336;border-radius:2px;padding:1.5px 3px}
 .track .sl{position:absolute;top:0;bottom:0;width:1px;z-index:2;opacity:.9}
@@ -117,7 +117,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .ck{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;user-select:none;-webkit-user-select:none;padding:8px 0 7px;min-width:0}
 .ck input{appearance:none;-webkit-appearance:none;width:22px;height:22px;margin:0;border:2px solid var(--muted);border-radius:6px;display:grid;place-content:center;background:transparent;flex:none;cursor:pointer}
 .ck input:checked{background:var(--c);border-color:var(--c)}
-.ck input:checked::after{content:"";width:11px;height:6px;border:2.5px solid #0a0a1a;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.ck input:checked::after{content:"";width:11px;height:6px;border:2.5px solid #050506;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
 .ck span{border-bottom:2px solid var(--c);line-height:1.3;white-space:nowrap;font-size:12px}
 .pnote{font-size:11px;color:var(--muted);margin-top:2px}
 .readout{font-size:12px;color:var(--ink2);height:40px;overflow:hidden;margin:4px 2px 2px;font-variant-numeric:tabular-nums}
@@ -133,7 +133,7 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 #sig .tl{display:grid;grid-template-columns:112px 1fr 76px;align-items:center;gap:10px;padding:9px 0}
 #sig .tl+.tl{border-top:1px solid var(--line)}
 #sig .tln{font-weight:800;font-size:13.5px;color:var(--ink);white-space:nowrap}
-#sig .tlh{justify-self:center;display:flex;gap:10px;background:#07070f;border:1px solid var(--line);border-radius:22px;padding:7px 12px 15px}
+#sig .tlh{justify-self:center;display:flex;gap:10px;background:#040405;border:1px solid var(--line);border-radius:22px;padding:7px 12px 15px}
 #sig .tlh i{position:relative;width:24px;height:24px;border-radius:50%;background:var(--c);opacity:.18}
 #sig .tlh i.on{opacity:1;box-shadow:0 0 12px 3px var(--c),inset 0 -3px 6px rgba(0,0,0,.25)}
 #sig .tlh small{position:absolute;left:50%;top:27px;transform:translateX(-50%);font:600 9.5px/1 var(--f-tick);font-stretch:85%;color:var(--muted);white-space:nowrap;font-style:normal}
@@ -218,7 +218,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .doc b{color:var(--ink)}
 .doc ol,.doc ul{margin:0 0 10px;padding-left:1.4em}
 .doc li{margin-bottom:6px}
-.doc .eq{background:#0c0c22;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0 12px;font-family:var(--f-tick);font-stretch:90%;font-size:14px;color:var(--ink);line-height:1.9}
+.doc .eq{background:#09090b;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0 12px;font-family:var(--f-tick);font-stretch:90%;font-size:14px;color:var(--ink);line-height:1.9}
 .doc .eq small{font-family:var(--f-body);font-size:11.5px;color:var(--muted);margin-left:6px}
 .doc .note{font-size:12.5px;color:var(--muted)}
 .doc table{width:100%;border-collapse:collapse;margin:4px 0 12px;font-size:12.5px}
@@ -227,7 +227,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .doc td:first-child{white-space:nowrap}.doc td:first-child{color:var(--ink)}
 .doc .lv{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 @media (max-width:400px){h1{font-size:min(24px,6.2vw)}.big{font-size:46px}.seg button{padding:8px 9px;font-size:12.5px}}
-.langseg{position:absolute;right:0;top:12px;display:flex;background:var(--chip,#1a1a36);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px;flex:none}.langseg button{appearance:none;border:0;background:transparent;color:var(--muted);font:700 12px/1 inherit;letter-spacing:.04em;padding:7px 9px;border-radius:6px;cursor:pointer}.langseg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.4)}
+.langseg{position:absolute;right:0;top:12px;display:flex;background:var(--chip,#17171b);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px;flex:none}.langseg button{appearance:none;border:0;background:transparent;color:var(--muted);font:700 12px/1 inherit;letter-spacing:.04em;padding:7px 9px;border-radius:6px;cursor:pointer}.langseg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.4)}
 </style>
 </head>
 <body>
@@ -1064,7 +1064,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v144";
+const APP_VER="mri-v145";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
