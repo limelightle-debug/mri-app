@@ -2,7 +2,7 @@ name: research-ho
 on:
   push:
     branches: [research-ho]
-    paths: ["research/ho/breadth.py", ".github/workflows/research-ho.yml"]
+    paths: ["research/ho/lehman.py"]
 permissions:
   contents: write
 jobs:
@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q yfinance pandas numpy
-      - run: python research/ho/breadth.py 2> research/ho/log.txt || (tail -30 research/ho/log.txt; exit 1)
+      - run: python research/ho/lehman.py 2> research/ho/log.txt || (tail -30 research/ho/log.txt; exit 1)
       - run: |
           tail -5 research/ho/log.txt
           git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
