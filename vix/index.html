@@ -483,7 +483,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v119";
+const APP_VER="vix-v120";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -833,8 +833,8 @@ function markText(m,waves){
   if(m[0]==="d5")return ja?"5日LWMA減衰":"5d LWMA decline";
   if(m[0]==="buy")return ja?`${ordJ(w)} 買いシグナル（${m[2]==="d10"?"10日LWMA減衰":"5日が10日を下抜け"}）`:`${ordE(w)} Wave Buy Signal, ${m[2]==="d10"?"10d LWMA decline":"5d crosses 10d"}`;
   if(m[0]==="wend")return ja?`${ordJ(w)} 終了`:`${ordE(w)} Wave End`;
-  if(m[0]==="end")return ja?"イベント終了":"Event end";
-  if(m[0]==="s1")return ja?"+1σ割れ　実質のイベント終了":"Below +1σ: the event's real end";
+  if(m[0]==="end")return ja?"イベント終了（名目）":"Event end (nominal)";
+  if(m[0]==="s1")return ja?"+1σ割れ　イベント終了（実質）":"Below +1σ: event end (real)";
   return "";
 }
 const fmtD=d=>{const s=String(d);return LANG==="ja"?`${+s.slice(4,6)}/${+s.slice(6)}`:`${+s.slice(4,6)}/${+s.slice(6)}`};
@@ -868,7 +868,7 @@ function noteStatus(n){
   const d5=has("d5"),buy=has("buy"),we=has("wend"),wj=ja?`第${w}波`:`Wave ${w}`;
   let st,cls;
   const s1=R.find(r=>r[8].some(m=>m[0]==="s1"));
-  if(s1){st=ja?`${fmtD(s1[0])}に +1σ を下回った。実質のイベント終了${last[7]!=null?`。正式な終了まで +1σ未達 ${last[7]}／10日`:""}`:`Below +1σ on ${fmtD(s1[0])}: the event's real end${last[7]!=null?`. ${last[7]}/10 days below +1σ to the formal end`:""}`;cls="ok"}
+  if(s1){st=ja?`${fmtD(s1[0])}に +1σ を下回った。イベント終了（実質）${last[7]!=null?`。名目の終了まで +1σ未達 ${last[7]}／10日`:""}`:`Below +1σ on ${fmtD(s1[0])}: the event's real end${last[7]!=null?`. ${last[7]}/10 days below +1σ to the nominal end`:""}`;cls="ok"}
   else if(we){st=last[7]!=null?(ja?`${wj} 終了。イベント終了まで +1σ未達 ${last[7]}／10日`:`${wj} ended. Below +1σ ${last[7]}/10 days to the event's end`):(ja?`${wj} 終了。次の波を監視中`:`${wj} ended. Watching for another wave`);cls="ok"}
   else if(buy){st=ja?`${wj} 買いシグナル点灯（${fmtD(buy[0])}）。波の終了まで +2σ未達 ${last[6]??0}／5日`:`${wj} buy signal on ${fmtD(buy[0])}. Below +2σ ${last[6]??0}/5 days to the wave's end`;cls="by"}
   else if(d5){st=ja?`5日LWMAが減衰（${fmtD(d5[0])}）。10日の減衰かクロスを待つ`:`5d LWMA falling since ${fmtD(d5[0])}. Waiting for the 10d to fall or the cross`;cls="d5"}
@@ -890,11 +890,12 @@ function noteBody(n,el){
     <div class="nfrom">${ja?`${fm.slice(0,4)}年${+fm.slice(4)}月時点（イベント前月）`:`As of ${fm.slice(0,4)}-${fm.slice(4)} (the month before the event)`}</div>
     <div class="nchart">${noteChart(n,Math.max(260,(el.clientWidth||360)-20))}</div>
     <div class="ntw"><table class="nt"><thead><tr><th></th><th>${ja?"日付":"Date"}</th><th>${ja?"VIX高値":"VIX H"}</th><th>${ja?"5日":"5d"}</th><th>${ja?"10日":"10d"}</th><th>S&P${ja?"安値":" L"}</th><th>${ja?"騰落":"Chg"}</th>${n.lev?`<th>${n.lev}</th>`:""}</tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="pnote">${ja?"VIX高値は日足高値。5日・10日はその線形加重移動平均（直近ほど重い）。左の白い数字は買いシグナル後に+2σを下回った日数（5で波の終了）、赤は+1σを下回った日数（10でイベント終了）。騰落は表の最初の日のS&P500安値から。TQQQも同じく最初の日の安値からの騰落。TQQQ*はTQQQ上場（2010年2月）前の推定で、ナスダック100の日々の値動きの3倍から年0.95%の経費を引いたもの。色は +1σ緑、+2σオレンジ、+3σ赤、減衰した移動平均は黄、イベント開始後のS&P500の最安値は紫。『VIXの声を聴け』第十章のルール。":"VIX H is the daily high; 5d and 10d its linearly weighted moving averages (the latest heaviest). White counts on the left: days below +2σ after the buy signal (5 ends the wave); red: days below +1σ (10 ends the event). Chg is from the first row's S&P 500 low; TQQQ likewise from its first low in the table; TQQQ* is an estimate before TQQQ began (Feb 2010): 3x the Nasdaq 100's daily moves less a 0.95% yearly fee. Colours: +1σ green, +2σ orange, +3σ red; a falling average yellow; the S&P 500's lowest low magenta. The rules of chapter 10 of the book."}</p>`;
+    <p class="pnote">${ja?"VIX高値は日足高値。5日・10日はその線形加重移動平均（直近ほど重い）。左の白い数字は買いシグナル後に+2σを下回った日数（5で波の終了）、赤は+1σを下回った日数（10で名目のイベント終了）。最初に+1σを下回った日が実質のイベント終了で、その後に次の波が来た例はない。騰落は表の最初の日のS&P500安値から。TQQQも同じく最初の日の安値からの騰落。TQQQ*はTQQQ上場（2010年2月）前の推定で、ナスダック100の日々の値動きの3倍から年0.95%の経費を引いたもの。色は +1σ緑、+2σオレンジ、+3σ赤、減衰した移動平均は黄、イベント開始後のS&P500の最安値は紫。『VIXの声を聴け』第十章のルール。":"VIX H is the daily high; 5d and 10d its linearly weighted moving averages (the latest heaviest). White counts on the left: days below +2σ after the buy signal (5 ends the wave); red: days below +1σ (10 ends the event). Chg is from the first row's S&P 500 low; TQQQ likewise from its first low in the table; TQQQ* is an estimate before TQQQ began (Feb 2010): 3x the Nasdaq 100's daily moves less a 0.95% yearly fee. Colours: +1σ green, +2σ orange, +3σ red; a falling average yellow; the S&P 500's lowest low magenta. The rules of chapter 10 of the book."}</p>`;
 }
 function noteCard(n,i,open){
   const ja=LANG==="ja",pk=Math.max(...n.rows.map(r=>r[1])),s=String(n.start),e=n.end?String(n.end):"";
-  const span=`${s.slice(0,4)}/${+s.slice(4,6)}/${+s.slice(6)} – ${e?`${e.slice(0,4)}/${+e.slice(4,6)}/${+e.slice(6)}`:(ja?"進行中":"ongoing")}`;
+  const r1=n.rows.find(r=>r[8].some(m=>m[0]==="s1")),q=r1?String(r1[0]):"";
+  const span=`${s.slice(0,4)}/${+s.slice(4,6)}/${+s.slice(6)} – ${q?`${+q.slice(4,6)}/${+q.slice(6)}${ja?"（実質）":" real"}`:""}${q&&e?" ":""}${e?`${+e.slice(4,6)}/${+e.slice(6)}${ja?"（名目）":" nominal"}`:q?"":(ja?"進行中":"ongoing")}`;
   return `<section class="panel ncard${open?" open":""}" data-ym="${n.ym}"><div class="nhead"><span class="nn">${i}</span><span class="nt"><b>${ja?n.name:n.en} ${n.year}${n.active?`<i class="live">${ja?"進行中":"LIVE"}</i>`:""}</b><small>${span}${n.waves>1?(ja?`　${n.waves}波`:`  ${n.waves} waves`):""}</small></span><span class="np" style="color:${pk>=n.sig[2]?"var(--s3)":"var(--s2)"}">${pk.toFixed(2)}</span><span class="chev">›</span></div>${open?`<div class="nbody">${noteBody(n,$("notes"))}</div>`:""}</section>`;
 }
 
