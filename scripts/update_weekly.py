@@ -76,7 +76,8 @@ def main(force=False):
         try:
             b = dict(bars(sym))
             b.update(lat.get(k, {}))
-            b = [[d, b[d]] for d in sorted(b)][-30:]
+            # weekdays only (bitcoin trades on weekends too; its weekend is in weekend.json)
+            b = [[d, b[d]] for d in sorted(b) if datetime.strptime(d, "%Y%m%d").weekday() < 5][-30:]
             if len(b) < 10:
                 raise ValueError(f"only {len(b)} bars")
             items[k] = {"ja": ja, "d": b}

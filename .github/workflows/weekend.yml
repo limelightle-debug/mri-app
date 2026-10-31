@@ -1,0 +1,25 @@
+name: weekend
+# bitcoin through the weekend for the paper's Sunday edition (the other markets are shut)
+on:
+  schedule:
+    - cron: "17 */2 * * 6,0"   # every 2 hours on Saturday and Sunday (UTC)
+    - cron: "38 21 * * 6"      # just before the Sunday edition (6:52 Japan time)
+    - cron: "45 22 * * 5"      # Friday night after the close
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - run: |
+          python scripts/update_weekend.py
+          python scripts/update_weekly.py --force || true
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/weekend.json data/weekly.json && git commit -qm "data: weekend" && for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done || true
