@@ -15,6 +15,7 @@ jobs:
           python scripts/update_macro.py --force 2> /tmp/err.txt || true
           python scripts/update_oas.py --force 2>> /tmp/err.txt || true
           python scripts/update_weekly.py --force 2>> /tmp/err.txt || true
+          python scripts/update_rstar.py --force 2>> /tmp/err.txt || true
           python scripts/update_fedwatch.py 2>> /tmp/err.txt || true
           python scripts/backfill_liquidity.py 300 2>> /tmp/err.txt || true
           python scripts/update_liquidity.py 2>> /tmp/err.txt || true
