@@ -10,6 +10,8 @@ began, an estimate from 3x the Nasdaq 100's daily moves, marked TQQQ*), and the 
   wave end       after the signal, the 5th day in a row whose high stays below +2 sigma (counted 1-5)
   next wave      a high above +2 sigma again after a wave ended: the same rules again
   event end      the 10th day in a row whose high stays below +1 sigma (counted 1-10), as in vix.json
+  under +1 sigma the first day after the start whose high is below +1 sigma: the event's real end (once the high
+                 has fallen under +1 sigma, even for a day, no further wave has come in any event)
 Thresholds: +1/+2/+3 sigma of the month before the start (vix.json months: 10^(mean + k sd) of log monthly highs).
 A note is kept as it was once its event has ended (later data revisions don't rewrite it); `--rebuild` redoes all.
 """
@@ -120,6 +122,10 @@ def note(ym, ev, months, dl, hi, spx, lev=None):
         elif state == "after" and h > t2:
             wave += 1
             r["m"].append(["start", wave]); state = "rise"
+    # the real end: the first day after the start whose high is below +1 sigma
+    k1 = next((i for i in range(i_s + 1, i1 + 1) if H[i] < t1), None)
+    if k1 is not None:
+        R(k1)["m"].append(["s1"])
     # the event end count: the run of days below +1 sigma that ends the event (or the run so far)
     j, run = i1, []
     while j > i_s and H[j] < t1:

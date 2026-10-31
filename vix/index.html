@@ -483,7 +483,7 @@ table.ev tr.on td{background:var(--chip)}
 <script src="../books.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="vix-v118";
+const APP_VER="vix-v119";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
@@ -834,6 +834,7 @@ function markText(m,waves){
   if(m[0]==="buy")return ja?`${ordJ(w)} 買いシグナル（${m[2]==="d10"?"10日LWMA減衰":"5日が10日を下抜け"}）`:`${ordE(w)} Wave Buy Signal, ${m[2]==="d10"?"10d LWMA decline":"5d crosses 10d"}`;
   if(m[0]==="wend")return ja?`${ordJ(w)} 終了`:`${ordE(w)} Wave End`;
   if(m[0]==="end")return ja?"イベント終了":"Event end";
+  if(m[0]==="s1")return ja?"+1σ割れ　実質のイベント終了":"Below +1σ: the event's real end";
   return "";
 }
 const fmtD=d=>{const s=String(d);return LANG==="ja"?`${+s.slice(4,6)}/${+s.slice(6)}`:`${+s.slice(4,6)}/${+s.slice(6)}`};
@@ -851,7 +852,7 @@ function noteChart(n,W){
   let g="";for(let v=lo;v<=hi;v+=hi-lo>60?20:10)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" stroke="#fff" stroke-opacity=".06"/><text x="${ML-4}" y="${y(v)+3}" text-anchor="end" font-size="9" fill="#8a8aa6">${v}</text>`;
   if(ps.length)for(let v=plo;v<=phi+1e-9;v+=pst)g+=`<text x="${ML+PW+4}" y="${yp(v)+3}" font-size="9" fill="#00E5FF" fill-opacity=".8">${v>0?"+":v<0?"−":""}${Math.abs(v)}%</text>`;
   const th=(v,c,l)=>v>=lo&&v<=hi?`<line x1="${ML}" x2="${ML+PW}" y1="${y(v)}" y2="${y(v)}" stroke="${c}" stroke-opacity=".7" stroke-dasharray="3 3"/><text x="${ML+PW-2}" y="${y(v)-3}" text-anchor="end" font-size="9" fill="${c}">${l}</text>`:"";
-  const mk=R.map((r,i)=>r[8].some(m=>m[0]==="buy")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="4" fill="#b59bff" stroke="#fff" stroke-width="1"/>`:r[8].some(m=>m[0]==="start")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="3.5" fill="#ffe873"/>`:"").join("");
+  const mk=R.map((r,i)=>r[8].some(m=>m[0]==="buy")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="4" fill="#b59bff" stroke="#fff" stroke-width="1"/>`:r[8].some(m=>m[0]==="start")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="3.5" fill="#ffe873"/>`:r[8].some(m=>m[0]==="s1")?`<circle cx="${x(i)}" cy="${y(r[1])}" r="3.5" fill="#3DFF6E" stroke="#fff" stroke-width="1"/>`:"").join("");
   const ix=[0,Math.floor((k-1)/2),k-1].filter((v,i,a)=>a.indexOf(v)===i);
   const xl=ix.map(i=>`<text x="${x(i)}" y="${H-3}" text-anchor="${i===0?"start":i===k-1?"end":"middle"}" font-size="9" fill="#8a8aa6">${fmtD(R[i][0])}</text>`).join("");
   const key=`<g font-size="9"><text x="${ML+2}" y="${MT+8}" fill="#f2f2f7">VIX</text><text x="${ML+24}" y="${MT+8}" fill="#3DFF6E">5${LANG==="ja"?"日":"d"}</text><text x="${ML+44}" y="${MT+8}" fill="#FF3B5C">10${LANG==="ja"?"日":"d"}</text><text x="${ML+68}" y="${MT+8}" fill="#00E5FF">S&amp;P500</text>${n.lev?`<text x="${ML+112}" y="${MT+8}" fill="#ff7ad9">${n.lev}</text>`:""}<text x="${ML+(n.lev?146:112)}" y="${MT+8}" fill="#8a8aa6">${LANG==="ja"?"（右軸）":"(right)"}</text></g>`;
@@ -866,7 +867,9 @@ function noteStatus(n){
   const w=(R[ws][8].find(m=>m[0]==="start")||[0,1])[1],seg=R.slice(ws),has=k=>seg.find(r=>r[8].some(m=>m[0]===k));
   const d5=has("d5"),buy=has("buy"),we=has("wend"),wj=ja?`第${w}波`:`Wave ${w}`;
   let st,cls;
-  if(we){st=last[7]!=null?(ja?`${wj} 終了。イベント終了まで +1σ未達 ${last[7]}／10日`:`${wj} ended. Below +1σ ${last[7]}/10 days to the event's end`):(ja?`${wj} 終了。次の波を監視中`:`${wj} ended. Watching for another wave`);cls="ok"}
+  const s1=R.find(r=>r[8].some(m=>m[0]==="s1"));
+  if(s1){st=ja?`${fmtD(s1[0])}に +1σ を下回った。実質のイベント終了${last[7]!=null?`。正式な終了まで +1σ未達 ${last[7]}／10日`:""}`:`Below +1σ on ${fmtD(s1[0])}: the event's real end${last[7]!=null?`. ${last[7]}/10 days below +1σ to the formal end`:""}`;cls="ok"}
+  else if(we){st=last[7]!=null?(ja?`${wj} 終了。イベント終了まで +1σ未達 ${last[7]}／10日`:`${wj} ended. Below +1σ ${last[7]}/10 days to the event's end`):(ja?`${wj} 終了。次の波を監視中`:`${wj} ended. Watching for another wave`);cls="ok"}
   else if(buy){st=ja?`${wj} 買いシグナル点灯（${fmtD(buy[0])}）。波の終了まで +2σ未達 ${last[6]??0}／5日`:`${wj} buy signal on ${fmtD(buy[0])}. Below +2σ ${last[6]??0}/5 days to the wave's end`;cls="by"}
   else if(d5){st=ja?`5日LWMAが減衰（${fmtD(d5[0])}）。10日の減衰かクロスを待つ`:`5d LWMA falling since ${fmtD(d5[0])}. Waiting for the 10d to fall or the cross`;cls="d5"}
   else{st=ja?`恐怖が上昇中。5日LWMAの減衰を待つ`:`Fear still rising. Waiting for the 5d LWMA to fall`;cls="up"}
@@ -878,7 +881,7 @@ function noteBody(n,el){
   const rows=n.rows.map(r=>{
     const [d,h,l5,l10,lo,pc,wc,ec,ms,hl,lv]=r;
     const hc=h>=n.sig[2]?"h3":h>=n.sig[1]?"h2":h>=n.sig[0]?"h1":"";
-    const tr=ms.some(m=>m[0]==="buy")?"by":ms.some(m=>m[0]==="start")?"st":ms.some(m=>m[0]==="wend"||m[0]==="end")?"ok":"";
+    const tr=ms.some(m=>m[0]==="buy")?"by":ms.some(m=>m[0]==="start")?"st":ms.some(m=>m[0]==="wend"||m[0]==="end"||m[0]==="s1")?"ok":"";
     const c=wc!=null?`<td class="c">${wc}</td>`:ec!=null?`<td class="c e">${ec}</td>`:`<td class="c"></td>`;
     return `<tr class="${tr}">${c}<td class="d">${fmtD(d)}</td><td class="${hc}">${f(h)}</td><td class="${hl.includes("l5")?"y":""}">${f(l5)}</td><td class="${hl.includes("l10")?"y":""}">${f(l10)}</td><td class="${d===n.bottom?"bt":""}">${lo==null?"":Math.round(lo).toLocaleString("en-US")}</td><td class="${pc<0?"neg":""}">${pc==null?"":(pc>=0?"":"−")+Math.abs(pc*100).toFixed(1)+"%"}</td>${n.lev?`<td class="${lv<0?"neg":""}">${lv==null?"":(lv>=0?"":"−")+Math.abs(lv*100).toFixed(0)+"%"}</td>`:""}</tr>`
       // the note goes on its own line under the day, across the table (the table stays within a phone's width)
