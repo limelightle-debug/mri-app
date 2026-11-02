@@ -122,15 +122,3 @@ def session_mode(now=None):
     if m < 3 * 60 and (td or gth_morning_holiday(d)) and _evening_session(d - timedelta(days=1)):
         return "night"
     return "closed"
-
-
-def minutes_to_session(limit=180, now=None):
-    """Minutes until the next session (session_mode not closed) starts, if it starts within `limit` minutes; else -1.
-    A run started shortly before VIX's Sunday-evening session waits for it instead of stopping."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-    n = now or datetime.now(ZoneInfo("America/New_York"))
-    for k in range(0, limit + 1, 5):
-        if session_mode(n + timedelta(minutes=k)) != "closed":
-            return k
-    return -1
