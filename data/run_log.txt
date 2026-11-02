@@ -1,6 +1,5 @@
-2026-11-02T07:45:21Z 02:45 ET mode=closed run=41408305941
+2026-11-02T08:22:49Z 03:22 ET mode=pre run=41412603927
 note: multpl.com has not finalised 202610 yet
-updated: 4271 days 20091102..20261102, MRI 0.5301 (VIX 19.42 SKEW 149.76 CAPE 39.949)
+updated: 4271 days 20091102..20261102, MRI 0.5080 (VIX 18.972 SKEW 146.45 CAPE 40.048)
 repo: rp/repo/all/results/search.json?startDate=2024-10-03&endDate=2026-11-02 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-03&endDate=2026-11-02
 repo: rp/repo/propositions/search.json?startDate=2024-10-03 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-03
-claims (DOL): 502 Server Error: Bad Gateway for url: https://oui.doleta.gov/unemploy/wkclaims/report.asp
