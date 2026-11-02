@@ -1,3 +1,5 @@
-2026-11-02T16:10:04Z 11:10 ET mode=open run=41458685125
+2026-11-02T16:15:29Z 11:15 ET mode=open run=41458685125
 note: multpl.com has not finalised 202610 yet
-updated: 4271 days 20091102..20261102, MRI 0.5348 (VIX 18.47 SKEW 147.38 CAPE 40.269)
+updated: 4271 days 20091102..20261102, MRI 0.5319 (VIX 18.64 SKEW 147.54 CAPE 40.233)
+repo: rp/repo/all/results/search.json?startDate=2024-10-03&endDate=2026-11-02 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-03&endDate=2026-11-02
+repo: rp/repo/propositions/search.json?startDate=2024-10-03 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-03
