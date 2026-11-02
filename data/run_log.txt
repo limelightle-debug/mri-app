@@ -1,3 +1,4 @@
-2026-11-02T14:11:21Z 09:11 ET mode=pre run=41458685125
+2026-11-02T14:16:47Z 09:16 ET mode=open run=41458685125
 note: multpl.com has not finalised 202610 yet
-updated: 4271 days 20091102..20261102, MRI 0.5120 (VIX 19.08 SKEW 146.91 CAPE 40.086)
+updated: 4271 days 20091102..20261102, MRI 0.5124 (VIX 19.06 SKEW 146.91 CAPE 40.086)
+claims (DOL): claims: no rows
