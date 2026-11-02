@@ -1,5 +1,5 @@
-2026-11-02T06:20:02Z 01:20 ET mode=closed run=41399229279
+2026-11-02T06:54:01Z 01:54 ET mode=closed run=41402823229
 note: multpl.com has not finalised 202610 yet
 updated: 4271 days 20091102..20261102, MRI 0.5301 (VIX 19.42 SKEW 149.76 CAPE 39.949)
-rrp: HTTPSConnectionPool(host='markets.newyorkfed.org', port=443): Read timed out. (read timeout=60)
-money: 504 Server Error: Gateway Time-out for url: https://markets.newyorkfed.org/api/rates/unsecured/effr/search.json?startDate=2024-10-03&endDate=2026-11-02
+repo: rp/repo/all/results/search.json?startDate=2024-10-03&endDate=2026-11-02 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-03&endDate=2026-11-02
+repo: rp/repo/propositions/search.json?startDate=2024-10-03 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-03
