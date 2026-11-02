@@ -22,6 +22,8 @@ on:
     - cron: "5 7 * * 1-5"     # 3:05 ET (summer): the extended session after a weekend or holiday (no night run then)
     - cron: "5 8 * * 1-5"     # 3:05 ET (winter)
     - cron: "7 9 * * 1-5"
+    - cron: "40 22 * * 0"     # Sunday: starts before VIX's Sunday-evening session (20:15 ET) and waits for it
+    - cron: "40 23 * * 0"     # (the weekend workflow also starts it on Sunday evening, in case these are skipped)
   workflow_dispatch:
 
 permissions:
@@ -89,7 +91,12 @@ jobs:
               fi
               timeout 120 git push -q || echo "push failed; trying again next time"
             fi
-            [ "$s" = closed ] && break
+            if [ "$s" = closed ]; then
+              # a session starting within 3 hours (VIX's Sunday-evening session after a weekend start): wait for it
+              w=$(python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import minutes_to_session; print(minutes_to_session())')
+              if [ "$w" -gt 0 ] 2>/dev/null; then echo "waiting $w min for the session"; sleep $(( w * 60 )); continue; fi
+              break
+            fi
             if [ $(( $(date +%s) - start )) -gt 20400 ]; then
               # close to the 6-hour limit: hand over to a fresh run
               gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
