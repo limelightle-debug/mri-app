@@ -54,6 +54,8 @@ BLS = {
     "WPSFD4": "ppi_sa",
     "JTS000000000000000JOR": "jolts", # job openings rate, SA
     "CES0500000003": "ahe",           # average hourly earnings, total private, SA, dollars
+    "LNS11300000": "civpart",         # labor force participation rate, 16+, SA
+    "LNS11300060": "civpart_prime",   # participation rate, ages 25-54 (prime age), SA
 }
 PCE = {"DPCERG": "pce", "DPCCRG": "core_pce"}
 
@@ -228,7 +230,7 @@ def main():
     for k, f in (("bls", bls), ("pce", pce), ("claims", claims), ("gdp", gdp), ("gdpnow", gdpnow)):
         last = checked.get(k)
         have = out.get("bls") or {}
-        short = k == "bls" and (len(have.get("jolts", [])) < 100 or "ahe" not in have)  # ten years, every series
+        short = k == "bls" and (len(have.get("jolts", [])) < 100 or "ahe" not in have or "civpart" not in have)  # ten years, every series
         every = RUSH if rush_hour(now) else EVERY
         if not force and not short and last and now - datetime.fromisoformat(last) < every and k in out:
             continue
