@@ -77,6 +77,7 @@ jobs:
             timeout 90 python scripts/update_weekly.py > /dev/null 2>> $log || echo "update_weekly failed ($?)" >> $log
             timeout 90 python scripts/update_rstar.py > /dev/null 2>> $log || echo "update_rstar failed ($?)" >> $log
             timeout 120 python scripts/update_fedwatch.py > /dev/null 2>> $log || echo "update_fedwatch failed ($?)" >> $log
+            timeout 90 python scripts/update_mmf.py > /dev/null 2>> $log || echo "update_mmf failed ($?)" >> $log
             cat $log
             git add data/
             if ! git diff --cached --quiet; then
