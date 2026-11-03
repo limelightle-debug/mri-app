@@ -305,6 +305,56 @@ def cnbc_monthly(sym):
     return [[k, v] for k, v in sorted(m.items())]
 
 
+# ---------- the dollar's pendulum (Ryo's model, workbook sheet GLD) ----------
+DXYM = Path(__file__).resolve().parent.parent / "data" / "dxy_monthly.json"
+
+
+def ncdf(x, m, s):
+    from math import erf, sqrt
+    return 0.5 * (1 + erf((x - m) / (s * sqrt(2))))
+
+
+def dxy_model(cnbc, gold):
+    """Month-end DXY: the workbook's series (1990-), then CNBC's for later months. For each month:
+    trend = the 120-month average of DXY; dev = (DXY - trend) / trend; ave = the 120-month average of dev;
+    sd = the 120-month standard deviation of dev (sample); pct = NORMDIST(dev, ave, sd); alloc (the gold allocation
+    index) = ((pct - 0.5) * 2) ** 3 rounded to 2 when dev > ave, else 0; alloc20 = the 240-month average of alloc;
+    corr6 = the 6-month correlation of DXY and gold (month ends).
+    Rows: [YYYY-MM, dxy, trend, dev, ave, sd, pct, alloc, alloc20, corr6]."""
+    base = dict(json.loads(DXYM.read_text())["hist"])
+    last = max(base)
+    for k, v in cnbc or []:
+        if k > last:
+            base[k] = v
+    ms = sorted(base)
+    gm = dict(gold or [])
+    rows, devs, allocs = [], [], []
+    for i, m in enumerate(ms):
+        x = base[m]
+        trend = statistics.mean(base[k] for k in ms[i - 119:i + 1]) if i >= 119 else None
+        dev = (x - trend) / trend if trend else None
+        if dev is not None:
+            devs.append(dev)
+        ave = sd = pct = alloc = None
+        if dev is not None and len(devs) >= 24:  # expanding window until 10 years of deviations exist
+            w = devs[-120:]
+            ave, sd = statistics.mean(w), statistics.stdev(w)
+            pct = ncdf(dev, ave, sd)
+            alloc = round(((pct - 0.5) * 2) ** 3, 2) if dev > ave else 0
+            allocs.append(alloc)
+        a20 = round(statistics.mean(allocs[-240:]), 2) if allocs else None
+        c6 = None
+        w6 = ms[max(0, i - 5):i + 1]
+        if len(w6) == 6 and all(k in gm for k in w6):
+            try:
+                c6 = round(statistics.correlation([base[k] for k in w6], [gm[k] for k in w6]), 3)
+            except Exception:
+                c6 = None
+        r = lambda v, d=5: None if v is None else round(v, d)
+        rows.append([m, x, r(trend, 3), r(dev), r(ave), r(sd), r(pct, 4), alloc, a20, c6])
+    return [row for row in rows if row[4] is not None]
+
+
 def main():
     force = "--force" in sys.argv
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
@@ -339,6 +389,10 @@ def main():
             out["gravity"] = gravity(out["real"]["monthly"])
         except Exception as e:
             log(f"gravity: {e}")
+    try:
+        out["dxym"] = dxy_model(out.get("dxy"), out.get("gold"))
+    except Exception as e:
+        log(f"dxy model: {e}")
     out["halvings"] = ["2012-11-28", "2016-07-09", "2020-05-11", "2024-04-20"]
     out["updatedAt"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     out["log"] = LOG[-20:]
