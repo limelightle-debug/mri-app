@@ -1,0 +1,29 @@
+name: money
+# data/money.json for the institute's Money app (scripts/update_money.py)
+on:
+  push:
+    branches: [main]
+    paths: ["scripts/update_money.py", ".github/workflows/money.yml"]
+  schedule:
+    - cron: "47 22 * * 1-5"
+    - cron: "47 10 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: money
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - run: python scripts/update_money.py --force
+      - run: |
+          git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+          git add data/money.json && git commit -qm "data: money" && for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && break; sleep 7; done || true
