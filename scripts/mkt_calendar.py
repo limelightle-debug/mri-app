@@ -122,3 +122,16 @@ def session_mode(now=None):
     if m < 3 * 60 and (td or gth_morning_holiday(d)) and _evening_session(d - timedelta(days=1)):
         return "night"
     return "closed"
+
+
+def minutes_to_session(limit=45, now=None):
+    """Minutes until the next session (session_mode not closed) starts, if within `limit` minutes; else -1.
+    A run started a little before a session (the scheduler fires late or skips: 20:02 ET for the 20:15 night
+    session) waits for it instead of stopping."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    n = now or datetime.now(ZoneInfo("America/New_York"))
+    for k in range(0, limit + 1, 1):
+        if session_mode(n + timedelta(minutes=k)) != "closed":
+            return k
+    return -1

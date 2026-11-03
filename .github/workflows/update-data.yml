@@ -90,7 +90,13 @@ jobs:
               fi
               timeout 120 git push -q || echo "push failed; trying again next time"
             fi
-            [ "$s" = closed ] && break
+            if [ "$s" = closed ]; then
+              # a session starting within 45 minutes (the scheduler fired early or late, e.g. 20:02 ET for the 20:15
+              # night session): wait for it instead of stopping
+              w=$(python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import minutes_to_session; print(minutes_to_session())')
+              if [ "$w" -gt 0 ] 2>/dev/null; then echo "waiting $w min for the session"; sleep $(( w * 60 )); continue; fi
+              break
+            fi
             if [ $(( $(date +%s) - start )) -gt 20400 ]; then
               # close to the 6-hour limit: hand over to a fresh run
               gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
