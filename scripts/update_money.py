@@ -35,7 +35,7 @@ from pathlib import Path
 import requests
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "money.json"
-SPX = Path(__file__).resolve().parent.parent / "data" / "spx_history.csv"
+SPX = Path(__file__).resolve().parent.parent / "data" / "spx_daily.json"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 TREAS = ("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{y}/all"
@@ -105,13 +105,12 @@ def real_part(old, today):
 
 # ---------- gravity and CAPE gap ----------
 def spx_month_ends():
+    """{YYYY-MM: the S&P 500's last close of the month} from data/spx_daily.json (rows [YYYYMMDD, low, close])."""
     out = {}
-    with open(SPX) as f:
-        for row in csv.DictReader(f):
-            m, d, y = row["DATE"].split("/")
-            v = fnum(row["CLOSE"])
-            if v:
-                out[f"{y}-{m}"] = v  # file is in date order: the last day of each month wins
+    for d, lo, c in json.loads(SPX.read_text())["hist"]:
+        d = str(d)
+        if c:
+            out[f"{d[:4]}-{d[4:6]}"] = c
     return out
 
 
@@ -288,14 +287,19 @@ def japan(old):
 
 # ---------- yardsticks ----------
 def cnbc_monthly(sym):
-    r = requests.get(CNBC.format(s=requests.utils.quote(sym)), headers={"User-Agent": UA}, timeout=60)
-    r.raise_for_status()
-    bars = r.json()["barData"]["priceBars"]
+    """Month-end closes: the full history (quarterly bars in its early years), then the 10-year chart's bars."""
     m = {}
-    for b in bars:
-        t, c = b.get("tradeTime", ""), fnum(b.get("close"))
-        if len(t) >= 8 and c:
-            m[f"{t[:4]}-{t[4:6]}"] = c
+    for rng in ("ALL", "10Y"):
+        url = CNBC.replace("ALL.json", rng + ".json").format(s=requests.utils.quote(sym))
+        try:
+            r = requests.get(url, headers={"User-Agent": UA}, timeout=60)
+            r.raise_for_status()
+            for b in r.json()["barData"]["priceBars"]:
+                t, c = b.get("tradeTime", ""), fnum(b.get("close"))
+                if len(t) >= 8 and c:
+                    m[f"{t[:4]}-{t[4:6]}"] = c
+        except Exception as e:
+            log(f"CNBC {sym} {rng}: {e}")
     if len(m) < 60:
         raise RuntimeError(f"CNBC {sym}: only {len(m)} months")
     return [[k, v] for k, v in sorted(m.items())]
@@ -320,6 +324,8 @@ def main():
         ("gold", lambda: cnbc_monthly("@GC.1")),
         ("dxy", lambda: cnbc_monthly(".DXY")),
         ("btc", lambda: cnbc_monthly("BTC.CM=")),
+        ("usdjpy", lambda: cnbc_monthly("JPY=")),
+        ("jpcpi", lambda: [[d[:7], v] for d, v in fred("JPNCPIALLMINMEI", "1990-01-01")]),
         ("cpi", lambda: [[d[:7], v] for d, v in fred("CPIAUCSL", "1980-01-01")]),
         ("cape", cape_gap),
     ]
