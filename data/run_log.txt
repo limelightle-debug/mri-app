@@ -1,3 +1,4 @@
-2026-11-03T14:54:15Z 09:54 ET mode=open run=41654638100
+2026-11-03T14:59:42Z 09:59 ET mode=open run=41654638100
 note: multpl.com has not finalised 202610 yet
-updated: 4272 days 20091102..20261103, MRI 0.5158 (VIX 20.81 SKEW 151.16 CAPE 39.849)
+updated: 4272 days 20091102..20261103, MRI 0.5158 (VIX 20.86 SKEW 151.16 CAPE 39.874)
+bls: 503 Server Error: Service Unavailable for url: https://api.bls.gov/publicAPI/v1/timeseries/data/
