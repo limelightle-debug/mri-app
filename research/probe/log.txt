@@ -1,18 +1,12 @@
-== https://www.nbcnews.com/politics/2026-elections/senate-results
-"S":{"officeCode":"S","indicatorValue":50,"maxValue":100,"upForElection":35,"dem":{"name":"Democratic seats","total":54,"flips":7,"netGain":7,"isWinner":true,"notUpForElection":34},"rep":{"name":"Republican seats","total":43,"flips":0,"netGain":-7,"isWinner":false,"notUpForElection":31},"ind":{"name":"Independent seats","total":0,"isWinner":false}}}},"racesToWatch":null,"governorKeyRaces":{"type":"governorKeyRaces","title":"Key Governor Results","link":"","races":[{"state":"Arizona","office":"Governor"},{"state":"Georgia","office":"Governor"},{"state":"Iowa","office":"Governor"},{"state":"Michigan","office":"Governor"},{"state":"Nevada","office":"Governor"},{"state":"Ohio","office":"Governor
-
-"S":{"officeCode":"S","indicatorValue":50,"maxValue":100,"upForElection":35,"dem":{"name":"Democratic seats","total":54,"flips":7,"netGain":7,"isWinner":true,"notUpForElection":34},"rep":{"name":"Republican seats","total":43,"flips":0,"netGain":-7,"isWinner":false,"notUpForElection":31},"ind":{"name":"Independent seats","total":0,"isWinner":false}}}},"racesToWatch":null,"governorKeyRaces":{"type":"governorKeyRaces","title":"Key Governor Results","link":"","races":[{"state":"Arizona","office":"Governor"},{"state":"Georgia","office":"Governor"},{"state":"Iowa","office":"Governor"},{"state":"Michigan","office":"Governor"},{"state":"Nevada","office":"Governor"},{"state":"Ohio","office":"Governor
-
-"lastUpdated":"Last updated","dataProvided":"Data provided by","footerTex
-"lastModified":"2026-11-04T06:08:23.068Z","pageUrl":"https://www.nbcnews.c
-dateModified":"2026-11-04T07:31:30.000Z","publisher":{"@type":"NewsMedia
-== https://www.nbcnews.com/politics/2026-elections/house-results
-"S":{"officeCode":"S","indicatorValue":50,"maxValue":100,"upForElection":35,"dem":{"name":"Democratic seats","total":54,"flips":7,"netGain":7,"isWinner":true,"notUpForElection":34},"rep":{"name":"Republican seats","total":43,"flips":0,"netGain":-7,"isWinner":false,"notUpForElection":31},"ind":{"name":"Independent seats","total":0,"isWinner":false}}}},"racesToWatch":null,"governorKeyRaces":{"type":"governorKeyRaces","title":"Key Governor Results","link":"","races":[{"state":"Arizona","office":"Governor"},{"state":"Georgia","office":"Governor"},{"state":"Iowa","office":"Governor"},{"state":"Michigan","office":"Governor"},{"state":"Nevada","office":"Governor"},{"state":"Ohio","office":"Governor
-
-"S":{"officeCode":"S","indicatorValue":50,"maxValue":100,"upForElection":35,"dem":{"name":"Democratic seats","total":54,"flips":7,"netGain":7,"isWinner":true,"notUpForElection":34},"rep":{"name":"Republican seats","total":43,"flips":0,"netGain":-7,"isWinner":false,"notUpForElection":31},"ind":{"name":"Independent seats","total":0,"isWinner":false}}}},"racesToWatch":null,"governorKeyRaces":{"type":"governorKeyRaces","title":"Key Governor Results","link":"","races":[{"state":"Arizona","office":"Governor"},{"state":"Georgia","office":"Governor"},{"state":"Iowa","office":"Governor"},{"state":"Michigan","office":"Governor"},{"state":"Nevada","office":"Governor"},{"state":"Ohio","office":"Governor
-
-"seatsByParty":{"dem":227,"rep":142,"uncalled":66}},"bopData":{"bar":{"maxValue":435,"indicatorValue":218,"isHouseReleas
-
-"lastUpdated":"Last updated","dataProvided":"Data provided by","footerTex
-"lastModified":"2026-11-04T04:31:22.065Z","pageUrl":"https://www.nbcnews.c
-dateModified":"2026-11-04T07:31:05.000Z","publisher":{"@type":"NewsMedia
+{'symbol': '@SP.1', 'last': '7,590.00', 'change': '-6.75', 'change_pct': '-0.09%', 'previous_day_closing': '7,596.75', 'high': '7,633.50', 'low': '7,490.00', 'open': '7,610.25', 'last_time': '2026-11-04T03:00:10.000-0500'}
+{'symbol': '@ND.1', 'last': '28,267.25', 'change': '-38.50', 'change_pct': '-0.14%', 'previous_day_closing': '28,305.75', 'high': '28,512.00', 'low': '27,615.75', 'open': '28,410.00', 'last_time': '2026-11-04T03:00:09.000-0500'}
+{'symbol': '@DJ.1', 'last': '52,032.00', 'change': '+137.00', 'change_pct': '+0.26%', 'previous_day_closing': '51,895.00', 'high': '52,042.00', 'low': '51,416.00', 'open': '51,808.00', 'last_time': '2026-11-04T03:00:08.000-0500'}
+{'symbol': '.N225', 'last': '62,188.63', 'change': '-893.23', 'change_pct': '-1.42%', 'previous_day_closing': '63,081.86', 'high': '63,105.47', 'low': '60,030.10', 'open': '62,973.16', 'last_time': '2026-11-04T15:45:03.000+0900'}
+{'symbol': '.DXY', 'last': '101.417', 'change': '-0.45', 'change_pct': '-0.44%', 'previous_day_closing': '101.867', 'high': '101.698', 'low': '101.245', 'open': '101.734', 'last_time': '2026-11-04T03:10:11.000-0500'}
+{'symbol': 'JPY=', 'last': '158.08', 'change': '-0.58', 'change_pct': '-0.3656%', 'previous_day_closing': '158.66', 'high': '158.74', 'low': '157.41', 'open': '158.66', 'last_time': '2026-11-04T03:10:00.000-0500'}
+{'symbol': 'US10Y', 'last': '4.921%', 'change': '-0.029', 'change_pct': '-0.5859%', 'previous_day_closing': '4.95%', 'high': '4.954%', 'low': '4.892%', 'open': '4.954%', 'last_time': '2026-11-04T03:10:12.000-0500'}
+{'symbol': 'US2Y', 'last': '4.596%', 'change': '-0.018', 'change_pct': '+0.0352%', 'previous_day_closing': '4.614%', 'high': '4.623%', 'low': '4.546%', 'open': '4.62%', 'last_time': '2026-11-04T03:10:03.000-0500'}
+{'symbol': '@GC.1', 'last': '4,032.60', 'change': '+92.20', 'change_pct': '+2.34%', 'previous_day_closing': '3,940.40', 'high': '4,039.30', 'low': '3,928.20', 'open': '3,940.80', 'last_time': '2026-11-04T03:00:08.000-0500'}
+{'symbol': '@CL.1', 'last': '96.19', 'change': '+0.10', 'change_pct': '+0.10%', 'previous_day_closing': '96.09', 'high': '97.15', 'low': '94.90', 'open': '96.81', 'last_time': '2026-11-04T03:00:09.000-0500'}
+{'symbol': '.VIX', 'last': '20.83', 'change': 'UNCH', 'change_pct': 'UNCH', 'previous_day_closing': '20.83', 'high': '0.00', 'low': '0.00', 'open': '0.00', 'last_time': '2026-11-03'}
+{'symbol': '@VX.1', 'last': '19.45', 'change': '-0.4493', 'change_pct': '-2.26%', 'previous_day_closing': '19.8993', 'high': '21.35', 'low': '19.40', 'open': '19.85', 'last_time': '2026-11-04T03:00:03.915-0500'}
