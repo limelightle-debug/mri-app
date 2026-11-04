@@ -355,6 +355,79 @@ def dxy_model(cnbc, gold):
     return [row for row in rows if row[4] is not None]
 
 
+# 自然利子率Now: a nowcast of the next LW r*. LW moves with the quarter's real GDP growth and the change in core PCE
+# inflation (its own inputs), so  ΔLW = a + b·GDP growth (q/q annualised) + c·Δ(core PCE y/y), fitted on 1962- (the
+# pandemic quarters 2020-2021 left out). The quarters LW has not published yet are chained from its last value: the
+# BEA's GDP where it is out, GDPNow for the quarter it tracks. bt: the out-of-sample backtest (expanding window).
+DATA = Path(__file__).resolve().parent.parent / "data"
+
+
+def ols(X, Y):
+    n = len(X[0])
+    A = [[sum(x[i] * x[j] for x in X) for j in range(n)] + [sum(x[i] * y for x, y in zip(X, Y))] for i in range(n)]
+    for i in range(n):
+        piv = max(range(i, n), key=lambda r: abs(A[r][i]))
+        A[i], A[piv] = A[piv], A[i]
+        for r in range(n):
+            if r != i:
+                f = A[r][i] / A[i][i]
+                A[r] = [a - f * b for a, b in zip(A[r], A[i])]
+    return [A[i][n] / A[i][i] for i in range(n)]
+
+
+def lw_now():
+    G = {qkey(d): v for d, v in fred("A191RL1Q225SBEA", "1960-01-01")}
+    pm = fred("PCEPILFE", "1959-01-01")
+    pmd = {d[:7]: v for d, v in pm}
+    qm = {}
+    for d, v in pm:
+        qm.setdefault(qkey(d), []).append(d[:7])
+    def yoy(q):  # the quarter's months on a year before, as many months as are out
+        ms = [m for m in qm.get(q, []) if f"{int(m[:4]) - 1}{m[4:]}" in pmd]
+        if not ms:
+            return None
+        return (sum(pmd[m] for m in ms) / sum(pmd[f"{int(m[:4]) - 1}{m[4:]}"] for m in ms) - 1) * 100
+    H = [h for h in json.loads((DATA / "rstar.json").read_text())["hist"] if h[2] is not None]
+    rows = []
+    for i in range(1, len(H)):
+        k, p = H[i][0], H[i - 1][0]
+        if k in G and yoy(k) is not None and yoy(p) is not None and k >= "1962":
+            rows.append([k, H[i - 1][2], H[i][2], G[k], yoy(k) - yoy(p)])
+    fit = [r for r in rows if not ("2020-Q1" <= r[0] <= "2021-Q4")]
+    X = lambda r: [1, r[3], r[4]]
+    coef = ols([X(r) for r in fit], [r[2] - r[1] for r in fit])
+    pred = lambda c, g, dp: c[0] + c[1] * g + c[2] * dp
+    hist = []
+    for r in fit:
+        if r[0] < "1985":
+            continue
+        tr = [x for x in fit if x[0] < r[0]]
+        c = ols([X(x) for x in tr], [x[2] - x[1] for x in tr])
+        hist.append([r[0], r[1], round(r[1] + pred(c, r[3], r[4]), 3), r[2]])
+    def stats(h):
+        n = len(h)
+        return {"n": n, "from": h[0][0], "hit": round(sum((p - b) * (a - b) > 0 for _, b, p, a in h) / n, 3),
+                "mae": round(sum(abs(p - a) for _, b, p, a in h) / n, 3), "naive": round(sum(abs(b - a) for _, b, p, a in h) / n, 3)}
+    gn = json.loads((DATA / "macro.json").read_text()).get("gdpnow") or {}
+    nq = lambda q: f"{int(q[:4]) + 1}-Q1" if q.endswith("Q4") else f"{q[:4]}-Q{int(q[-1]) + 1}"
+    path, q, lw = [], nq(H[-1][0]), H[-1][2]
+    while True:
+        g, src = (G[q], "BEA") if q in G else ((gn["evo"][-1][1], "GDPNow") if gn.get("quarter") == q and gn.get("evo") else (None, None))
+        if g is None:
+            break
+        pq = H[-1][0] if not path else path[-1][0]
+        dp = (yoy(q) - yoy(pq)) if yoy(q) is not None and yoy(pq) is not None else 0.0
+        lw = lw + pred(coef, g, dp)
+        path.append([q, g, src, round(dp, 3), round(lw, 3)])
+        q = nq(q)
+    evo = []
+    if path and path[-1][2] == "GDPNow":
+        base = H[-1][2] if len(path) == 1 else path[-2][4]
+        evo = [[d, v, round(base + pred(coef, v, path[-1][3]), 3)] for d, v, *_ in gn["evo"]]
+    return {"coef": [round(c, 4) for c in coef], "base": [H[-1][0], H[-1][2]], "path": path, "evo": evo,
+            "bt": stats(hist), "bt10": stats([h for h in hist if h[0] >= "2010"]), "hist": hist}
+
+
 def main():
     force = "--force" in sys.argv
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
@@ -378,6 +451,7 @@ def main():
         ("jpcpi", lambda: [[d[:7], v] for d, v in fred("JPNCPIALLMINMEI", "1990-01-01")]),
         ("cpi", lambda: [[d[:7], v] for d, v in fred("CPIAUCSL", "1980-01-01")]),
         ("cape", cape_gap),
+        ("lwnow", lw_now),
     ]
     for k, fn in parts:
         try:
