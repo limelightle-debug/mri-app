@@ -790,7 +790,7 @@ function renderTop(){
   renderSignals();
   $("inds").className=isLive?"live-ut":"";
   // the indicator's own change from the previous day
-  const rd=k=>{if(!prev||prev[k]==null)return"";const dd=last[k]-prev[k];return`<em class="rd">${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}</em>`};
+  const rd=k=>{if(!prev||prev[k]==null)return"";const dd=last[k]-prev[k];return`<em class="rd">${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}${k==="cape"?"":"pt"}</em>`};
   $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag+rd("skew"),last.sr)+row("vix","VIX",last.vix.toFixed(2)+(L.vix&&L.vix.estimate&&L.vix.date===last.n?t("est"):"")+rd("vix"),last.vr)+row("cape","CAPE",last.cape.toFixed(2)+(LANG==="ja"?"倍":"")+(L.spx&&L.spx.date===last.n?(L.spx.carried?t("carried"):L.spx.estimate?t("est"):""):"")+rd("cape"),last.cr);
 }
 
@@ -1072,7 +1072,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v149";
+const APP_VER="mri-v150";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
