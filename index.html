@@ -189,6 +189,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 .live-ut .utl{color:var(--accent)}
 .ind .sub{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .ind .nm .rd{font-style:normal;font-weight:600;color:var(--ink2);margin-left:8px}
+.ind .inv{font-size:11.5px;color:var(--muted);margin:-2px 0 4px;line-height:1.4}
+.ind .inv b{color:var(--accent);font-weight:700;margin-right:6px}
 .ind .dc{font-family:var(--f-tick);font-stretch:82%;font-size:12.5px;color:var(--ink2);white-space:nowrap;margin:-1px 0 3px auto}
 .ind .ut{font-style:normal;font-family:var(--f-tick);font-stretch:85%;font-size:11.5px;font-weight:600;color:var(--accent);margin-left:8px}
 .sched table{width:100%;border-collapse:collapse;margin-top:2px}
@@ -594,7 +596,7 @@ const T={
   estNote:(a,b)=>`推定値は、最新の公式値（実質金利・インフレ期待 ${a}、OAS ${b}）に今日の ETF の値動きを足したもので、その日の公式値が出たら置き換わる。実質金利は TIP、OAS は HYG・LQD から IEF（国債）の動きを除いて、それぞれのデュレーションで割って求める。TIP は満期がまちまちで10年ではないので、目安として見る。`,
   loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"8以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
-  confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",nightWait:"・Cboe の更新待ち",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
+  confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",nightWait:"・Cboe の更新待ち",vixInv:"<b>逆目盛</b>VIXが下がるほどスコアは上がる（右ほど楽観）",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",
    period:(sm,a,b)=>`${sm?"夏時間":"冬時間"}：${a} 〜 ${b}`,next:(sm,d)=>`${d}（日）から${sm?"冬時間":"夏時間"}。日本時間では翌月曜の夜間取引から、表の時刻が1時間${sm?"遅く":"早く"}なります。`,ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
@@ -607,7 +609,7 @@ const T={
   estNote:(a,b)=>`Estimates are the latest official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves, replaced once the day's official value is out. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
   loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 8 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
-  confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",nightWait:" · waiting for Cboe",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
+  confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",nightWait:" · waiting for Cboe",vixInv:"<b>Inverted</b>lower VIX, higher score (right = complacent)",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",
    period:(sm,a,b)=>`${sm?"Daylight time":"Standard time"}: ${a} to ${b}`,next:(sm,d)=>`${sm?"Standard":"Daylight"} time from Sun, ${d}: from the next overnight session, Japan times move one hour ${sm?"later":"earlier"}.`,ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
@@ -779,6 +781,7 @@ function renderTop(){
   const dch=(k,v)=>{if(!prev||prev[PK[k]]==null)return"";const dd=(v-prev[PK[k]])*100;return`${t("chg")} ${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}pt`};
   const row=(k,name,raw,v)=>`<div class="ind">
     <div class="top"><span class="nm">${name}<small>${raw}</small></span><span class="pc" style="color:${colorOf(v)}">${pc(v)}</span></div>
+    ${k==="vix"?`<div class="inv">${t("vixInv")}</div>`:""}
     <div class="sub">${UT[k]||""}<span class="dc">${dch(k,v)}</span></div>
     <div class="ann">${ANN[k].map(([x,t,b])=>`<span class="${b?"b":""}" style="left:${x}%">${t}</span>`).join("")}<span style="left:50%">Neutral</span></div>
     <div class="track"><div class="fill" style="width:${Math.min(v*100,100)}%;background:${colorOf(v)}"></div>${SIG.map(([x,,,c])=>`<div class="sl" style="left:${x}%;background:${COL[c]}"></div>`).join("")}</div>
@@ -1072,7 +1075,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v150";
+const APP_VER="mri-v151";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
