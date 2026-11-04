@@ -1,5 +1,19 @@
-{'symbol': '@VX.1', 'name': "VIX Index (Nov'26)", 'last': '21.23', 'change': '+1.3307', 'change_pct': '+6.69%', 'previous_day_closing': '19.8993', 'last_time': '2026-11-03T22:02:04.171-0500', 'ExtendedMktQuote': None}
-{'symbol': '@SP.1', 'name': "S&P 500 Fut (Dec'26)", 'last': '7,495.75', 'change': '-101.00', 'change_pct': '-1.33%', 'previous_day_closing': '7,596.75', 'last_time': '2026-11-03T22:02:09.000-0500', 'ExtendedMktQuote': None}
-{'symbol': '@ND.1', 'name': "NASDAQ 100 Fut (Dec'26)", 'last': '27,668.50', 'change': '-637.25', 'change_pct': '-2.25%', 'previous_day_closing': '28,305.75', 'last_time': '2026-11-03T22:02:08.000-0500', 'ExtendedMktQuote': None}
-{'symbol': '.VIX', 'name': 'CBOE Volatility Index', 'last': '20.83', 'change': '-0.32', 'change_pct': '-1.51%', 'previous_day_closing': '21.15', 'last_time': '2026-11-03T16:15:01.000-0500', 'ExtendedMktQuote': None}
-{'symbol': '@VX.2', 'name': "VIX Index (Dec'26)", 'last': '20.27', 'change': '+0.7223', 'change_pct': '+3.70%', 'previous_day_closing': '19.5477', 'last_time': '2024-08-05T10:08:43.000-0500', 'ExtendedMktQuote': None}
+== https://www.nbcnews.com/politics/2026-elections/house-results 200 2266811
+   i-house-results","dem":{"seatsWon":3},"rep":{"seatsWon":5},"uncalledRaces":0,"totalSeats":8}],"seatsByParty":{"dem":227,"rep":142,"uncalled":66}},"bopData":{"bar":{"maxValue":435,"indicatorValue":218,"isHouseReleased":true,"marginOfError":0,"officeC
+   false,"notUpForElection":0},"ind":{"name":"Independent seats","total":0,"isWinner":false}}},"houseModelData":{"dem":255,"rep":180,"neededForControl":218,"demColor":"#0071D0","repColor":"#CA262B","fills":["#0071D0","#0071D0","#0071D0","#0071D0","#007
+== https://www.nbcnews.com/politics/2026-elections/senate-results 200 1038190
+== https://www.politico.com/2026-election/results/house/ 403 5800
+== https://www.cnn.com/election/2026/results/house 404 1093875
+== https://www.foxnews.com/elections/2026/midterm-results/house 200 1249288
+   ath":1539,"winner":1540,"winner_last":1541,"winner_first":1542,"winner_party":1543,"call_time":1544},"TX-H-45876-6","6","R",94,"https:\u002F\u002Fimages.api.fox.com\u002Felections\u002Fheadshots\u002Ffallback.png","65914","Ellzey","Jake","GOP","2
+   "house":3850},{"startValues":3841,"seatsInPlayStart":1359,"pollClose":3668,"totals":3842,"partyResults":3844},{"D":1354,"R":1343,"Oth":3188},{"expectedTotal":3843,"seatsRemaining":1206,"netGain":10},100,[3845,3846,3848],{"partyCode":1548,"count":1
+   ":1189},"Oth",{"startValues":3851,"seatsInPlayStart":3852,"pollClose":3668,"totals":3853,"partyResults":3854},{"D":3188,"R":3188,"Oth":3188},435,{"expectedTotal":3852,"seatsRemaining":1877,"netGain":10},[3855,3857,3860],{"partyCode":1548,"count":3
+   lts":15012,"countyResults":15013,"caucusResults":15014,"dashboard":15015,"hotRaces":15016,"raceConfig":15017},{"dem":-1,"rep":-1},{"dem":-1,"rep":-1},{"dem":-1,"rep":-1},{"state":-1,"county":-1},{"dem":-1,"rep":-1},[],{"todayDate":1168,"party":1168
+== https://www.nytimes.com/interactive/2026/11/03/us/elections/results-house.html 403 771
+== https://www.cbsnews.com/elections/2026/house/ 404 576207
+== https://abcnews.go.com/Elections/2026-us-house-election-results 404 68679
+   r&&window.history.constructor.prototype,a=window.history;i&&i.pushState&&i.replaceState&&(a=i),o.inPlace(a,["pushState","replaceState"],"-")},{}],10:[function(t,e,n){function r(t){function e(){f.emit("jsonp-end",[],l),t.removeEventListener("load",e,c(!1)),t.re
+== https://www.reuters.com/graphics/USA-ELECTION/RESULTS/2026/ 403 160985
+== https://www.bloomberg.com/graphics/2026-us-election-results/house/ 200 343081
+   r&&window.history.constructor.prototype,a=window.history;i&&i.pushState&&i.replaceState&&(a=i),o.inPlace(a,["pushState","replaceState"],"-")},{}],10:[function(t,e,n){function r(t){function e(){f.emit("jsonp-end",[],l),t.removeEventListener("load",e,c(!1)),t.re
+== https://www.npr.org/2026/11/03/g-s1-election-results-house 404 125064
