@@ -42,7 +42,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests openpyxl
-      - name: Update every 5 minutes in the session, every 15 overnight
+      - name: Update every 5 minutes, in the session and overnight
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -94,8 +94,16 @@ jobs:
             if [ "$s" = closed ]; then
               # a session starting within 45 minutes (the scheduler fired early or late, e.g. 20:02 ET for the 20:15
               # night session): wait for it instead of stopping
-              w=$(python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import minutes_to_session; print(minutes_to_session())')
-              if [ "$w" -gt 0 ] 2>/dev/null; then echo "waiting $w min for the session"; sleep $(( w * 60 )); continue; fi
+              # (and between the close and the 20:15 ET night session, so the night does not depend on the scheduler,
+              # which often skips): wait up to 5 hours for the next session; past this run's time budget, hand over
+              w=$(python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import minutes_to_session; print(minutes_to_session(300))')
+              if [ "$w" -gt 0 ] 2>/dev/null; then
+                if [ $(( $(date +%s) - start + w * 60 )) -gt 20400 ]; then
+                  gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
+                  break
+                fi
+                echo "waiting $w min for the session"; sleep $(( w * 60 )); continue
+              fi
               break
             fi
             if [ $(( $(date +%s) - start )) -gt 20400 ]; then
@@ -103,5 +111,5 @@ jobs:
               gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
               break
             fi
-            if [ "$s" = open ] || [ "$s" = pre ]; then sleep 300; else sleep 900; fi
+            sleep 300  # every 5 minutes, overnight too (the futures move all night)
           done

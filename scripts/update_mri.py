@@ -249,6 +249,37 @@ def vix_estimate(prev, close):
     return close * cur / base if base else cur
 
 
+CNBC_Q = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={}"
+          "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1")
+
+
+def futures_now():
+    """Overnight, Cboe's VIX quote and the option quotes behind the estimates often stand still for hours (Cboe
+    publishes them sparsely until about 3:00 ET), while the futures trade around the clock. Returns the front VIX
+    future's and the S&P 500 future's moves against their last settlement (the same moment as the indices' closes),
+    as ratios, with the quote time; only when both quotes are fresh (within 20 minutes). Else None."""
+    try:
+        j = get(CNBC_Q.format("@VX.1|@SP.1"), timeout=20, tries=2).json()
+        qs = {q["symbol"]: q for q in j["FormattedQuoteResult"]["FormattedQuote"]}
+        out = {}
+        for sym, key in (("@VX.1", "vix"), ("@SP.1", "spx")):
+            q = qs[sym]
+            last, prev = num(str(q["last"]).replace(",", "")), num(str(q["previous_day_closing"]).replace(",", ""))
+            at = datetime.fromisoformat(q["last_time"].replace("Z", "+00:00")).astimezone(NY)
+            if not last or not prev or (datetime.now(NY) - at).total_seconds() > 20 * 60:
+                return None
+            out[key] = last / prev
+            out[key + "_at"] = at
+        # sanity: a VIX future does not halve or triple, nor the S&P 500 future move 15%, overnight
+        if not (0.5 < out["vix"] < 3 and 0.85 < out["spx"] < 1.15):
+            return None
+        out["time"] = max(out["vix_at"], out["spx_at"]).strftime("%Y-%m-%d %H:%M")
+        return out
+    except Exception as e:
+        print(f"warning: futures: {e}", file=sys.stderr)
+        return None
+
+
 def spx_ratio(prev):
     """How much the S&P 500 forward implied by the options has moved since the close of `prev`
     (same expiry), for the hours the index itself does not trade."""
@@ -403,6 +434,23 @@ def build():
                 vix[today] = est
                 live["vix"] = {**lv, "value": round(vix[today], 2), "estimate": True, "close": vix[prevv],
                                "time": calc_time()}
+    # overnight and before the open: when Cboe's quote still shows the close and the option quotes are stale, VIX is
+    # the close moved by the front VIX future's move since its settlement (futures trade all night)
+    from mkt_calendar import session_mode
+    mode = session_mode(now)
+    fut = futures_now() if mode in ("night", "pre") else None
+    if fut and today in vix:
+        prevv = max(d for d in vix if d < today)
+        lv = live.get("vix", {})
+        cboe_moved = not lv.get("estimate") and abs(vix[today] - vix[prevv]) > 1e-9
+        try:
+            calc_fresh = (now - datetime.fromisoformat(json.loads(SKEW_CALC.read_text(encoding="utf-8"))["quoteTime"]).astimezone(NY)).total_seconds() <= 20 * 60
+        except (OSError, ValueError, KeyError):
+            calc_fresh = False
+        if not cboe_moved and not (lv.get("estimate") and calc_fresh):
+            vix[today] = vix[prevv] * fut["vix"]
+            live["vix"] = {**lv, "date": today, "value": round(vix[today], 2), "estimate": True, "close": vix[prevv],
+                           "time": fut["time"], "by": "futures"}
     if today in vix and today not in skew and skew:
         prev = max(d for d in skew if d < today)
         chg = skew_change(prev)
@@ -418,10 +466,10 @@ def build():
     # the S&P 500 does not trade overnight: its last close stands for the session until it opens
     if today in vix and today not in spx and spx:
         prev = max(spx)
-        r = spx_ratio(prev)
+        r = fut["spx"] if fut else spx_ratio(prev)
         spx[today] = spx[prev] * (r or 1)
         live["spx"] = {**live.get("spx", {}), "date": today, "value": round(spx[today], 2),
-                       **({"estimate": True, "close": spx[prev], "time": calc_time()} if r else {"carried": True})}
+                       **({"estimate": True, "close": spx[prev], "time": fut["time"] if fut else calc_time(), **({"by": "futures"} if fut else {})} if r else {"carried": True})}
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
