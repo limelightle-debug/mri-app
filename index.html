@@ -347,9 +347,9 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>使うデータ</h3>
       <table>
         <tr><th>項目</th><th>確定値</th><th>リアルタイム</th></tr>
-        <tr><td>VIX</td><td>Cboe 公式の日次終値（1990年〜）</td><td>Cboe の約15分遅れの値。夜間に Cboe の値が出ていない間は S&amp;P500 オプションから推定</td></tr>
+        <tr><td>VIX</td><td>Cboe 公式の日次終値（1990年〜）</td><td>Cboe の約15分遅れの値。夜間に Cboe の値が止まっている間は S&amp;P500 オプションか VIX 先物から推定</td></tr>
         <tr><td>SKEW</td><td>Cboe 公式の日次終値（1990年〜）</td><td>S&amp;P500 オプションから推定</td></tr>
-        <tr><td>S&amp;P500</td><td>Cboe 公式の日次終値（1975年〜）</td><td>取引時間中は約15分遅れの値。夜間は S&amp;P500 オプションから推定</td></tr>
+        <tr><td>S&amp;P500</td><td>Cboe 公式の日次終値（1975年〜）</td><td>取引時間中は約15分遅れの値。夜間は S&amp;P500 先物から推定</td></tr>
         <tr><td>CAPE</td><td>multpl.com の月次の値（改定後、1871年〜）</td><td>S&amp;P500 から計算（下の「日々の CAPE」）</td></tr>
       </table>
       <p class="note">S&amp;P500 オプションは、Cboe が公開している約15分遅れの気配値を使います。</p>
@@ -401,9 +401,11 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>計算方法の違いによるズレは、前日終値時点でもいまでもほぼ同じだけ出るので、差し引きで消えます。前日終値時点の計算値は、毎日の取引終了後（米東部16:15〜20:00）に保存します。これがない日は、前日の公式終値をそのまま使います。</p>
       <p><b>夜間の VIX：</b>Cboe の無料データは、夜間取引の VIX をすぐには反映しないことがあります。その間は、VIX と同じ方法（S&amp;P500 オプションの30日分散）で計算し直した値の、前日終値時点からの<b>比率</b>で動かします。</p>
       <div class="eq">VIX<sub>夜間</sub> = 前日の公式終値<br>　×（いまの計算値 ÷ 前日終値時点の計算値）</div>
+      <p>オプションの気配値が20分以上止まっているときは、夜も取引されている VIX 先物（期近）の、前日の清算値からの<b>比率</b>で動かします。</p>
+      <div class="eq">VIX<sub>夜間</sub> = 前日の公式終値<br>　×（VIX 先物のいまの値 ÷ 前日の清算値）</div>
       <p><b>夜間の更新の間隔：</b>夜間取引のあいだ、Cboe の無料データはオプションの気配値をまばらにしか更新しません。夜の始まりはおよそ1時間おき、その後は米東部の朝3時（日本時間17時、夏時間は16時）まで更新されないことがよくあります。そのあいだはリアルタイムの値が動かず、見出しに「Cboe の更新待ち」と出ます。米東部の朝3時からは数分おきに動きます。</p>
-      <p><b>夜間の S&amp;P500：</b>S&amp;P500 指数は米国市場の取引時間にしか計算されません。夜間は、夜間取引している S&amp;P500 オプションの価格から市場が見込む水準（先物にあたる値）を求め、前日終値からの比率で動かします。</p>
-      <div class="eq">S&amp;P500<sub>夜間</sub> = 前日終値<br>　×（いまの見込み水準 ÷ 前日終値時点の見込み水準）</div>
+      <p><b>夜間の S&amp;P500：</b>S&amp;P500 指数は米国市場の取引時間にしか計算されません。夜間は、ほぼ24時間取引されている S&amp;P500 先物の、前日の清算値からの比率で動かします（先物の値が取れないときは、S&amp;P500 オプションから求めた見込み水準で動かします）。</p>
+      <div class="eq">S&amp;P500<sub>夜間</sub> = 前日終値<br>　×（S&amp;P500 先物のいまの値 ÷ 前日の清算値）</div>
       <p>インジケーターの値の横に「推定」と出ているものはこの推定値、「前日終値」と出ているものは前日の公式終値で代用している値です。推定値は、その日の公式の終値が出た時点で公式値に置き換わります。</p>
 
       <h3>CAPE の改定と過去の値への影響</h3>
@@ -467,9 +469,9 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>Data</h3>
       <table>
         <tr><th>Item</th><th>Confirmed</th><th>Realtime</th></tr>
-        <tr><td>VIX</td><td>Cboe official daily close (from 1990)</td><td>Cboe quote, about 15 min delayed; overnight, while Cboe shows no value, estimated from S&amp;P 500 options</td></tr>
+        <tr><td>VIX</td><td>Cboe official daily close (from 1990)</td><td>Cboe quote, about 15 min delayed; overnight, while Cboe's quote stands still, estimated from S&amp;P 500 options or VIX futures</td></tr>
         <tr><td>SKEW</td><td>Cboe official daily close (from 1990)</td><td>Estimated from S&amp;P 500 options</td></tr>
-        <tr><td>S&amp;P 500</td><td>Cboe official daily close (from 1975)</td><td>About 15 min delayed in the session; estimated from S&amp;P 500 options overnight</td></tr>
+        <tr><td>S&amp;P 500</td><td>Cboe official daily close (from 1975)</td><td>About 15 min delayed in the session; estimated from S&amp;P 500 futures overnight</td></tr>
         <tr><td>CAPE</td><td>multpl.com monthly values (revised, from 1871)</td><td>Calculated from the S&amp;P 500 (see "Daily CAPE")</td></tr>
       </table>
       <p class="note">S&amp;P 500 options: Cboe's public quotes, about 15 minutes delayed.</p>
@@ -520,8 +522,10 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>Differences in method show up about equally at the previous close and now, so they cancel out. The value at the close is saved after each session (16:15 to 20:00 ET). Without it, the previous official close is used as is.</p>
       <p><b>Overnight VIX:</b> Cboe's free data may not show VIX's overnight session right away. Until it does, VIX is moved by the <b>ratio</b> of a VIX recomputed with the same method (30-day variance of S&amp;P 500 options) to its value at the previous close.</p>
       <div class="eq">VIX<sub>overnight</sub> = previous official close<br>　× (recalculated now ÷ recalculated at the previous close)</div>
-      <p><b>Overnight S&amp;P 500:</b> the S&amp;P 500 index is only calculated during the US session. Overnight, the level the market expects (the forward, like a futures price) is worked out from S&amp;P 500 options, which do trade, and the previous close is moved by its ratio:</p>
-      <div class="eq">S&amp;P 500<sub>overnight</sub> = previous close<br>　× (expected level now ÷ expected level at the previous close)</div>
+      <p>When the option quotes have stood still for 20 minutes or more, VIX is moved by the <b>ratio</b> of the front VIX future, which trades overnight, to its last settlement.</p>
+      <div class="eq">VIX<sub>overnight</sub> = previous official close<br>　× (VIX future now ÷ its last settlement)</div>
+      <p><b>Overnight S&amp;P 500:</b> the S&amp;P 500 index is only calculated during the US session. Overnight, the previous close is moved by the ratio of the S&amp;P 500 future, which trades almost around the clock, to its last settlement (without a futures quote, by the level implied by S&amp;P 500 options):</p>
+      <div class="eq">S&amp;P 500<sub>overnight</sub> = previous close<br>　× (S&amp;P 500 future now ÷ its last settlement)</div>
       <p>"Estimate" next to an indicator marks these estimates; "Prev. close" marks a value carried from the previous official close. Estimates are replaced by official values once the day's closes are out.</p>
 
       <h3>CAPE revisions and past values</h3>
@@ -787,7 +791,7 @@ function renderTop(){
   $("inds").className=isLive?"live-ut":"";
   // the indicator's own change from the previous day
   const rd=k=>{if(!prev||prev[k]==null)return"";const dd=last[k]-prev[k];return`<em class="rd">${dd>=0?"+":"−"}${Math.abs(dd).toFixed(2)}</em>`};
-  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag+rd("skew"),last.sr)+row("vix","VIX",last.vix.toFixed(2)+(L.vix&&L.vix.estimate&&L.vix.date===last.n?t("est"):"")+rd("vix"),last.vr)+row("cape","CAPE",last.cape.toFixed(2)+(L.spx&&L.spx.date===last.n?(L.spx.carried?t("carried"):L.spx.estimate?t("est"):""):"")+rd("cape"),last.cr);
+  $("inds").innerHTML=row("skew","SKEW",last.skew.toFixed(2)+skTag+rd("skew"),last.sr)+row("vix","VIX",last.vix.toFixed(2)+(L.vix&&L.vix.estimate&&L.vix.date===last.n?t("est"):"")+rd("vix"),last.vr)+row("cape","CAPE",last.cape.toFixed(2)+(LANG==="ja"?"倍":"")+(L.spx&&L.spx.date===last.n?(L.spx.carried?t("carried"):L.spx.estimate?t("est"):""):"")+rd("cape"),last.cr);
 }
 
 /* ---------- daily chart ---------- */
@@ -1068,7 +1072,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v148";
+const APP_VER="mri-v149";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
