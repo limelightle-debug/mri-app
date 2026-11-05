@@ -274,7 +274,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
     </section>
 
     <section class="panel">
-      <h2><i class="h2t" data-i18n="indicators">インジケーター</i> <span id="asof"></span></h2>
+      <h2><i class="h2t" data-i18n="indicators">3つの窓</i> <span id="asof"></span></h2>
       <div id="inds"></div>
     </section>
 
@@ -408,7 +408,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p><b>夜間の更新の間隔：</b>夜間取引のあいだ、Cboe の無料データはオプションの気配値をまばらにしか更新しません。夜の始まりはおよそ1時間おき、その後は米東部の朝3時（日本時間17時、夏時間は16時）まで更新されないことがよくあります。そのあいだはリアルタイムの値が動かず、見出しに「Cboe の更新待ち」と出ます。米東部の朝3時からは数分おきに動きます。</p>
       <p><b>夜間の S&amp;P500：</b>S&amp;P500 指数は米国市場の取引時間にしか計算されません。夜間は、ほぼ24時間取引されている S&amp;P500 先物の、前日の清算値からの比率で動かします（先物の値が取れないときは、S&amp;P500 オプションから求めた見込み水準で動かします）。</p>
       <div class="eq">S&amp;P500<sub>夜間</sub> = 前日終値<br>　×（S&amp;P500 先物のいまの値 ÷ 前日の清算値）</div>
-      <p>インジケーターの値の横に「推定」と出ているものはこの推定値、「前日終値」と出ているものは前日の公式終値で代用している値です。推定値は、その日の公式の終値が出た時点で公式値に置き換わります。</p>
+      <p>3つの窓の値の横に「推定」と出ているものはこの推定値、「前日終値」と出ているものは前日の公式終値で代用している値です。推定値は、その日の公式の終値が出た時点で公式値に置き換わります。</p>
 
       <h3>CAPE の改定と過去の値への影響</h3>
       <p>multpl.com は、公表済みの直近の月の CAPE を後から改定します。S&amp;P500 の利益の確定や物価指数の反映によるものです。このアプリは<b>毎回、改定後の最新の値で全期間を計算し直します</b>。</p>
@@ -429,7 +429,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>60〜80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
         <tr><td>80〜100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
       </table>
-      <p>チャートの MRI の線には、<b>80超えに赤</b>、<b>75以上にオレンジ</b>、<b>10以下に薄い緑</b>、<b>8以下に濃い緑</b>の点を付けています。上のバーの BUY は MRI 8、SELL は 80 の位置で、MRI がその先に入ると光ります。インジケーターの目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
+      <p>チャートの MRI の線には、<b>80超えに赤</b>、<b>75以上にオレンジ</b>、<b>10以下に薄い緑</b>、<b>8以下に濃い緑</b>の点を付けています。上のバーの BUY は MRI 8、SELL は 80 の位置で、MRI がその先に入ると光ります。3つの窓の目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
 
       <h3>チャート</h3>
       <p>チャートは上下2つの欄に分かれていて、それぞれに表示するもの（MRI・SKEW・VIX・CAPE・S&amp;P500）をチェックボックスで選べます。どれも同じ 0〜100 の目盛りです。下の欄で何も選ばなければ、上の欄だけになります。期間はボタンのほか、始点と終点の年月でも選べます。</p>
@@ -594,7 +594,7 @@ let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")re
 const T={
  ja:{estTitle:"金利の推定",estSub:"リアルタイム",estReal:"10年実質金利",estBe:"10年インフレ期待",estHy:"OAS ハイイールド",estIg:"OAS 投資適格",estTag:"推定値",
   estNote:(a,b)=>`推定値は、最新の公式値（実質金利・インフレ期待 ${a}、OAS ${b}）に今日の ETF の値動きを足したもので、その日の公式値が出たら置き換わる。実質金利は TIP、OAS は HYG・LQD から IEF（国債）の動きを除いて、それぞれのデュレーションで割って求める。TIP は満期がまちまちで10年ではないので、目安として見る。`,
-  loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"8以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"インジケーター",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
+  loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"8以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"3つの窓",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",nightWait:"・Cboe の更新待ち",vixInv:"<b>逆目盛</b>VIX↓でスコア↑",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
@@ -607,7 +607,7 @@ const T={
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
  en:{estTitle:"Rates estimate",estSub:"Realtime",estReal:"10Y real yield",estBe:"10Y breakeven",estHy:"OAS high yield",estIg:"OAS inv. grade",estTag:"estimate",
   estNote:(a,b)=>`Estimates are the latest official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves, replaced once the day's official value is out. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
-  loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 8 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Indicators",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
+  loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 8 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Three windows",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",nightWait:" · waiting for Cboe",vixInv:"<b>Inverted</b>VIX↓ score↑",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
@@ -1074,7 +1074,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v152";
+const APP_VER="mri-v153";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
