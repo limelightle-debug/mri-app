@@ -1,5 +1,5 @@
-2026-11-05T07:57:43Z 02:57 ET mode=night run=41986448651
+2026-11-05T08:03:03Z 03:03 ET mode=pre run=41986448651
 error: RuntimeError: cannot compute SPXW 2026-12-07 16:00:00-05:00
 skew_calc failed (1)
 note: multpl.com has not finalised 202610 yet
-updated: 4274 days 20091102..20261105, MRI 0.6126 (VIX 16.758 SKEW 150.9 CAPE 40.474)
+updated: 4274 days 20091102..20261105, MRI 0.6128 (VIX 16.758 SKEW 150.9 CAPE 40.479)
