@@ -1,3 +1,5 @@
-2026-11-04T22:22:56Z 17:22 ET mode=closed run=41901337663
+2026-11-05T01:15:13Z 20:15 ET mode=night run=41901337663
 note: multpl.com has not finalised 202610 yet
 no change
+repo: rp/repo/all/results/search.json?startDate=2024-10-06&endDate=2026-11-05 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-06&endDate=2026-11-05
+repo: rp/repo/propositions/search.json?startDate=2024-10-06 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-06
