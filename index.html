@@ -334,8 +334,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
      <div class="l-ja">
       <h3>MRI とは</h3>
       <p>MRI（Market Risk Index）は、<b>恐怖指数研究所が2025年に開発した指標</b>です。</p>
-      <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値の10年平均からの乖離率が、<b>過去10年の乖離率の平均からどれだけ外れているか</b>を、正規分布の中での位置（パーセンタイル、0〜100）で表し、その3つを平均したものです。平均からの乖離ではなく、<b>乖離の平均からの乖離</b>を見ています。</p>
-      <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
+      <p>SKEW・VIX・シラーPE（CAPE）の3つについて、いまの値が<b>10年の傾向からどれだけ外れているか</b>を 0〜100 で表し、その3つを合わせたものです。VIX だけは逆向きで、VIX が傾向より低い（楽観が強い）ほど、リスクを高く出します。</p>
       <p class="note">MRI は、相場の天井と底を推定するための指標です。10年の傾向から見て、いまの値がどれだけ外れているかで、天井と底に近づいた局面を示します。</p>
 
       <h3>確定値とリアルタイム</h3>
@@ -364,32 +363,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>Cboe の値は約15分遅れです。そのため画面に出るのは、取引の開始から15分ほどあとからです（夜間は米東部20:30ごろから）。</p>
       <p class="note">日本時間は、米国の夏時間中は米東部＋13時間、冬時間中は＋14時間です。</p>
 
-      <h3>月ごとの値</h3>
-      <p>計算は月単位です。各月の値は、その月の<b>最後の取引日の終値</b>です。CAPE は multpl.com の各月の値を使います。</p>
-      <p>VIX と SKEW は<b>常用対数（log<sub>10</sub>）</b>に直してから計算します。CAPE はそのまま使います。以下では、この値を x と書きます。</p>
-
-      <h3>計算の手順</h3>
-      <p>どの月 t についても、<b>その月を含む直近120か月（10年）</b>を窓にします。</p>
-      <ol>
-        <li><b>10年平均</b>
-          <div class="eq">μ<sub>t</sub> = ( x<sub>t−119</sub> + … + x<sub>t</sub> ) ÷ 120</div></li>
-        <li><b>乖離率</b>（10年平均から何%離れているか）
-          <div class="eq">d<sub>t</sub> = ( x<sub>t</sub> − μ<sub>t</sub> ) ÷ μ<sub>t</sub></div>
-          <p>過去の各月の乖離率も、それぞれの月を含む120か月の平均で計算した値です。</p></li>
-        <li><b>乖離率の平均と標準偏差</b>（同じ120か月の d）。乖離率の平均 m がトレンド補正です。指標の水準が一方向に動いていると、乖離率は同じ向きに偏り続けます。その偏りを m で差し引きます。
-          <div class="eq">m<sub>t</sub> = ( d<sub>t−119</sub> + … + d<sub>t</sub> ) ÷ 120<br>s<sub>t</sub> = d<sub>t−119</sub> … d<sub>t</sub> の標準偏差<br><small style="margin:0">標本標準偏差（n−1 で割る）</small></div></li>
-        <li><b>標準化</b>（乖離の平均からの乖離を、乖離の標準偏差で割る）
-          <div class="eq">z<sub>t</sub> = ( d<sub>t</sub> − m<sub>t</sub> ) ÷ s<sub>t</sub></div></li>
-        <li><b>パーセンタイルに変換</b>（標準正規分布の累積分布 Φ。z が分布の下から何%の位置にあるか）
-          <div class="eq">SKEW = Φ( z )<br>CAPE = Φ( z )<br>VIX = 1 − Φ( z )</div>
-          <p>VIX だけは逆向きです。VIX が10年の傾向より<b>低い</b>（楽観が強い）ほど、リスクを高く出します。</p></li>
-        <li><b>MRI</b> = 3つの平均 × 100</li>
-      </ol>
-      <p class="note">Excel の関数でいえば、AVERAGE・STDEV（STDEV.S）・NORMDIST（累積 TRUE）による計算と同じです。</p>
-
-      <h3>当月の扱い（ローリング計算）</h3>
-      <p>当月の行には、月末を待たずに<b>その日の値（暫定値）</b>を入れて計算します。前月までの119か月は確定した月末値です。</p>
-      <p>日足チャートの各日は、その日の値を当月の行として計算した MRI です。たとえば2026年10月15日の点は、2016年11月〜2026年9月の119か月の月末値に、10月15日の値を加えた120か月から出しています。月の最後の取引日の値は、その月の月次の MRI と一致します。リアルタイムの値も、同じように当月の行に入れて計算します。</p>
+      <h3>日々の値</h3>
+      <p>日足チャートの各日は、その日の値で計算した MRI です。リアルタイムの値も同じように計算します。</p>
 
       <h3>日々の CAPE</h3>
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
@@ -415,7 +390,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>そのため CAPE が改定されると、すでに表示した値も次のように変わります。</p>
       <ul>
         <li><b>改定された月：</b>その月の CAPE、日々の CAPE（E10 が変わるため）、MRI が変わります。</li>
-        <li><b>その後の月：</b>改定された月の値は、その後120か月の10年平均に入ります。さらにそこで出た乖離率が、その後の乖離率の平均と標準偏差に入ります。このため、改定された月から最長239か月後までの CAPE のリスク値と MRI が少しずつ変わります。</li>
+        <li><b>その後の月：</b>改定された月の値はその後の計算にも使われるため、その後の月の CAPE のリスク値と MRI も少しずつ変わります。</li>
         <li><b>それより前の月：</b>改定された月の値を使わないので変わりません。</li>
       </ul>
       <p>過去に見た MRI の値と、いまチャートに出る同じ日の値が一致しないことがあるのはこのためです。改定前の値で記録した表とも、改定された月以降でずれていきます。当月の各日の値も、月が替わってその月の CAPE が確定したときに少し動きます。</p>
@@ -429,35 +404,30 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>60〜80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
         <tr><td>80〜100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
       </table>
-      <p>チャートの MRI の線には、<b>80超えに赤</b>、<b>75以上にオレンジ</b>、<b>10以下に薄い緑</b>、<b>8以下に濃い緑</b>の点を付けています。上のバーの BUY は MRI 8、SELL は 80 の位置で、MRI がその先に入ると光ります。3つの窓の目盛りの線は、z が ±1σ・±2σ にあたる位置です。</p>
+      <p>チャートの MRI の線には、<b>80超えに赤</b>、<b>75以上にオレンジ</b>、<b>10以下に薄い緑</b>、<b>8以下に濃い緑</b>の点を付けています。上のバーの BUY は MRI 8、SELL は 80 の位置で、MRI がその先に入ると光ります。3つの窓の目盛りの線は、±1σ・±2σ にあたる位置です。</p>
 
       <h3>チャート</h3>
       <p>チャートは上下2つの欄に分かれていて、それぞれに表示するもの（MRI・SKEW・VIX・CAPE・S&amp;P500）をチェックボックスで選べます。どれも同じ 0〜100 の目盛りです。下の欄で何も選ばなければ、上の欄だけになります。期間はボタンのほか、始点と終点の年月でも選べます。</p>
-      <p>チャートの S&amp;P500 は、株価そのものではなく、<b>トレンド補正後の値</b>です。3指標と<b>同じ計算</b>（月末終値、当月はその日の値、10年の乖離率、乖離率の平均によるトレンド補正、Φ によるパーセンタイル化）で 0〜100 にしたものです。対数はとらず、CAPE と同じく値をそのまま使います。偏差値（50＋10z）ではなく、z を正規分布の中での位置（パーセンタイル）に直した値なので、50 が傾向どおり、84 が +1σ、98 が +2σ にあたります。</p>
+      <p>チャートの S&amp;P500 は、株価そのものではなく、<b>トレンド補正後の値</b>です。3指標と<b>同じ考え方</b>で 0〜100 にしたもので、50 が傾向どおり、84 が +1σ、98 が +2σ にあたります。</p>
       <p>チャートの下には、表示している期間で MRI が80を超えた日の一覧を出します。行をタップすると、チャートのその日が選ばれます。</p>
 
       <h3>読むときの注意（構造的な問題）</h3>
-      <p>この計算は、乖離率の平均を差し引くことで、指標の水準のゆるやかな変化（トレンド）を補正しています。ただし、乖離率の平均も過去10年分なので、<b>補正は10年の窓の速さでしか追いつけません</b>。水準が急に変わったときや、暴落が窓に入ったり出たりするときには、トレンド補正をかけても影響は避けられません。指標ごとの事情は次のとおりです。</p>
+      <p>MRI は10年の傾向と比べるので、指標の水準のゆるやかな変化（トレンド）には追いつけます。ただし、<b>追いつく速さは10年の窓の速さまで</b>です。水準が急に変わったときや、暴落が10年の窓に入ったり出たりするときには、影響を避けられません。指標ごとの事情は次のとおりです。</p>
       <ul>
         <li><b>VIX：</b>1990年代・2010年代・2020年代のどれでも、平均はおおむね17〜20です。危機で跳ねても元の水準に戻り、水準そのものの変化がないため、最も信頼できます。</li>
-        <li><b>SKEW：</b>1990〜2009年は年平均111〜121でほぼ横ばいでした。2013年ごろから上がり始め、2020年代は145〜150前後が普通になっています。水準が上がる局面では乖離率が上向きに偏り続けます。トレンド補正で偏りの一部は差し引かれますが、追いつききれず、リスク値が高めに出ます。</li>
+        <li><b>SKEW：</b>1990〜2009年は年平均111〜121でほぼ横ばいでした。2013年ごろから上がり始め、2020年代は145〜150前後が普通になっています。水準が上がる局面では傾向の補正が追いつききれず、リスク値が高めに出ます。</li>
         <li><b>CAPE：</b>1990年代前半の17〜20から、2020年代は30台後半まで水準が上がっています。上がり方がゆるやかなので、トレンド補正がある程度効いています。それでも SKEW と同じ種類の問題を持っています。</li>
       </ul>
       <p><b>リーマンショックの影響：</b>2013〜2018年は、CAPE のリスク値が年平均で90を超え続けました。10年平均の中に、2008〜09年に13前後まで下がった CAPE が入っていて、平均が低く引っ張られていたためです。リーマンショック（2008年9月）が10年平均の窓から外れたのは2018年9月、底値（2009年3月）が外れたのは2019年3月です。2011〜2018年に MRI が80を超えた日が多いのは主にこのためで、相場の過熱だけを表しているわけではありません。<b>このため、チャートは2019年1月から表示しています。</b></p>
-      <p class="note">乖離率の平均と標準偏差の窓には、危機を含む10年平均で計算した乖離率が2018年まで入っています。影響はずっと小さくなりますが、それが窓から抜けきるのは2028年ごろです。</p>
+      <p class="note">危機の影響は2019年以降ずっと小さくなっていますが、計算から抜けきるのは2028年ごろです。</p>
 
       <h3>いつから計算できるか</h3>
-      <p>VIX と SKEW が1990年1月からしかないため、MRI は<b>2009年11月</b>から計算できます。ただし上の理由で、2018年までは機能していないため、表示は<b>2019年1月から</b>にしています。</p>
-      <ul>
-        <li>乖離率を1本出すのに120か月が必要です。最初の乖離率は1999年12月です。</li>
-        <li>その平均と標準偏差を出すのに、乖離率がさらに120本必要です。最初の乖離率から数えて120本目が2009年11月です。</li>
-      </ul>
+      <p>MRI は<b>2009年11月</b>から計算できますが、上の理由で2018年までは機能していないため、表示は<b>2019年1月から</b>にしています。</p>
      </div>
      <div class="l-en">
       <h3>What MRI is</h3>
       <p>MRI (Market Risk Index) is <b>an indicator developed by the Fear Index Research Institute in 2025</b>.</p>
-      <p>For each of SKEW, VIX and the Shiller PE (CAPE), MRI takes today's deviation from the 10-year average and measures <b>how far it sits from the average deviation of the past 10 years</b>. That distance is expressed as a position in the normal distribution (a percentile, 0 to 100), and MRI is the average of the three. It is not the deviation from the average, but <b>the deviation from the average deviation</b>.</p>
-      <div class="eq">MRI = ( SKEW + VIX + CAPE ) ÷ 3 × 100</div>
+      <p>For each of SKEW, VIX and the Shiller PE (CAPE), MRI measures <b>how far today's value sits from its 10-year trend</b> on a 0–100 scale, and combines the three. VIX alone is inverted: the lower VIX is against its trend (the more complacent the market), the higher the risk.</p>
       <p class="note">MRI is built to estimate market tops and bottoms. It shows how far the current values are from their 10-year trend, and so when the market is nearing a top or a bottom.</p>
 
       <h3>Confirmed and realtime</h3>
@@ -485,32 +455,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       </ul>
       <p>Cboe's values are about 15 minutes delayed, so they show up about 15 minutes after trading starts (around 20:30 ET overnight).</p>
 
-      <h3>Monthly values</h3>
-      <p>The calculation works by month. Each month's value is the <b>close on its last trading day</b>. CAPE uses multpl.com's value for each month.</p>
-      <p>VIX and SKEW are converted to <b>common logarithms (log<sub>10</sub>)</b> first. CAPE is used as is. Below, this value is written x.</p>
-
-      <h3>Steps</h3>
-      <p>For any month t, the window is <b>the latest 120 months (10 years), including that month</b>.</p>
-      <ol>
-        <li><b>10-year average</b>
-          <div class="eq">μ<sub>t</sub> = ( x<sub>t−119</sub> + … + x<sub>t</sub> ) ÷ 120</div></li>
-        <li><b>Deviation</b> (how far from the 10-year average, in %)
-          <div class="eq">d<sub>t</sub> = ( x<sub>t</sub> − μ<sub>t</sub> ) ÷ μ<sub>t</sub></div>
-          <p>The deviation of each past month also uses the 120-month average ending in that month.</p></li>
-        <li><b>Mean and standard deviation of the deviations</b> (the same 120 months of d). The mean m is the trend correction: when an indicator's level drifts one way, its deviations stay skewed the same way, and m takes that skew out.
-          <div class="eq">m<sub>t</sub> = ( d<sub>t−119</sub> + … + d<sub>t</sub> ) ÷ 120<br>s<sub>t</sub> = standard deviation of d<sub>t−119</sub> … d<sub>t</sub><br><small style="margin:0">sample standard deviation (divided by n−1)</small></div></li>
-        <li><b>Standardise</b> (deviation from the average deviation, divided by the standard deviation of the deviations)
-          <div class="eq">z<sub>t</sub> = ( d<sub>t</sub> − m<sub>t</sub> ) ÷ s<sub>t</sub></div></li>
-        <li><b>Convert to a percentile</b> (the standard normal cumulative distribution Φ: what share of the distribution lies below z)
-          <div class="eq">SKEW = Φ( z )<br>CAPE = Φ( z )<br>VIX = 1 − Φ( z )</div>
-          <p>VIX alone is inverted: the <b>lower</b> VIX is against its 10-year trend (the more complacent the market), the higher the risk.</p></li>
-        <li><b>MRI</b> = the average of the three × 100</li>
-      </ol>
-      <p class="note">In Excel terms, this is the same as AVERAGE, STDEV (STDEV.S) and NORMDIST (cumulative TRUE).</p>
-
-      <h3>The current month (rolling calculation)</h3>
-      <p>The current month's row holds <b>the day's value (provisional)</b> without waiting for the month to end. The 119 months before it are confirmed month-end values.</p>
-      <p>Each day on the daily chart is the MRI calculated with that day's value as the current month's row. For example, the point for 15 October 2026 uses the 119 month-end values from November 2016 to September 2026 plus the value of 15 October. On a month's last trading day it equals that month's monthly MRI. Realtime values go into the current month's row the same way.</p>
+      <h3>Daily values</h3>
+      <p>Each day on the daily chart is the MRI calculated with that day's values. Realtime values are calculated the same way.</p>
 
       <h3>Daily CAPE</h3>
       <p>CAPE is only published monthly, so the daily value is calculated from the S&amp;P 500's daily closes:</p>
@@ -535,7 +481,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>So when CAPE is revised, values already shown change:</p>
       <ul>
         <li><b>The revised month:</b> its CAPE, daily CAPE (E10 changes) and MRI change.</li>
-        <li><b>Later months:</b> the revised value enters the 10-year averages of the next 120 months, and the deviations from those enter the means and standard deviations after that. CAPE risk and MRI for up to 239 months after the revised month shift slightly.</li>
+        <li><b>Later months:</b> the revised value is used in later calculations too, so CAPE risk and MRI for later months shift slightly.</li>
         <li><b>Earlier months:</b> unchanged, since they do not use the revised value.</li>
       </ul>
       <p>That is why an MRI value seen earlier may not match the same day on the chart now, and why tables kept with pre-revision values drift from the revised month on. The current month's daily values also move a little once the month ends and its CAPE is final.</p>
@@ -549,29 +495,25 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>60–80</td><td><i class="lv" style="background:var(--l4)"></i>High</td></tr>
         <tr><td>80–100</td><td><i class="lv" style="background:var(--l5)"></i>Very High</td></tr>
       </table>
-      <p>On the chart, the MRI line has <b>red dots above 80</b>, <b>orange dots from 75</b> and <b>light green dots at 10 or below</b>, <b>deep green dots at 8 or below</b>. On the bar above, BUY marks MRI 8 and SELL marks 80; each lights up once MRI is past it. The lines on the indicator bars mark z at ±1σ and ±2σ.</p>
+      <p>On the chart, the MRI line has <b>red dots above 80</b>, <b>orange dots from 75</b> and <b>light green dots at 10 or below</b>, <b>deep green dots at 8 or below</b>. On the bar above, BUY marks MRI 8 and SELL marks 80; each lights up once MRI is past it. The lines on the indicator bars mark ±1σ and ±2σ.</p>
 
       <h3>Chart</h3>
       <p>The chart has two windows, top and bottom. Tick boxes choose what each shows (MRI, SKEW, VIX, CAPE, S&amp;P 500), all on the same 0–100 scale. If nothing is ticked for the bottom window, only the top one is shown. Pick a period with the buttons or with start and end months.</p>
-      <p>The S&amp;P 500 on the chart is not the price but its <b>trend-corrected value</b>: the <b>same calculation</b> as the three indicators (month-end closes, today's value for the current month, 10-year deviation, trend correction by the average deviation, percentile by Φ), without logarithms, like CAPE. It is a percentile, not a deviation score (50 + 10z): 50 is on trend, 84 is +1σ and 98 is +2σ.</p>
+      <p>The S&amp;P 500 on the chart is not the price but its <b>trend-corrected value</b> on the same 0–100 scale as the three indicators: 50 is on trend, 84 is +1σ and 98 is +2σ.</p>
       <p>Below the chart is a list of the days in the period when MRI was above 80. Tap a row to pick that day on the chart.</p>
 
       <h3>Caveats (structural issues)</h3>
-      <p>Subtracting the average deviation corrects slow changes in an indicator's level (trend). But that average also covers 10 years, so <b>the correction only catches up at the pace of the 10-year window</b>. When a level shifts quickly, or a crash enters or leaves the window, the trend correction cannot avoid the effect. By indicator:</p>
+      <p>MRI compares against the 10-year trend, so it follows slow changes in an indicator's level, but <b>only at the pace of the 10-year window</b>. When a level shifts quickly, or a crash enters or leaves the window, the effect cannot be avoided. By indicator:</p>
       <ul>
         <li><b>VIX:</b> averaged about 17 to 20 in the 1990s, 2010s and 2020s alike. It spikes in crises and always comes back, with no shift in level, so it is the most reliable.</li>
-        <li><b>SKEW:</b> yearly averages of 111 to 121 from 1990 to 2009, nearly flat. It started rising around 2013 and 145 to 150 is normal in the 2020s. While the level rises, deviations stay skewed upward; the correction removes part of it but not all, so its risk reads high.</li>
+        <li><b>SKEW:</b> yearly averages of 111 to 121 from 1990 to 2009, nearly flat. It started rising around 2013 and 145 to 150 is normal in the 2020s. While the level rises, the trend correction cannot fully keep up, so its risk reads high.</li>
         <li><b>CAPE:</b> from 17 to 20 in the early 1990s to the high 30s in the 2020s. The rise is gradual, so the correction works to some degree, but it has the same kind of problem as SKEW.</li>
       </ul>
       <p><b>The Lehman shock:</b> from 2013 to 2018, CAPE risk averaged above 90 every year, because the 10-year average still held CAPE values near 13 from 2008–09, pulling the average down. The Lehman collapse (September 2008) left the window in September 2018, and the low (March 2009) in March 2019. That is the main reason MRI was above 80 so often in 2011–2018; it does not reflect overheating alone. <b>So the chart starts in January 2019.</b></p>
-      <p class="note">The window for the mean and standard deviation of the deviations still holds deviations computed with crisis-era averages up to 2018. The effect is much smaller, but it only fully leaves the window around 2028.</p>
+      <p class="note">The crisis effect has been much smaller since 2019, but it only fully leaves the calculation around 2028.</p>
 
       <h3>How far back it goes</h3>
-      <p>VIX and SKEW only go back to January 1990, so MRI can be calculated from <b>November 2009</b>. For the reasons above it does not work until 2018, so the chart starts in <b>January 2019</b>.</p>
-      <ul>
-        <li>One deviation needs 120 months; the first is December 1999.</li>
-        <li>Its mean and standard deviation need 120 more deviations; the 120th from the first is November 2009.</li>
-      </ul>
+      <p>MRI can be calculated from <b>November 2009</b>, but for the reasons above it does not work until 2018, so the chart starts in <b>January 2019</b>.</p>
      </div>
     </section>
     <section class="panel books" data-books="vix:3"></section>
