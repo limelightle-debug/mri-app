@@ -696,7 +696,7 @@ function yScale(lo,hi,centre,top,bottom){
   if(state.sc==="log"){const c=centre,d=Math.max(Math.log10(hi)-c,c-Math.log10(lo))*1.04;
     const y=d3.scaleLog().domain([10**(c-d),10**(c+d)]).range([bottom,top]);y.tk=[5,8,10,12,15,20,25,30,40,50,60,80,100].filter(v=>v>=10**(c-d)&&v<=10**(c+d));return y}
   const y=d3.scaleLinear().domain([0,hi*1.04]).nice().range([bottom,top]);y.tk=y.ticks(6).filter(v=>v>0);return y}
-// monthly candlesticks with the normal range (low −1σ to high +1σ) as a band and the +2σ line
+// monthly candlesticks with the normal range (low −1σ to high +1σ) as a band and the +1σ and +2σ lines
 const CUP="#FF3B5C",CDN="#3DFF6E";
 function renderCandle(){
   const box=$("cchart"),R=state.cr==="all"?M:M.slice(-(+state.cr*12));
@@ -713,6 +713,7 @@ const bl=r=>r.nL,bh=r=>r.nH,mid=r=>Math.sqrt(r.nL*r.nH);
   const up=R.map((r,i)=>`${(x(i)-bw/2).toFixed(1)} ${y(bh(r)).toFixed(1)}L${(x(i)+bw/2).toFixed(1)} ${y(bh(r)).toFixed(1)}`).join("L");
   const dn=R.map((r,i)=>`${(x(i)+bw/2).toFixed(1)} ${y(bl(r)).toFixed(1)}L${(x(i)-bw/2).toFixed(1)} ${y(bl(r)).toFixed(1)}`).reverse().join("L");
   g+=`<path d="M${up}L${dn}Z" fill="#7fa8ff" opacity=".13"/>`;
+  g+=`<path d="${R.map((r,i)=>(i?"L":"M")+(x(i)-bw/2).toFixed(1)+" "+y(r.th[1]).toFixed(1)+"L"+(x(i)+bw/2).toFixed(1)+" "+y(r.th[1]).toFixed(1)).join("")}" fill="none" stroke="${COL.s1}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".95" filter="url(#neon)"/>`;
   g+=`<path d="${R.map((r,i)=>(i?"L":"M")+(x(i)-bw/2).toFixed(1)+" "+y(r.th[2]).toFixed(1)+"L"+(x(i)+bw/2).toFixed(1)+" "+y(r.th[2]).toFixed(1)).join("")}" fill="none" stroke="${COL.s2}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".95" filter="url(#neon)"/>`;
   g+=`<path d="${R.map((r,i)=>(i?"L":"M")+(x(i)-bw/2).toFixed(1)+" "+y(mid(r)).toFixed(1)+"L"+(x(i)+bw/2).toFixed(1)+" "+y(mid(r)).toFixed(1)).join("")}" fill="none" stroke="${COL.mean}" stroke-width="1.1" stroke-dasharray="4 3" opacity=".95" filter="url(#neon)"/>`;
   const cw=Math.max(1,Math.min(9,bw*.7));
@@ -726,7 +727,7 @@ const bl=r=>r.nL,bh=r=>r.nH,mid=r=>Math.sqrt(r.nL*r.nH);
   $("cread").innerHTML=`<div><b>${t("ym",sel.m)}</b><small>${t("cBand")}</small> <b>${bl(sel).toFixed(2)}–${bh(sel).toFixed(2)}</b><small>${t("cCentre")}</small> <b>${mid(sel).toFixed(2)}</b></div><div>${[sel.o,sel.h,sel.l,sel.c].map((v,k)=>`<small>${L[k]}</small> <b${k===3?` style="color:${cc}"`:""}>${v.toFixed(2)}</b>`).join("")}</div>`;
   const svg=box.querySelector("svg");
   box._geo={W,idx:cx=>R[Math.max(0,Math.min(R.length-1,Math.floor((cx-ML)/bw)))].m,set:m=>{if(state.cpick!==m){state.cpick=m;renderCandle()}}};
-  $("clegend").innerHTML=`<span><i class="sq" style="--c:${CUP}"></i>${t("cUp")}</span><span><i class="sq" style="--c:${CDN}"></i>${t("cDown")}</span><span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.s2}"></i>+2σ</span><span><i class="d" style="--c:${COL.mean}"></i>${t("cMid")}</span>`;
+  $("clegend").innerHTML=`<span><i class="sq" style="--c:${CUP}"></i>${t("cUp")}</span><span><i class="sq" style="--c:${CDN}"></i>${t("cDown")}</span><span><i class="sq band"></i>${t("cBand")}</span><span><i class="d" style="--c:${COL.s1}"></i>+1σ</span><span><i class="d" style="--c:${COL.s2}"></i>+2σ</span><span><i class="d" style="--c:${COL.mean}"></i>${t("cMid")}</span>`;
   document.querySelectorAll("#crange [data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.cr));
 }
 
