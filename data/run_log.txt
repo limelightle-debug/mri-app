@@ -1,2 +1,3 @@
-2026-11-06T13:25:33Z 08:25 ET mode=pre run=42198138702
-updated: 4275 days 20091102..20261106, MRI 0.3918 (VIX 27.46 SKEW 150.1 CAPE 38.673)
+2026-11-06T13:30:55Z 08:30 ET mode=pre run=42198138702
+updated: 4275 days 20091102..20261106, MRI 0.3901 (VIX 27.52 SKEW 149.88 CAPE 38.698)
+bls: 503 Server Error: Service Unavailable for url: https://api.bls.gov/publicAPI/v1/timeseries/data/
