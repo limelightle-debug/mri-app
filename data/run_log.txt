@@ -1,33 +1,4 @@
-2026-11-06T23:14:07Z 18:14 ET mode=closed run=42310470273
+2026-11-07T02:20:23Z 21:20 ET mode=closed run=42328731769
 no change
-rrp: Expecting value: line 1 column 1 (char 0)
-money: Expecting value: line 1 column 1 (char 0)
-Traceback (most recent call last):
-  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1116, in json
-    return complexjson.loads(self.text, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/decoder.py", line 338, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/decoder.py", line 356, in raw_decode
-    raise JSONDecodeError("Expecting value", s, err.value) from None
-json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 116, in <module>
-    main()
-  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 95, in main
-    lo, hi, effr, effr_day = target()
-                             ^^^^^^^^
-  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 51, in target
-    x = r.json()["refRates"][0]
-        ^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1120, in json
-    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
-requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-update_fedwatch failed (1)
+repo: rp/repo/all/results/search.json?startDate=2024-10-08&endDate=2026-11-07 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-08&endDate=2026-11-07
+repo: rp/repo/propositions/search.json?startDate=2024-10-08 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-08
