@@ -1,5 +1,2 @@
-2026-11-12T18:48:06Z 13:48 ET mode=open run=43283543070
-updated: 4279 days 20091102..20261112, MRI 0.5679 (VIX 17.65 SKEW 149.57 CAPE 40.08)
-repo: rp/repo/all/results/search.json?startDate=2024-10-13&endDate=2026-11-12 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-13&endDate=2026-11-12
-repo: rp/repo/propositions/search.json?startDate=2024-10-13 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-13
-bls: 503 Server Error: Service Unavailable for url: https://api.bls.gov/publicAPI/v1/timeseries/data/
+2026-11-12T18:53:32Z 13:53 ET mode=open run=43283543070
+updated: 4279 days 20091102..20261112, MRI 0.5759 (VIX 17.71 SKEW 150.5 CAPE 40.086)
