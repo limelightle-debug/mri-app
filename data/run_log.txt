@@ -1,3 +1,4 @@
-2026-11-13T14:35:41Z 09:35 ET mode=open run=43404175842
-updated: 4280 days 20091102..20261113, MRI 0.5410 (VIX 18.07 SKEW 147.94 CAPE 40.027)
-claims (DOL): claims: no rows
+2026-11-13T14:41:08Z 09:41 ET mode=open run=43404175842
+error: RuntimeError: cannot compute SPXW 2026-12-11 16:00:00-05:00
+skew_calc failed (1)
+updated: 4280 days 20091102..20261113, MRI 0.5404 (VIX 18.1 SKEW 147.94 CAPE 40.027)
