@@ -32,6 +32,7 @@ MIN_DAYS, MAX_DAYS = 23, 37
 # since 1990 is 24.8; broken snapshots were 55 off) and its VIX is at least SANE_VIX of the close-time value (VIX's
 # lowest low against the previous close is 0.59, 2020-03-24; broken snapshots were 0.65 with SKEW far off)
 SANE_SKEW, SANE_VIX = 30, .5
+METHOD = 2  # 2: third-Friday SPX and end-of-week SPXW only (2026-11-16); 1: every SPXW expiry
 # between two sane snapshots within 3 hours, a jump of more than JUMP_SKEW points or JUMP_VIX in VIX waits for
 # the next snapshot to confirm it (a lone broken snapshot once gave SKEW 122 between two 149s)
 JUMP_SKEW, JUMP_VIX = 6, .15
@@ -241,6 +242,11 @@ def main():
     except (OSError, ValueError):
         prev = {}
     anchors, anchors_f, anchors_v = prev.get("anchors", {}), prev.get("anchorsF", {}), prev.get("anchorsV", {})
+    # anchors from an earlier option selection do not compare with this one: drop them (the next session then
+    # carries the official close until this selection has a close-time value of its own)
+    if prev.get("method") != METHOD:
+        anchors, anchors_f, anchors_v = {}, {}, {}
+        prev = {k: v for k, v in prev.items() if k not in ("skew", "quoteTime", "rejected")}
     take, rejected = judge(prev, {"quoteTime": t.isoformat(timespec="seconds"), "skew": skew, "vix": vixc}, anchors, anchors_v)
     if not take:
         # keep the last result whole (its time, values, forwards and terms)
@@ -260,7 +266,7 @@ def main():
     anchors = dict(sorted(anchors.items())[-30:])
     anchors_f = dict(sorted(anchors_f.items())[-30:])
     anchors_v = dict(sorted(anchors_v.items())[-30:])
-    res = {"at": datetime.now(NY).isoformat(timespec="seconds"), "quoteTime": t.isoformat(timespec="seconds"),
+    res = {"method": METHOD, "at": datetime.now(NY).isoformat(timespec="seconds"), "quoteTime": t.isoformat(timespec="seconds"),
            "skew": round(skew, 2), "official": official, "weightNear": round(w, 4),
            "terms": [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in o.items()} for o in out] if take else out,
            "vix": None if vixc is None else round(vixc, 4),
