@@ -543,7 +543,7 @@ def build():
             pass
     data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "liveDay": live_day, "daily": rows}
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
-    # the realtime MRI through the session, one point per update: [time, MRI, VIX, SKEW, CAPE risk]
+    # the realtime MRI through the session, one point per update: [time, MRI, VIX, SKEW, CAPE risk, VIX, SKEW, CAPE]
     intra = old.get("intraday") or {}
     if live_day:
         if intra.get("day") != live_day:
@@ -552,7 +552,9 @@ def build():
         before = [r for r in rows if r[0] < live_day]
         intra["prevClose"] = before[-1][7] if before else None
         r = rows[-1]
-        pt = [now.isoformat(timespec="minutes"), r[7], r[4], r[5], r[6]]
+        # [time, MRI, VIX score, SKEW score, CAPE score, VIX, SKEW, CAPE]: the raw values too, so that after the
+        # close the session's last realtime values can be checked against the confirmed ones
+        pt = [now.isoformat(timespec="minutes"), r[7], r[4], r[5], r[6], r[1], r[2], r[3]]
         pts = intra["points"]
         if pts and pts[-1][0] == pt[0]:
             pts[-1] = pt
