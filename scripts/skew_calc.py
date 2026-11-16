@@ -171,6 +171,24 @@ def judge(prev, snap, anchors, anchors_v):
     return False, rec
 
 
+RAW = OUT.with_name("skew_raw")  # the close-time quotes behind each day's anchor, to test the method against Cboe's
+
+
+def save_raw(t, terms):
+    """The day's close-time quotes of every expiry 20 to 40 days out (SPX and SPXW), gzipped, one file a day
+    (overwritten until the evening): [strike, call bid, call ask, put bid, put ask] per strike."""
+    import gzip
+    rows = []
+    for (exp, root), strikes in sorted(terms.items(), key=lambda x: x[0][0]):
+        days = (exp - t).total_seconds() / 86400
+        if 20 <= days <= 40:
+            rows.append({"exp": exp.isoformat(), "root": root, "q": [[k, *strikes[k].get("C", (0, 0)), *strikes[k].get("P", (0, 0))]
+                                                                   for k in sorted(strikes)]})
+    RAW.mkdir(exist_ok=True)
+    with gzip.open(RAW / f"{t.strftime('%Y%m%d')}.json.gz", "wt", encoding="utf-8") as f:
+        json.dump({"quoteTime": t.isoformat(timespec="seconds"), "terms": rows}, f, separators=(",", ":"))
+
+
 def main():
     t, terms = chain()
     cand = []
@@ -223,6 +241,11 @@ def main():
     mins = t.hour * 60 + t.minute
     if is_trading_day(t.date()) and options_close_minutes(t.date()) <= mins < 20 * 60:
         anchors[t.strftime("%Y%m%d")] = round(skew, 3)
+        if take:
+            try:
+                save_raw(t, terms)
+            except Exception as e:  # noqa: BLE001
+                print(f"warning: raw quotes: {e}", file=sys.stderr)
         anchors_f[t.strftime("%Y%m%d")] = forwards
         if vixc:
             anchors_v[t.strftime("%Y%m%d")] = round(vixc, 4)
