@@ -1,7 +1,7 @@
 """Estimate the Cboe SKEW Index from Cboe's delayed SPX option quotes.
 
 Cboe publishes SKEW once a day, at the close. This recomputes it from the option chain with
-Cboe's published method (the same option selection as VIX; the skewness of the 30-day
+Cboe's published method (the same option selection as VIX: third-Friday SPX and end-of-week SPXW; the skewness of the 30-day
 risk-neutral distribution, SKEW = 100 - 10 * S), so it can be compared with the official close
 and, if it tracks it, used during the session.
 
@@ -192,7 +192,15 @@ def save_raw(t, terms):
 def main():
     t, terms = chain()
     cand = []
+    # Cboe's option selection (VIX methodology 2.1, which SKEW shares): AM-settled SPX (third Friday) and PM-settled
+    # SPXW expiring at the end of the week, except those on the same date as an SPX. The Monday-to-Thursday SPXW are
+    # left out: they list far fewer strikes, and with them the near and next terms changed every day.
+    spx_days = {exp.date() for (exp, root) in terms if root == "SPX"}
+    def week_end(d):
+        return not any(is_trading_day(d + timedelta(days=i)) for i in range(1, 7 - d.weekday()))
     for (exp, root), strikes in terms.items():
+        if root == "SPXW" and (exp.date() in spx_days or not week_end(exp.date())):
+            continue
         days = (exp - t).total_seconds() / 86400
         if MIN_DAYS <= days <= MAX_DAYS:
             cand.append((exp, root, strikes))
