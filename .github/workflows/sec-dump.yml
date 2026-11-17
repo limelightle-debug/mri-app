@@ -1,0 +1,31 @@
+name: SEC facts dump
+
+# Saves a company's XBRL facts from SEC EDGAR (data.sec.gov) to the "sec-dump" branch, for one-off analysis
+# (the analysis sandbox cannot reach data.sec.gov).
+on:
+  workflow_dispatch:
+    inputs:
+      cik:
+        description: "10-digit CIK"
+        default: "0001045810"
+
+permissions:
+  contents: write
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch and push to the sec-dump branch
+        env:
+          CIK: ${{ inputs.cik }}
+        run: |
+          mkdir out && cd out
+          curl -sSf -H "User-Agent: fear-index-research admin@fear-index.invalid" -o "CIK$CIK.json" "https://data.sec.gov/api/xbrl/companyfacts/CIK$CIK.json"
+          gzip -9 "CIK$CIK.json"
+          git init -q && git checkout -q -b sec-dump
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "SEC facts CIK$CIK"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" sec-dump
