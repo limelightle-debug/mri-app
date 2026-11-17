@@ -92,6 +92,12 @@ jobs:
               timeout 120 git push -q || echo "push failed; trying again next time"
             fi
             if [ "$s" = closed ]; then
+              # Cboe publishes the day's SKEW after the close, usually by 17:20 ET but sometimes later: until it is in
+              # (or 19:00 ET), keep passing every 5 minutes, so the day's final MRI does not wait for the night session
+              pend=$(python -c 'import json; from datetime import datetime; from zoneinfo import ZoneInfo; n = datetime.now(ZoneInfo("America/New_York")); s = json.load(open("data/mri.json"))["live"].get("skew", {}); print(1 if (s.get("estimate") or s.get("carried")) and s.get("date") == int(n.strftime("%Y%m%d")) and n.hour < 19 else 0)' 2>/dev/null)
+              if [ "$pend" = 1 ]; then
+                echo "waiting for the official SKEW"; sleep 300; continue
+              fi
               # a session starting within 45 minutes (the scheduler fired early or late, e.g. 20:02 ET for the 20:15
               # night session): wait for it instead of stopping
               # (and between the close and the 20:15 ET night session, so the night does not depend on the scheduler,
