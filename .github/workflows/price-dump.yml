@@ -1,0 +1,37 @@
+name: Price dump
+
+# One-off research: daily closes for given Yahoo tickers, saved to the "price-dump" branch
+# (the analysis sandbox cannot reach Yahoo Finance).
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "space-separated Yahoo tickers"
+        default: "GC=F DX-Y.NYB"
+      start:
+        default: "2025-12-01"
+
+permissions:
+  contents: write
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas
+      - name: Fetch and push
+        env:
+          TICKERS: ${{ inputs.tickers }}
+          START: ${{ inputs.start }}
+        run: |
+          mkdir out && cd out
+          python -c "import os,yfinance as yf; yf.download(os.environ['TICKERS'].split(), start=os.environ['START'], auto_adjust=True, progress=False)['Close'].to_csv('daily.csv')"
+          git init -q && git checkout -q -b price-dump
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "daily prices"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" price-dump
