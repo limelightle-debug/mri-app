@@ -1,13 +1,2 @@
-2026-11-18T10:59:11Z 05:59 ET mode=pre run=44280978131
-updated: 4283 days 20091102..20261118, MRI 0.3372 (VIX 23.63 SKEW 140.92 CAPE 38.817)
-repo: rp/repo/all/results/search.json?startDate=2024-10-19&endDate=2026-11-18 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-19&endDate=2026-11-18
-repo: rp/repo/propositions/search.json?startDate=2024-10-19 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-19
-Traceback (most recent call last):
-  File "/home/runner/work/mri-app/mri-app/scripts/update_oas.py", line 56, in <module>
-    main()
-  File "/home/runner/work/mri-app/mri-app/scripts/update_oas.py", line 31, in main
-    r.raise_for_status()
-  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 504 Server Error: Gateway Time-out for url: https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2,BAMLC0A0CM&cosd=2023-11-19
-update_oas failed (1)
+2026-11-18T11:04:43Z 06:04 ET mode=pre run=44280978131
+updated: 4283 days 20091102..20261118, MRI 0.3413 (VIX 23.66 SKEW 141.35 CAPE 38.824)
