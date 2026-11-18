@@ -1,3 +1,2 @@
-2026-11-18T07:45:30Z 02:45 ET mode=night run=44236279195
-warning: futures: 'last'
-no change
+2026-11-18T07:50:50Z 02:50 ET mode=night run=44236279195
+updated: 4283 days 20091102..20261118, MRI 0.3496 (VIX 24.463 SKEW 143.5 CAPE 38.681)
