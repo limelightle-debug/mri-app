@@ -1,2 +1,4 @@
-2026-11-18T22:22:56Z 17:22 ET mode=closed run=44401011634
+2026-11-19T01:15:16Z 20:15 ET mode=night run=44401011634
 no change
+repo: rp/repo/all/results/search.json?startDate=2024-10-20&endDate=2026-11-19 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-20&endDate=2026-11-19
+repo: rp/repo/propositions/search.json?startDate=2024-10-20 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-20
