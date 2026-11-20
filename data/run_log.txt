@@ -1,5 +1,2 @@
-2026-11-20T08:03:40Z 03:03 ET mode=pre run=44699528935
-updated: 4285 days 20091102..20261120, MRI 0.2515 (VIX 28.167 SKEW 140.3 CAPE 37.563)
-repo: rp/repo/all/results/search.json?startDate=2024-10-21&endDate=2026-11-20 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-21&endDate=2026-11-20
-repo: rp/repo/propositions/search.json?startDate=2024-10-21 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-21
-claims (DOL): 502 Server Error: Bad Gateway for url: https://oui.doleta.gov/unemploy/wkclaims/report.asp
+2026-11-20T08:09:07Z 03:09 ET mode=pre run=44699528935
+updated: 4285 days 20091102..20261120, MRI 0.2514 (VIX 28.167 SKEW 140.3 CAPE 37.561)
