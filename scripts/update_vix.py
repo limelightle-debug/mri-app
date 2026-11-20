@@ -23,6 +23,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import requests
+import cboe_headers  # noqa: F401  (headers Cboe requires)
 
 NY = ZoneInfo("America/New_York")
 DATA = Path(__file__).resolve().parent.parent / "data"

@@ -17,6 +17,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import requests
+import cboe_headers  # noqa: F401  (headers Cboe requires)
 
 from mkt_calendar import is_trading_day, options_close_minutes
 

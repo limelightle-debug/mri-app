@@ -28,6 +28,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import requests
+import cboe_headers  # noqa: F401  (headers Cboe requires)
 
 from mkt_calendar import gth_morning_holiday, is_trading_day
 from skew_calc import SANE_SKEW, SANE_VIX

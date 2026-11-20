@@ -11,6 +11,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import requests
+import cboe_headers  # noqa: F401  (headers Cboe requires)
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "indices.json"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "

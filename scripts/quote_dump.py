@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
+import cboe_headers  # noqa: F401  (headers Cboe requires)
 
 out = Path(sys.argv[1])
 out.mkdir(parents=True, exist_ok=True)
