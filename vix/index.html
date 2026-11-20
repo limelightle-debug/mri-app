@@ -615,6 +615,9 @@ function renderLatest(){
 // band with its centre, and this month's range from low to high
 function renderGaugeBar(r){
   const q=D.quote||D.live,lp=q&&q.price;
+  // the latest value counts toward this month's range (Cboe's daily history comes in only after the close, and the
+  // extended session moves before it), so the month's high is never below the latest value
+  if(lp&&q.time&&+String(q.time).slice(0,7).replace("-","")===r.m)r={...r,h:Math.max(r.h,lp),l:Math.min(r.l,lp)};
   // +3σ joins the gauge once the month's high or the latest value has passed +2σ
   const s3=r.h>r.th[2]||(lp&&lp>r.th[2]);
   const box=$("vg"),W=Math.max(300,box.clientWidth||340),H=128,ML=20,MR=20,PW=W-ML-MR,Y=76,YM=30;
@@ -649,7 +652,8 @@ function renderGaugeBar(r){
 
 function renderTop(){
   const r=M[M.length-1],z=zoneOf(r.h,r.th),zc=ZC()[z];
-  const lv=D.live,lt=lv&&nyDate(lv.time);
+  // as of: the newer of the last close (live) and the latest quote
+  const lv=D.live,qq=D.quote,l0=lv&&nyDate(lv.time),q0=qq&&nyDate(qq.time),lt=q0&&(!l0||q0>l0)?q0:l0;
   $("tmTitle").textContent=t("monthHL",r.m);
   renderGaugeBar(r);
   $("asof").textContent=lt?t("asof",fmtTime(lt,{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})):"";
