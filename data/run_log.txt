@@ -1,4 +1,4 @@
-2026-11-20T01:35:09Z 20:35 ET mode=night run=44607063132
+2026-11-20T01:41:31Z 20:41 ET mode=night run=44607063132
 error: HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/_SPX.json
 skew_calc failed (1)
 warning: live vix: https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json: HTTP 403
