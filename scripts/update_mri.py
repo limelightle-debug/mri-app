@@ -36,6 +36,9 @@ DATA = Path(__file__).resolve().parent.parent / "data"
 OUT = DATA / "mri.json"
 CACHE = DATA / "sources.json"  # long histories, refreshed hourly; kept only for the run (not committed)
 STATUS = DATA / "status.json"
+# confirmed daily closes [VIX, SKEW, S&P 500] as this script saw them, so a day already confirmed is not lost when
+# Cboe's history files lag and its quotes cannot be read (e.g. Cboe answering 403 to GitHub's runners)
+CLOSES = DATA / "closes.json"
 NY = ZoneInfo("America/New_York")
 WINDOW = 120  # months
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -402,6 +405,14 @@ def build():
     src, refreshed = load_sources(cache)
     vix, skew, spx = dict(src["vix"]), dict(src["skew"]), dict(src["spx"])
     cape_m, spx_m = src["cape_m"], src["spx_m"]
+    try:
+        closes = {int(d): v for d, v in json.loads(CLOSES.read_text(encoding="utf-8")).items()}
+    except (OSError, ValueError):
+        closes = {}
+    for d, (cv, ck, cs) in closes.items():  # the sources win where they have the day
+        vix.setdefault(d, cv)
+        skew.setdefault(d, ck)
+        spx.setdefault(d, cs)
 
     # latest values (Cboe delayed quotes) for today
     live = {}
@@ -535,6 +546,11 @@ def build():
     # the last row is provisional while the day's SKEW is not official yet (estimated or carried)
     sk = live.get("skew", {})
     live_day = today if rows[-1][0] == today and sk.get("date") == today and (sk.get("estimate") or sk.get("carried")) else None
+    # keep the last 30 confirmed days' closes (the provisional day is not confirmed)
+    keep = {r[0]: [r[1], r[2], r[8]] for r in rows[-30:] if r[0] != live_day}
+    closes_out = {str(d): v for d, v in sorted({**{d: v for d, v in closes.items() if d >= rows[-30][0]}, **keep}.items())}
+    if not CLOSES.exists() or json.loads(CLOSES.read_text(encoding="utf-8")) != closes_out:
+        CLOSES.write_text(json.dumps(closes_out, separators=(",", ":")) + "\n", encoding="utf-8")
     # each live value's time as an ISO timestamp (the quote times are New York time)
     for v in live.values():
         try:

@@ -1,0 +1,16 @@
+name: Cboe probe
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s https://api.ipify.org; echo
+          for u in https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json \
+                   https://cdn-api.cboe.com/api/global/delayed_quotes/quotes/_VIX.json \
+                   https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv \
+                   https://www.cboe.com/; do
+            echo "== $u"
+            echo "-- plain"; curl -s -o /dev/null -D - "$u" | head -12
+            echo "-- browser"; curl -s -o /tmp/b -w "%{http_code}\n" -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" -H "Accept: application/json, text/plain, */*" -H "Accept-Language: en-US,en;q=0.9" -H "Origin: https://www.cboe.com" -H "Referer: https://www.cboe.com/" "$u"; head -c 300 /tmp/b; echo
+          done
