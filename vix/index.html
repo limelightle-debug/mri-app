@@ -379,7 +379,7 @@ table.ev tr.on td{background:var(--chip)}
       <ol>
         <li><b>月足高値・安値</b>：その月の日足の高値の最大と、安値の最小。</li>
         <li><b>対数</b>：月足高値の常用対数（log<sub>10</sub>）をとる。VIX は対数正規分布に近いため。</li>
-        <li><b>平均と標準偏差</b>：その月を含む直近360か月（30年）の対数の平均 μ と標準偏差 σ（n−1）。データが1990年1月からなので、2019年11月以前の月は、1990年1月〜2019年12月の値で固定する。</li>
+        <li><b>平均と標準偏差</b>：前月までの直近360か月（30年）の対数の平均 μ と標準偏差 σ（n−1）。当月はまだ確定していないので含めない（月の途中で線が動かない）。データが1990年1月からなので、2019年12月以前の月は、1990年1月〜2019年12月の値で固定する。</li>
         <li><b>閾値</b>：<div class="eq">+kσ ＝ 10<sup>μ＋kσ</sup>　（k＝1, 2, 3）</div></li>
         <li><b>イベント</b>：日足高値が +2σ を最初に超えた日に発生。日足高値が +1σ を10日連続で上回れなかった日に終了。閾値はイベント前月の値。終了までの再突破は同じイベント。</li>
         <li><b>規模</b>：イベント中のピークの月足高値が +3σ を超えたら「+3σイベント」、そうでなければ「+2σイベント」。</li>
@@ -397,7 +397,7 @@ table.ev tr.on td{background:var(--chip)}
       <p>Cboe の気配値。取引時間中は前日終値との差、時間外取引中はその日の終値との差を出す。最新値の色は、今月の閾値（+1σ・+2σ・+3σ）に対する位置。</p>
 
       <h3>月足ローソクと平常範囲</h3>
-      <p>平常範囲は、直近360か月の<b>月足安値の中央値</b>から<b>月足高値の中央値</b>まで（2019年までは1990〜2019年で固定、閾値と同じ扱い）。</p>
+      <p>平常範囲は、前月までの直近360か月の<b>月足安値の中央値</b>から<b>月足高値の中央値</b>まで（2019年までは1990〜2019年で固定、閾値と同じ扱い）。</p>
       <div class="eq">平常範囲の中心 ＝ √(下限 × 上限)<small>対数での中心</small></div>
       <p>対数表示では、表示している期間の中心の平均（対数）がチャートの真ん中に来る。月足高値チャートは、月足高値の対数の平均が真ん中。</p>
 
@@ -426,7 +426,7 @@ table.ev tr.on td{background:var(--chip)}
       <ol>
         <li><b>Monthly high and low</b>: the highest daily high and the lowest daily low of the month.</li>
         <li><b>Logs</b>: take log<sub>10</sub> of the monthly high; VIX is close to log-normal.</li>
-        <li><b>Mean and standard deviation</b>: μ and σ (n−1) of the logs over the latest 360 months (30 years) including that month. Data starts in January 1990, so months up to November 2019 use the January 1990–December 2019 values.</li>
+        <li><b>Mean and standard deviation</b>: μ and σ (n−1) of the logs over the 360 months (30 years) up to the previous month. The current month is not confirmed yet, so it is left out (the lines do not move during the month). Data starts in January 1990, so months up to December 2019 use the January 1990–December 2019 values.</li>
         <li><b>Thresholds</b>: <div class="eq">+kσ = 10<sup>μ + kσ</sup>　(k = 1, 2, 3)</div></li>
         <li><b>Event</b>: starts on the first day whose high passes +2σ, and ends when the daily high fails to pass +1σ for 10 days in a row, on the thresholds of the month before. Passing +2σ again before the end is the same event.</li>
         <li><b>Scale</b>: a "+3σ event" if the peak monthly high of the event passed +3σ, otherwise a "+2σ event".</li>
@@ -444,7 +444,7 @@ table.ev tr.on td{background:var(--chip)}
       <p>Cboe's quote. In the session the change is from the previous close; in extended hours, from that day's close. Its colour shows where it stands against this month's thresholds (+1σ, +2σ, +3σ).</p>
 
       <h3>Monthly candles and the normal range</h3>
-      <p>The normal range runs from the <b>median of monthly lows</b> to the <b>median of monthly highs</b> over the latest 360 months (fixed at 1990–2019 until 2019, as for the thresholds).</p>
+      <p>The normal range runs from the <b>median of monthly lows</b> to the <b>median of monthly highs</b> over the 360 months up to the previous month (fixed at 1990–2019 until 2019, as for the thresholds).</p>
       <div class="eq">Centre of the normal range = √(low × high)<small>the centre in logs</small></div>
       <p>On the log scale, the mean (in logs) of the centre over the shown period is in the middle of the chart; on the monthly-high chart, the mean of the log of monthly highs is.</p>
 
@@ -487,7 +487,7 @@ const APP_VER="vix-v120";
 let LANG=(()=>{try{const v=localStorage.getItem("lang");if(v==="ja"||v==="en")return v}catch(e){}return /^ja/i.test(navigator.language||"")?"ja":"en"})();
 const T={
  ja:{loading:"読み込み中…",loadingData:"データを読み込んでいます…",lab:"恐怖指数研究所",thisMonth:"今月の高値・安値",lowLab:"今月の安値",monthHL:m=>`${Math.floor(m/100)}年${m%100}月の高値・安値`,nCentre:"中心",lgMonth:"今月",lgLatest:"最新値",gHigh:"高値",gLow:"安値",price:"現在値",chartTitle:"VIXイベント",logScale:"対数目盛",
-  rALL:"全期間",r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",r2:"2年",tabEv:"履歴",subMap:"マップ",subNote:"ノート",tabNow:"現況",tabMethod:"解説",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
+  rALL:"全期間",r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",r2:"2年",tabEv:"履歴",subMap:"マップ",subNote:"ノート",tabNow:"現況",tabMethod:"解説",lTitle:"VIX 最新値",lOn:"取引中",lExt:"時間外取引中",lOff:"休止中",lPrev:v=>`前日終値 ${v}`,lNext:v=>`次の更新開始 ${v}`,lHours:(a,b)=>`更新：平日 ${a}〜翌${b}`,scLin:"通常",scLog:"対数",r20:"20年",cTitle:"VIX 月足ローソク",cUp:"上昇",cDown:"下落",cBand:"平常範囲",cNote:"平常範囲は前月までの直近30年の月足安値の中央値から月足高値の中央値まで（2019年までは1990〜2019年で固定）。破線は平常範囲の対数での中心（√(下限×上限)）で、対数表示ではチャートの中央。",cMid:"平常範囲の中心",cCentre:"中心",ohlc:["始","高","安","終"],r10:"10年",r5:"5年",events:"VIXイベント一覧",month:"発生日",high:"高値",th2:"+2σ",count:n=>`${n}回`,
   updated:t=>`更新 ${t}`,asof:t=>`${t} 時点`,ym:m=>`${Math.floor(m/100)}年${m%100}月`,ymd:d=>`${Math.floor(d/10000)}年${Math.floor(d/100)%100}月${d%100}日`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["平常","+1σ超え","+2σ超え","+3σ超え"],last:"前回イベント",elapsed:n=>`${n}か月経過`,none:"―",
   lgHigh:"月足高値",lgMean:"平均",lgEvent:"イベント",evWord:"イベント",lgEv2:"+2σイベント",lgEv3:"+3σイベント",
@@ -495,7 +495,7 @@ const T={
   note:"閾値は月足高値の対数の平均＋kσ。2019年までは1990〜2019年の値で固定、2020年以降は直近30年。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。"},
  en:{loading:"Loading…",loadingData:"Loading data…",lab:"Fear Index Research Institute",thisMonth:"This month's high and low",lowLab:"This month's low",monthHL:m=>`High and low, ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,nCentre:"Centre",lgMonth:"This month",lgLatest:"Latest",gHigh:"High",gLow:"Low",price:"Latest",chartTitle:"VIX events",logScale:"log scale",
-  rALL:"All",r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",r2:"2Y",tabEv:"History",subMap:"Map",subNote:"Notes",tabNow:"Now",tabMethod:"Notes",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the latest 30 years (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
+  rALL:"All",r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",r2:"2Y",tabEv:"History",subMap:"Map",subNote:"Notes",tabNow:"Now",tabMethod:"Notes",lTitle:"VIX latest",lOn:"Market open",lExt:"Extended hours",lOff:"Paused",lPrev:v=>`prev. close ${v}`,lNext:v=>`Updates resume ${v}`,lHours:(a,b)=>`Updates: weekdays ${a} to ${b}`,scLin:"Linear",scLog:"Log",r20:"20Y",cTitle:"VIX monthly candles",cUp:"Up",cDown:"Down",cBand:"Normal range",cNote:"Normal range: from the median of monthly lows to the median of monthly highs over the 30 years up to the previous month (fixed at 1990–2019 until 2019). The dashed line is the centre of the normal range in logs (√(low × high)), in the middle of the chart on the log scale.",cMid:"Centre of the normal range",cCentre:"centre",ohlc:["O","H","L","C"],r10:"10Y",r5:"5Y",events:"Event list",month:"Date",high:"High",th2:"+2σ",count:n=>`${n} events`,
   updated:t=>`Updated ${t}`,asof:t=>`as of ${t}`,ym:m=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m%100-1]} ${Math.floor(m/100)}`,ymd:d=>`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Math.floor(d/100)%100-1]} ${d%100}, ${Math.floor(d/10000)}`,ymS:m=>`${Math.floor(m/100)}/${String(m%100).padStart(2,"0")}`,
   zone:["Normal","Above +1σ","Above +2σ","Above +3σ"],last:"Last event",elapsed:n=>`${n} months ago`,none:"–",
   lgHigh:"Monthly high",lgMean:"Mean",lgEvent:"Event",evWord:" event",lgEv2:"+2σ event",lgEv3:"+3σ event",
@@ -1014,7 +1014,9 @@ async function load(){
     const res=await fetch("../data/vix.json?ts="+Date.now(),{cache:"no-store"});
     if(!res.ok)throw new Error(res.status);
     D=await res.json();
-    M=D.months.map(r=>({m:r[0],h:r[1],l:r[2],c:r[3],mu:r[4],sd:r[5],muL:r[6],sdL:r[7],o:r[8]??r[3],muC:r[9]??(r[4]+r[6])/2,nL:r[10]??10**(r[6]-r[7]),nH:r[11]??10**(r[4]+r[5]),th:thOf(r)}));
+    // a month's thresholds, mean and normal range come from the 360 months up to the month before (vix.json's row
+    // for the previous month), as the events use them: the current month's provisional high never moves its lines
+    M=D.months.map((r,i,A)=>{const p=i?A[i-1]:r;return {m:r[0],h:r[1],l:r[2],c:r[3],mu:p[4],sd:p[5],muL:p[6],sdL:p[7],o:r[8]??r[3],muC:p[9]??(p[4]+p[6])/2,nL:p[10]??10**(p[6]-p[7]),nH:p[11]??10**(p[4]+p[5]),th:thOf(p)}});
     $("app").hidden=false;$("empty").hidden=true;renderAll();
   }catch(e){if(!D){$("empty").textContent=t("loadFail")}}
 }
