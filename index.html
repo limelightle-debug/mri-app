@@ -281,7 +281,6 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
     <section class="panel" id="sig" hidden></section>
     <section class="panel" id="sigh" hidden></section>
     <section class="panel" id="intra" hidden></section>
-    <section class="panel" id="rest" hidden></section>
     <section class="panel sched" id="sched" hidden></section>
 
     <section class="panel books" data-books="vix:3"></section>
@@ -954,6 +953,7 @@ async function loadRates(){
   [MK,CV,OASD]=await Promise.all([g("data/markets.json"),g("data/curve.json"),g("../fear-index/data/oas.json")]);renderEst();
 }
 function renderEst(){
+  if(!$("rest"))return;
   const box=$("rest"),I=CV&&CV.infl,O=OASD&&OASD.date?OASD:CV&&CV.oas,it={};(MK&&MK.items||[]).forEach(x=>it[x.k]=x);
   box.hidden=!(state.view!=="close"&&(I||O));if(box.hidden)return;
   const day=x=>x&&String(x.time||"").slice(0,10),mday=day(it.tip)||day(it.us10y);
@@ -1041,7 +1041,6 @@ async function load(){
     const d=await r.json();
     if(!d||!Array.isArray(d.daily)||!d.daily.length)throw new Error("bad data");
     if(!D||d.updatedAt!==D.updatedAt){setData(d);renderAll()}else renderStatus();
-    loadRates();
   }catch(e){
     if(!D){$("empty").textContent=t("loadFail");$("status").textContent=t("loadFailShort")}
   }finally{loading=false}
