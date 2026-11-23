@@ -1,12 +1,2 @@
-2026-11-23T16:01:02Z 11:01 ET mode=open run=45185265047
-updated: 4286 days 20091102..20261123, MRI 0.2659 (VIX 27.22 SKEW 139.22 CAPE 38.154)
-Traceback (most recent call last):
-  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 116, in <module>
-    main()
-  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 94, in main
-    F = futures()
-        ^^^^^^^^^
-  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 43, in futures
-    raise ValueError(f"fed funds futures: only {sorted(out)}")
-ValueError: fed funds futures: only []
-update_fedwatch failed (1)
+2026-11-23T16:06:24Z 11:06 ET mode=open run=45185265047
+updated: 4286 days 20091102..20261123, MRI 0.2573 (VIX 27.53 SKEW 138.62 CAPE 38.123)
