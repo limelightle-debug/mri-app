@@ -1,5 +1,2 @@
-2026-11-23T07:49:56Z 02:49 ET mode=closed run=45133938685
+2026-11-23T07:55:40Z 02:55 ET mode=closed run=45133938685
 updated: 4286 days 20091102..20261123, MRI 0.1763 (VIX 35.89 SKEW 138.84 CAPE 36.311)
-repo: rp/repo/all/results/search.json?startDate=2024-10-24&endDate=2026-11-23 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-24&endDate=2026-11-23
-repo: rp/repo/propositions/search.json?startDate=2024-10-24 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-24
-claims (DOL): 502 Server Error: Bad Gateway for url: https://oui.doleta.gov/unemploy/wkclaims/report.asp
