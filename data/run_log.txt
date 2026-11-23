@@ -1,4 +1,4 @@
-2026-11-23T14:39:50Z 09:39 ET mode=open run=45185265047
-updated: 4286 days 20091102..20261123, MRI 0.2246 (VIX 26.84 SKEW 135.02 CAPE 37.866)
-repo: rp/repo/all/results/search.json?startDate=2024-10-24&endDate=2026-11-23 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-24&endDate=2026-11-23
-repo: rp/repo/propositions/search.json?startDate=2024-10-24 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-24
+2026-11-23T14:45:20Z 09:45 ET mode=open run=45185265047
+error: RuntimeError: cannot compute SPX 2026-12-18 09:30:00-05:00
+skew_calc failed (1)
+updated: 4286 days 20091102..20261123, MRI 0.2252 (VIX 26.76 SKEW 135.02 CAPE 37.866)
