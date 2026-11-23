@@ -1,4 +1,2 @@
-2026-11-23T15:44:48Z 10:44 ET mode=open run=45185265047
-updated: 4286 days 20091102..20261123, MRI 0.2521 (VIX 26.26 SKEW 136.54 CAPE 38.224)
-repo: rp/repo/all/results/search.json?startDate=2024-10-24&endDate=2026-11-23 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-24&endDate=2026-11-23
-repo: rp/repo/propositions/search.json?startDate=2024-10-24 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-24
+2026-11-23T15:50:14Z 10:50 ET mode=open run=45185265047
+updated: 4286 days 20091102..20261123, MRI 0.2405 (VIX 26.25 SKEW 134.84 CAPE 38.263)
