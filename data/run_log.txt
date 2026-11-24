@@ -1,2 +1,2 @@
-2026-11-24T02:27:30Z 21:27 ET mode=night run=45278748541
+2026-11-24T02:32:58Z 21:32 ET mode=night run=45278748541
 error: RuntimeError: https://www.multpl.com/shiller-pe/table/by-month: ConnectionError: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
