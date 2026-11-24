@@ -1,3 +1,2 @@
-2026-11-24T04:19:54Z 23:19 ET mode=night run=45323704372
+2026-11-24T04:25:21Z 23:25 ET mode=night run=45323704372
 error: AttributeError: 'NoneType' object has no attribute 'items'
-cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
