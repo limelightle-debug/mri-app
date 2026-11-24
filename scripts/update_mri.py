@@ -315,15 +315,45 @@ def spx_ratio(prev):
     return f0 / fb if fb else None
 
 
+def monthly_cape():
+    """{yyyymm: CAPE} from the committed month-end table (multpl.com's finalised months)."""
+    out = {}
+    try:
+        for line in MONTHLY_CSV.read_text(encoding="utf-8").splitlines()[1:]:
+            m, _, _, c = line.split(",")
+            out[int(m[:4]) * 100 + int(m[5:7])] = float(c)
+    except (OSError, ValueError):
+        return None
+    return out or None
+
+
 def load_sources(cache):
     fresh = cache.get("fetchedAt")
     if fresh and (datetime.now(timezone.utc) - datetime.fromisoformat(fresh)).total_seconds() < 3600:
         return cache, False
     out = {"fetchedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")}
-    out["vix"] = cboe_history("VIX")
-    out["skew"] = cboe_history("SKEW")
-    out["cape_m"] = multpl_monthly("shiller-pe")
-    out["spx_m"] = multpl_monthly("s-p-500-historical-prices")
+    # one source down (multpl.com refusing connections, say) must not stop the live values: fall back to what this
+    # run already has, or for CAPE to the committed month-end table, and try the source again on the next pass
+    partial = False
+
+    def keep(key, fetch, fallback=None):
+        nonlocal partial
+        try:
+            out[key] = fetch()
+        except RuntimeError as e:
+            old = cache.get(key) or (fallback() if fallback else None)
+            if key in ("vix", "skew") and not old:
+                raise
+            print(f"note: {key} not refreshed ({e}); using the last values", file=sys.stderr)
+            out[key] = old
+            partial = True
+
+    keep("vix", lambda: cboe_history("VIX"))
+    keep("skew", lambda: cboe_history("SKEW"))
+    keep("cape_m", lambda: multpl_monthly("shiller-pe"), monthly_cape)
+    keep("spx_m", lambda: multpl_monthly("s-p-500-historical-prices"))
+    if partial:
+        out.pop("fetchedAt")
     spx = {int(k): v for k, v in (cache.get("spx") or {}).items()}
     got, out["spxSource"] = spx_daily()
     spx.update(got)  # keeps everything collected so far, adds what the source has
@@ -406,6 +436,8 @@ def build():
     src, refreshed = load_sources(cache)
     vix, skew, spx = dict(src["vix"]), dict(src["skew"]), dict(src["spx"])
     cape_m, spx_m = src["cape_m"], src["spx_m"]
+    if not spx_m:  # multpl.com's prices unavailable: its finished months equal Cboe's average closes
+        spx_m = {m: v for m, v in month_means(spx).items() if m in cape_m}
     try:
         closes = {int(d): v for d, v in json.loads(CLOSES.read_text(encoding="utf-8")).items()}
     except (OSError, ValueError):
