@@ -1,2 +1,3 @@
-2026-11-24T15:31:53Z 10:31 ET mode=open run=45410184761
-updated: 4287 days 20091102..20261124, MRI 0.2287 (VIX 27.61 SKEW 136.43 CAPE 37.829)
+2026-11-24T15:37:16Z 10:37 ET mode=open run=45410184761
+updated: 4287 days 20091102..20261124, MRI 0.2253 (VIX 27.75 SKEW 136.29 CAPE 37.785)
+cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
