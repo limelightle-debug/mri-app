@@ -431,7 +431,7 @@ MONTHLY_CSV = DATA / "monthly.csv"  # month-end VIX, SKEW and CAPE used for the 
 def build():
     cache = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
     for k in ("vix", "skew", "spx", "cape_m", "spx_m"):
-        if k in cache:
+        if cache.get(k):
             cache[k] = {int(d): v for d, v in cache[k].items()}
     src, refreshed = load_sources(cache)
     vix, skew, spx = dict(src["vix"]), dict(src["skew"]), dict(src["spx"])
