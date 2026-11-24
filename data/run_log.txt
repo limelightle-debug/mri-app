@@ -1,4 +1,2 @@
-2026-11-24T06:09:04Z 01:09 ET mode=night run=45323704372
+2026-11-24T06:14:16Z 01:14 ET mode=night run=45323704372
 error: AttributeError: 'NoneType' object has no attribute 'items'
-repo: rp/repo/all/results/search.json?startDate=2024-10-25&endDate=2026-11-24 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-25&endDate=2026-11-24
-repo: rp/repo/propositions/search.json?startDate=2024-10-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-25
