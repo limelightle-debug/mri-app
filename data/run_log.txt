@@ -1,4 +1,4 @@
-2026-11-24T08:27:06Z 03:27 ET mode=pre run=45339868559
+2026-11-24T08:32:55Z 03:32 ET mode=pre run=45339868559
 note: cape_m not refreshed (https://www.multpl.com/shiller-pe/table/by-month: ConnectionError: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))); using the last values
 note: spx_m not refreshed (https://www.multpl.com/s-p-500-historical-prices/table/by-month: ConnectionError: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /s-p-500-historical-prices/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))); using the last values
-updated: 4287 days 20091102..20261124, MRI 0.2477 (VIX 26.479 SKEW 136.73 CAPE 38.093)
+updated: 4287 days 20091102..20261124, MRI 0.2513 (VIX 26.27 SKEW 136.98 CAPE 38.088)
