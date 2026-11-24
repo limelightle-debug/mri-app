@@ -350,8 +350,14 @@ def load_sources(cache):
 
     keep("vix", lambda: cboe_history("VIX"))
     keep("skew", lambda: cboe_history("SKEW"))
-    keep("cape_m", lambda: multpl_monthly("shiller-pe"), monthly_cape)
-    keep("spx_m", lambda: multpl_monthly("s-p-500-historical-prices"))
+    # multpl.com is only needed in the first days of a month, while the month just ended gets finalised; after that
+    # the committed month-end table holds the same numbers, so the site is not asked at all
+    table = monthly_cape()
+    if datetime.now(timezone.utc).day <= 7 or not table:
+        keep("cape_m", lambda: multpl_monthly("shiller-pe"), monthly_cape)
+        keep("spx_m", lambda: multpl_monthly("s-p-500-historical-prices"))
+    else:
+        out["cape_m"], out["spx_m"] = table, None
     if partial:
         out.pop("fetchedAt")
     spx = {int(k): v for k, v in (cache.get("spx") or {}).items()}
