@@ -1,4 +1,2 @@
-2026-11-24T02:16:29Z 21:16 ET mode=night run=45278748541
+2026-11-24T02:22:00Z 21:22 ET mode=night run=45278748541
 error: RuntimeError: https://www.multpl.com/shiller-pe/table/by-month: ConnectionError: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
-repo: rp/repo/all/results/search.json?startDate=2024-10-25&endDate=2026-11-24 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-25&endDate=2026-11-24
-repo: rp/repo/propositions/search.json?startDate=2024-10-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-25
