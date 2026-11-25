@@ -1,5 +1,5 @@
-2026-11-25T17:07:49Z 12:07 ET mode=open run=45661387961
-updated: 4288 days 20091102..20261125, MRI 0.2125 (VIX 33.64 SKEW 140.79 CAPE 36.809)
-breadth: 281 up / 219 down, sum -1.885%, top [['HD', 'Home Depot', 1.87, 0.75, 0.0104]]
+2026-11-25T17:38:13Z 12:38 ET mode=open run=45666821673
+updated: 4288 days 20091102..20261125, MRI 0.2147 (VIX 30.28 SKEW 138.19 CAPE 37.35)
+breadth: 317 up / 185 down, sum -1.373%, top [['META', 'Meta Platforms', 1.23, 1.87, 0.0259]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
