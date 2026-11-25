@@ -540,7 +540,7 @@ const T={
  ja:{estTitle:"金利の推定",estSub:"リアルタイム",estReal:"10年実質金利",estBe:"10年インフレ期待",estHy:"OAS ハイイールド",estIg:"OAS 投資適格",estTag:"推定値",
   estNote:(a,b)=>`推定値は、最新の公式値（実質金利・インフレ期待 ${a}、OAS ${b}）に今日の ETF の値動きを足したもので、その日の公式値が出たら置き換わる。実質金利は TIP、OAS は HYG・LQD から IEF（国債）の動きを除いて、それぞれのデュレーションで割って求める。TIP は満期がまちまちで10年ではないので、目安として見る。`,
   loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"8以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"3つの窓",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
-  r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
+  r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",preOpen:"プレセッション",closed:"米国市場 時間外",stale:"更新が遅れています",
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",preTag:"・プレセッション",nightWait:"・Cboe の更新待ち",vixInv:"<b>逆目盛</b>VIX↓でスコア↑",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",rtLast:" リアルタイムの最終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（プレセッション開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",
@@ -553,7 +553,7 @@ const T={
  en:{estTitle:"Rates estimate",estSub:"Realtime",estReal:"10Y real yield",estBe:"10Y breakeven",estHy:"OAS high yield",estIg:"OAS inv. grade",estTag:"estimate",
   estNote:(a,b)=>`Estimates are the latest official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves, replaced once the day's official value is out. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
   loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 8 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Three windows",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
-  r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
+  r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",preOpen:"Pre-session",closed:"US market closed",stale:"Update delayed",
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",preTag:" · pre-session",nightWait:" · waiting for Cboe",vixInv:"<b>Inverted</b>VIX↓ score↑",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",rtLast:" last realtime",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (pre-session open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",
@@ -614,8 +614,8 @@ function renderStatus(){
   if(!D)return;
   const d=new Date(D.updatedAt);
   const tm=fmtTime(d,{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"});
-  const open=marketOpen(), night=!open&&vixNight(), age=(Date.now()-d.getTime())/6e4, stale=open?age>45:night?age>90:age>4*1440;
-  $("status").innerHTML=`<span>${esc(t("updated",tm))}</span><span class="pill ${open?"open":night?"night":""}"><i></i>${open?t("open"):night?t("night"):t("closed")}</span>${stale?`<span class="pill warn">${t("stale")}</span>`:""}`;
+  const open=marketOpen(), pre=!open&&preSess(), age=(Date.now()-d.getTime())/6e4, stale=(open||pre)?age>45:age>4*1440;
+  $("status").innerHTML=`<span>${esc(t("updated",tm))}</span><span class="pill ${open?"open":pre?"night":""}"><i></i>${open?t("open"):pre?t("preOpen"):t("closed")}</span>${stale?`<span class="pill warn">${t("stale")}</span>`:""}`;
 }
 
 /* ---------- MRI and the three indicators ---------- */
@@ -702,10 +702,10 @@ function renderTop(){
    // realtime paused: the values shown are the last confirmed ones, so no colour
    $("t-mri").classList.toggle("gray",paused);
    $("vtitle").className="vtitle"+(isLive?" live":paused?" paused":"");
-   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":preSess()?t("preTag"):vixNight()?t("nightTag")+(nightStale()?t("nightWait"):""):""}</span>`
+   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":preSess()?t("preTag"):""}</span>`
      :paused?`<b>${t("realtime")}</b><span><i>${t("paused")}</i><i>${esc(t("nextStart",fmtTime(nextStart(),{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"})))}</i></span>`
      :`<b>${md(last.d)} ${t("confirmed")}</b>`;}
-  $("asof").textContent=`${md(last.d)}${endRt!=null?t("rtLast"):!isLive?t("close"):marketOpen()?t("latest"):vixNight()?t("nightAsof"):t("prov")}`;
+  $("asof").textContent=`${md(last.d)}${endRt!=null?t("rtLast"):!isLive?t("close"):marketOpen()?t("latest"):t("prov")}`;
   const ANN={
     skew:[[8,"Run-away"],[30,"Passive"],[50,"Position",1],[72,"Active"],[92,"All-in"]],
     vix:[[8,"Panic"],[28,"Fear"],[50,"Emotion",1],[72,"Greed"],[92,"Euphoria"]],
@@ -983,10 +983,12 @@ function renderIntra(){
   const done=state.view!=="close"&&!hasLive()&&I&&I.points&&I.points.length;
   box.hidden=!((live&&I&&I.day===liveDay()&&I.points&&I.points.length)||done);if(box.hidden)return;
   const fin=done?(ALL.find(r=>r.n===I.day)||{}).mri:null;
-  const P=I.points.map(p=>({t:new Date(p[0]),v:p[1]})),pc=I.prevClose;
+  const P0=I.points.map(p=>({t:new Date(p[0]),v:p[1]})),pc=I.prevClose;
   const ds=String(I.day),day=`${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
   const pd=new Date(Date.UTC(+ds.slice(0,4),+ds.slice(4,6)-1,+ds.slice(6,8))-864e5).toISOString().slice(0,10);
-  const t0=nyDate(`${pd} 20:30`),t1=nyDate(`${day} 17:00`);
+  const t0=nyDate(`${day} 03:00`),t1=nyDate(`${day} 17:00`);
+  // points from before the pre-session (the old overnight updates) are left out
+  const P=P0.filter(p=>p.t>=t0);if(!P.length){box.hidden=true;return}
   const W=Math.max(300,box.clientWidth-28),H=Math.round(W*.66)+12,ML=2,MR=30,MT=8,MB=34,PW=W-ML-MR,PH=H-MT-MB;
   const vs=P.map(p=>p.v).concat(pc!=null?[pc]:[],fin!=null?[fin]:[]);let lo=Math.min(...vs),hi=Math.max(...vs);
   const pad=Math.max(.01,(hi-lo)*.25);lo=Math.max(0,lo-pad);hi=Math.min(1,hi+pad);
@@ -1029,7 +1031,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v159";
+const APP_VER="mri-v160";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
