@@ -1,33 +1,18 @@
 name: Update MRI data
 
-# One run stays up through the US session (and VIX's overnight session) and keeps updating, so the data
-# does not depend on GitHub's scheduler firing every few minutes (it often skips).
-# The schedules below only start that run (several times, in case one is skipped);
-# a start while it is running waits in the queue and does a single update afterwards.
+# One pass per run, started by the schedule below (no run keeps itself alive or starts the next one).
+# Every 10 minutes from 9:00 ET to the evening (summer and winter time both covered), every 30 minutes overnight
+# for VIX's night and early sessions. GitHub's scheduler sometimes fires late or skips; the next run catches up.
 on:
   schedule:
-    - cron: "25 13 * * 1-5"   # 9:25 ET in summer time
-    - cron: "25 14 * * 1-5"   # 9:25 ET in winter time
-    - cron: "47 13 * * 1-5"
-    - cron: "47 14 * * 1-5"
-    - cron: "17 16 * * 1-5"
-    - cron: "17 18 * * 1-5"
-    - cron: "43 22 * * 1-5"   # after the close, for the final daily figures
-    - cron: "20 0 * * 1-5"    # 20:20 ET (summer), Sun-Thu: VIX's overnight session
-    - cron: "20 1 * * 1-5"    # 20:20 ET (winter)
-    - cron: "52 0 * * 1-5"    # second tries for the overnight start (the scheduler often fires late or not at all)
-    - cron: "52 1 * * 1-5"
-    - cron: "37 2 * * 1-5"
-    - cron: "7 5 * * 1-5"     # backups through the night
-    - cron: "5 7 * * 1-5"     # 3:05 ET (summer): the extended session after a weekend or holiday (no night run then)
-    - cron: "5 8 * * 1-5"     # 3:05 ET (winter)
-    - cron: "7 9 * * 1-5"
+    - cron: "*/10 13-22 * * 1-5"
+    - cron: "5,35 0-12 * * 1-5"
+    - cron: "5,35 23 * * 0-4"
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: write
-
+  
 concurrency:
   group: update-data
   cancel-in-progress: false
@@ -35,14 +20,14 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install requests openpyxl
-      - name: Update every 5 minutes, in the session and overnight
+      - name: One pass
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -53,69 +38,39 @@ jobs:
           session() {
             python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import session_mode; print(session_mode())'
           }
-          start=$(date +%s)
-          while true; do
-            s=$(session)
-            # data/run_log.txt: what the last pass did (a stall or an error shows up there, in the repo)
-            log=data/run_log.txt
-            echo "$(date -u +%FT%TZ) $(TZ=America/New_York date +%H:%M) ET mode=$s run=$GITHUB_RUN_ID" > $log
-            # each script gets at most 4 minutes, so one hung download cannot stop the loop
-            # SKEW recomputed from the option quotes (used for today's SKEW during the session)
-            timeout 240 python scripts/skew_calc.py > /dev/null 2>> $log || echo "skew_calc failed ($?)" >> $log
-            timeout 240 python scripts/update_mri.py >> $log 2>&1 || echo "update_mri failed ($?)" >> $log
-            timeout 240 python scripts/update_vix.py > /dev/null 2>> $log || echo "update_vix failed ($?)" >> $log
-            timeout 120 python scripts/update_indices.py > /dev/null 2>> $log || echo "update_indices failed ($?)" >> $log
-            timeout 120 python scripts/update_markets.py > /dev/null 2>> $log || echo "update_markets failed ($?)" >> $log
-            timeout 60 python scripts/update_futures.py > /dev/null 2>> $log || echo "update_futures failed ($?)" >> $log
-            timeout 120 python scripts/update_hyg.py > /dev/null 2>> $log || echo "update_hyg failed ($?)" >> $log
-            timeout 120 python scripts/update_spx_daily.py > /dev/null 2>> $log || echo "update_spx_daily failed ($?)" >> $log
-            timeout 60 python scripts/build_vix_notes.py > /dev/null 2>> $log || echo "build_vix_notes failed ($?)" >> $log
-            timeout 180 python scripts/update_curve.py > /dev/null 2>> $log || echo "update_curve failed ($?)" >> $log
-            timeout 180 python scripts/update_liquidity.py > /dev/null 2>> $log || echo "update_liquidity failed ($?)" >> $log
-            timeout 180 python scripts/update_macro.py > /dev/null 2>> $log || echo "update_macro failed ($?)" >> $log
-            timeout 90 python scripts/update_oas.py > /dev/null 2>> $log || echo "update_oas failed ($?)" >> $log
-            timeout 90 python scripts/update_weekly.py > /dev/null 2>> $log || echo "update_weekly failed ($?)" >> $log
-            timeout 90 python scripts/update_rstar.py > /dev/null 2>> $log || echo "update_rstar failed ($?)" >> $log
-            timeout 120 python scripts/update_fedwatch.py > /dev/null 2>> $log || echo "update_fedwatch failed ($?)" >> $log
-            timeout 90 python scripts/update_mmf.py > /dev/null 2>> $log || echo "update_mmf failed ($?)" >> $log
-            timeout 300 python scripts/update_money.py > /dev/null 2>> $log || echo "update_money failed ($?)" >> $log
-            cat $log
-            git add data/
-            if ! git diff --cached --quiet; then
-              git commit -q -m "data: update MRI"
-              if ! timeout 120 git pull -q --rebase origin main; then
-                # a conflict would leave the rebase open and block every later pass: drop this pass and start
-                # again from main (the next pass recomputes everything)
-                git rebase --abort || true
-                timeout 120 git fetch -q origin main && git reset -q --hard origin/main
-              fi
-              timeout 120 git push -q || echo "push failed; trying again next time"
+          s=$(session)
+          # data/run_log.txt: what the last pass did (a stall or an error shows up there, in the repo)
+          log=data/run_log.txt
+          echo "$(date -u +%FT%TZ) $(TZ=America/New_York date +%H:%M) ET mode=$s run=$GITHUB_RUN_ID" > $log
+          # each script gets at most 4 minutes, so one hung download cannot stop the loop
+          # SKEW recomputed from the option quotes (used for today's SKEW during the session)
+          timeout 240 python scripts/skew_calc.py > /dev/null 2>> $log || echo "skew_calc failed ($?)" >> $log
+          timeout 240 python scripts/update_mri.py >> $log 2>&1 || echo "update_mri failed ($?)" >> $log
+          timeout 240 python scripts/update_vix.py > /dev/null 2>> $log || echo "update_vix failed ($?)" >> $log
+          timeout 120 python scripts/update_indices.py > /dev/null 2>> $log || echo "update_indices failed ($?)" >> $log
+          timeout 120 python scripts/update_markets.py > /dev/null 2>> $log || echo "update_markets failed ($?)" >> $log
+          timeout 60 python scripts/update_futures.py > /dev/null 2>> $log || echo "update_futures failed ($?)" >> $log
+          timeout 120 python scripts/update_hyg.py > /dev/null 2>> $log || echo "update_hyg failed ($?)" >> $log
+          timeout 120 python scripts/update_spx_daily.py > /dev/null 2>> $log || echo "update_spx_daily failed ($?)" >> $log
+          timeout 60 python scripts/build_vix_notes.py > /dev/null 2>> $log || echo "build_vix_notes failed ($?)" >> $log
+          timeout 180 python scripts/update_curve.py > /dev/null 2>> $log || echo "update_curve failed ($?)" >> $log
+          timeout 180 python scripts/update_liquidity.py > /dev/null 2>> $log || echo "update_liquidity failed ($?)" >> $log
+          timeout 180 python scripts/update_macro.py > /dev/null 2>> $log || echo "update_macro failed ($?)" >> $log
+          timeout 90 python scripts/update_oas.py > /dev/null 2>> $log || echo "update_oas failed ($?)" >> $log
+          timeout 90 python scripts/update_weekly.py > /dev/null 2>> $log || echo "update_weekly failed ($?)" >> $log
+          timeout 90 python scripts/update_rstar.py > /dev/null 2>> $log || echo "update_rstar failed ($?)" >> $log
+          timeout 120 python scripts/update_fedwatch.py > /dev/null 2>> $log || echo "update_fedwatch failed ($?)" >> $log
+          timeout 90 python scripts/update_mmf.py > /dev/null 2>> $log || echo "update_mmf failed ($?)" >> $log
+          timeout 300 python scripts/update_money.py > /dev/null 2>> $log || echo "update_money failed ($?)" >> $log
+          cat $log
+          git add data/
+          if ! git diff --cached --quiet; then
+            git commit -q -m "data: update MRI"
+            if ! timeout 120 git pull -q --rebase origin main; then
+              # a conflict would leave the rebase open and block every later pass: drop this pass and start
+              # again from main (the next pass recomputes everything)
+              git rebase --abort || true
+              timeout 120 git fetch -q origin main && git reset -q --hard origin/main
             fi
-            if [ "$s" = closed ]; then
-              # Cboe publishes the day's SKEW after the close, usually by 17:20 ET but sometimes later: until it is in
-              # (or 19:00 ET), keep passing every 5 minutes, so the day's final MRI does not wait for the night session
-              pend=$(python -c 'import json; from datetime import datetime; from zoneinfo import ZoneInfo; n = datetime.now(ZoneInfo("America/New_York")); s = json.load(open("data/mri.json"))["live"].get("skew", {}); print(1 if (s.get("estimate") or s.get("carried")) and s.get("date") == int(n.strftime("%Y%m%d")) and n.hour < 19 else 0)' 2>/dev/null)
-              if [ "$pend" = 1 ]; then
-                echo "waiting for the official SKEW"; sleep 300; continue
-              fi
-              # a session starting within 45 minutes (the scheduler fired early or late, e.g. 20:02 ET for the 20:15
-              # night session): wait for it instead of stopping
-              # (and between the close and the 20:15 ET night session, so the night does not depend on the scheduler,
-              # which often skips): wait up to 5 hours for the next session; past this run's time budget, hand over
-              w=$(python -c 'import sys; sys.path.insert(0, "scripts"); from mkt_calendar import minutes_to_session; print(minutes_to_session(300))')
-              if [ "$w" -gt 0 ] 2>/dev/null; then
-                if [ $(( $(date +%s) - start + w * 60 )) -gt 20400 ]; then
-                  gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
-                  break
-                fi
-                echo "waiting $w min for the session"; sleep $(( w * 60 )); continue
-              fi
-              break
-            fi
-            if [ $(( $(date +%s) - start )) -gt 20400 ]; then
-              # close to the 6-hour limit: hand over to a fresh run
-              gh workflow run update-data.yml --ref main -R "$GITHUB_REPOSITORY" || true
-              break
-            fi
-            sleep 300  # every 5 minutes, overnight too (the futures move all night)
-          done
+            timeout 120 git push -q || echo "push failed; trying again next time"
+          fi
