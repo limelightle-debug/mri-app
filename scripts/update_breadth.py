@@ -113,11 +113,13 @@ def quotes(tickers):
 
 
 def short(name):
-    """'Apple Inc.' -> 'Apple'; 'NVIDIA Corporation' -> 'NVIDIA' (for a narrow list)."""
-    s = re.sub(r",? (Inc\.?|Corp\.?|Corporation|Company|Co\.?|Ltd\.?|plc|Holdings?|Group|Incorporated|N\.V\.|S\.A\.|L\.P\.)$", "",
-               name.strip(), flags=re.I)
-    s = re.sub(r",? (Inc\.?|Corp\.?|Corporation|Company|Co\.?|Holdings?|Group)$", "", s, flags=re.I)
-    s = re.sub(r" Class [A-Z]$", "", s)
+    """'Apple Inc.' -> 'Apple'; 'Eli Lilly and Company' -> 'Eli Lilly' (for a narrow list)."""
+    s = re.sub(r" Class [A-Z]$", "", name.strip())
+    for _ in range(2):
+        s = re.sub(r",? (Inc\.?|Corp\.?|Corporation|Company|Co\.?|Ltd\.?|plc|Holdings?|Group|Incorporated|N\.V\.|S\.A\.|L\.P\.)$",
+                   "", s.strip(" ,"), flags=re.I)
+        s = re.sub(r"( and| &)$", "", s.strip(" ,"))
+    s = re.sub(r"^The ", "", s)
     return s.strip(" ,") or name
 
 
