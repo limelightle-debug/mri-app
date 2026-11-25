@@ -1,5 +1,5 @@
-2026-11-25T15:09:42Z 10:09 ET mode=open run=45641977807
-updated: 4288 days 20091102..20261125, MRI 0.2272 (VIX 33.21 SKEW 142.08 CAPE 36.835)
-breadth: 188 up / 313 down, sum -2.267%, top [['CVX', 'Chevron', 1.1, 0.52, 0.0072]]
+2026-11-25T15:38:08Z 10:38 ET mode=open run=45647359695
+updated: 4288 days 20091102..20261125, MRI 0.2153 (VIX 33.53 SKEW 140.93 CAPE 36.851)
+breadth: 230 up / 272 down, sum -2.393%, top [['DE', 'Deere', 3.75, 0.69, 0.0096]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
