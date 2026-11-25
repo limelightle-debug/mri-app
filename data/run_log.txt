@@ -1,6 +1,15 @@
-2026-11-25T07:21:22Z 02:21 ET mode=night run=45567460338
-updated: 4288 days 20091102..20261125, MRI 0.2468 (VIX 27.045 SKEW 139.16 CAPE 37.518)
-no change
+2026-11-25T07:33:09Z 02:33 ET mode=night run=45569009031
+updated: 4287 days 20091102..20261124, MRI 0.2619 (VIX 26.36 SKEW 139.16 CAPE 37.838)
+breadth: 8 up / 0 down, sum 0.004%, top [['CBOE', 'Cboe Global Markets', 2.21, 0.09, 0.0013]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
-claims (DOL): claims: no rows
+Traceback (most recent call last):
+  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 116, in <module>
+    main()
+  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 94, in main
+    F = futures()
+        ^^^^^^^^^
+  File "/home/runner/work/mri-app/mri-app/scripts/update_fedwatch.py", line 43, in futures
+    raise ValueError(f"fed funds futures: only {sorted(out)}")
+ValueError: fed funds futures: only []
+update_fedwatch failed (1)
