@@ -1,6 +1,7 @@
-2026-11-25T02:43:32Z 21:43 ET mode=night run=45534973464
-updated: 4288 days 20091102..20261125, MRI 0.2502 (VIX 26.99 SKEW 139.16 CAPE 37.617)
-breadth: 348 up / 154 down, sum -0.493%, top [['AAPL', 'Apple', 1.43, 8.45, 0.1168]]
+2026-11-25T04:38:58Z 23:38 ET mode=night run=45548195711
+updated: 4288 days 20091102..20261125, MRI 0.2513 (VIX 26.88 SKEW 139.16 CAPE 37.627)
+breadth: 8 up / 0 down, sum 0.004%, top [['CBOE', 'Cboe Global Markets', 2.21, 0.09, 0.0013]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
 claims (DOL): claims: no rows
+cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
