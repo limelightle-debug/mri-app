@@ -48,6 +48,8 @@ jobs:
           timeout 240 python scripts/update_mri.py >> $log 2>&1 || echo "update_mri failed ($?)" >> $log
           timeout 240 python scripts/update_vix.py > /dev/null 2>> $log || echo "update_vix failed ($?)" >> $log
           timeout 120 python scripts/update_indices.py > /dev/null 2>> $log || echo "update_indices failed ($?)" >> $log
+          # the S&P 500 from the inside (rises and falls, sectors, the points each stock added): for the paper
+          timeout 240 python scripts/update_breadth.py >> $log 2>&1 || echo "update_breadth failed ($?)" >> $log
           timeout 120 python scripts/update_markets.py > /dev/null 2>> $log || echo "update_markets failed ($?)" >> $log
           timeout 60 python scripts/update_futures.py > /dev/null 2>> $log || echo "update_futures failed ($?)" >> $log
           timeout 120 python scripts/update_hyg.py > /dev/null 2>> $log || echo "update_hyg failed ($?)" >> $log
