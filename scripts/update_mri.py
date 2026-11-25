@@ -585,6 +585,10 @@ def build():
     # the last row is provisional while the day's SKEW is not official yet (estimated or carried)
     sk = live.get("skew", {})
     live_day = today if rows[-1][0] == today and sk.get("date") == today and (sk.get("estimate") or sk.get("carried")) else None
+    # realtime starts at the pre-session (3:00 ET); a run overnight (by hand) does not open the new day: the page
+    # keeps the last session, paused, with its realtime chart
+    if live_day and mode == "night":
+        rows, live_day = rows[:-1], None
     # keep the last 30 confirmed days' closes (the provisional day is not confirmed)
     keep = {r[0]: [r[1], r[2], r[8]] for r in rows[-30:] if r[0] != live_day}
     closes_out = {str(d): v for d, v in sorted({**{d: v for d, v in closes.items() if d >= rows[-30][0]}, **keep}.items())}
