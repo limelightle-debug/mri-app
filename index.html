@@ -544,11 +544,11 @@ const T={
   confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",preTag:"・プレセッション",nightWait:"・Cboe の更新待ち",vixInv:"<b>逆目盛</b>VIX↓でスコア↑",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",rtLast:" リアルタイムの最終値",
   top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（プレセッション開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",
-   period:(sm,a,b)=>`${sm?"夏時間":"冬時間"}：${a} 〜 ${b}`,next:(sm,d)=>`${d}（日）から${sm?"冬時間":"夏時間"}。日本時間では翌月曜の夜間取引から、表の時刻が1時間${sm?"遅く":"早く"}なります。`,ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
-   rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:30 → 翌 9:30","月〜金 9:30 → 22:30","月〜金 10:30 → 23:30"],
-         ["取引時間","5分ごと","月〜金 9:30 → 17:00","月〜金 22:30 → 翌 6:00","月〜金 23:30 → 翌 7:00"],
-         ["停止","確定値のみ","月〜木 17:00 → 20:30<br>金 17:00 → 日 20:30","火〜金 6:00 → 9:30<br>土 6:00 → 月 9:30","火〜金 7:00 → 10:30<br>土 7:00 → 月 10:30"]],
-   note:"時刻は画面に値が出る目安です。Cboe の値は約15分遅れのため、取引の開始・終了より15分ほどあとになります。取引終了後は、SKEW の公式値が出る ET 17:00ごろまでリアルタイムが続き、その日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
+   period:(sm,a,b)=>`${sm?"夏時間":"冬時間"}：${a} 〜 ${b}`,next:(sm,d)=>`${d}（日）から${sm?"冬時間":"夏時間"}。日本時間では翌月曜のプレセッションから、表の時刻が1時間${sm?"遅く":"早く"}なります。`,ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
+   rows:[["プレセッションから引け後まで","10分ごと","月〜金 3:00 → 17:00","月〜金 16:00 → 翌 6:00","月〜金 17:00 → 翌 7:00"],
+         ["SKEW の公式値待ち","1回ずつ","月〜金 17:30・18:30","火〜土 6:30・7:30","火〜土 7:30・8:30"],
+         ["停止","確定値のみ","月〜木 19:00 → 翌 3:00<br>金 19:00 → 月 3:00","火〜金 8:00 → 16:00<br>土 8:00 → 月 16:00","火〜金 9:00 → 17:00<br>土 9:00 → 月 17:00"]],
+   note:"時刻は更新の目安です。Cboe の値は約15分遅れで、GitHub の定期実行は数分から数十分遅れたり、ときどき飛んだりします。夜間取引のあいだは、Cboe の無料データがまばらにしか動かないため更新を休みます。取引終了後は、SKEW の公式値が出たところでその日の確定値に切り替わります。米国の夏時間は3月第2日曜日から11月第1日曜日までです。米国の祝日は取引がありません。"},asOfTime:v=>`${v} 更新`,spxNote:"S&amp;P500 はトレンド補正後のパーセンタイル",month:m=>m+"月",chartAria:"MRIの日足チャート",over80:"80を超えた日",days:n=>n+"日",date:"日付",none80:"選択している期間に、80を超えた日はありません。",
   loadFail:"データを読み込めませんでした。しばらくしてから開き直してください。",loadFailShort:"読み込みに失敗しました",switchTo:"EN"},
  en:{estTitle:"Rates estimate",estSub:"Realtime",estReal:"10Y real yield",estBe:"10Y breakeven",estHy:"OAS high yield",estIg:"OAS inv. grade",estTag:"estimate",
   estNote:(a,b)=>`Estimates are the latest official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves, replaced once the day's official value is out. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
@@ -557,11 +557,11 @@ const T={
   confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",preTag:" · pre-session",nightWait:" · waiting for Cboe",vixInv:"<b>Inverted</b>VIX↓ score↑",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",rtLast:" last realtime",
   top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (pre-session open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",
-   period:(sm,a,b)=>`${sm?"Daylight time":"Standard time"}: ${a} to ${b}`,next:(sm,d)=>`${sm?"Standard":"Daylight"} time from Sun, ${d}: from the next overnight session, Japan times move one hour ${sm?"later":"earlier"}.`,ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
-   rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:30 → 9:30","Mon–Fri 9:30 → 22:30","Mon–Fri 10:30 → 23:30"],
-         ["Session","Every 5 min","Mon–Fri 9:30 → 17:00","Mon–Fri 22:30 → 6:00","Mon–Fri 23:30 → 7:00"],
-         ["Paused","Confirmed only","Mon–Thu 17:00 → 20:30<br>Fri 17:00 → Sun 20:30","Tue–Fri 6:00 → 9:30<br>Sat 6:00 → Mon 9:30","Tue–Fri 7:00 → 10:30<br>Sat 7:00 → Mon 10:30"]],
-   note:"Times are when values show on screen. Cboe's values are about 15 minutes delayed, so they follow the start and end of trading by about 15 minutes. After the close, realtime continues until the official SKEW (about 17:00 ET), then switches to the day's confirmed value. US daylight time runs from the second Sunday of March to the first Sunday of November. No trading on US holidays."},asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
+   period:(sm,a,b)=>`${sm?"Daylight time":"Standard time"}: ${a} to ${b}`,next:(sm,d)=>`${sm?"Standard":"Daylight"} time from Sun, ${d}: from the next pre-session, Japan times move one hour ${sm?"later":"earlier"}.`,ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
+   rows:[["Pre-session to after the close","Every 10 min","Mon–Fri 3:00 → 17:00","Mon–Fri 16:00 → 6:00","Mon–Fri 17:00 → 7:00"],
+         ["Waiting for the official SKEW","Once each","Mon–Fri 17:30, 18:30","Tue–Sat 6:30, 7:30","Tue–Sat 7:30, 8:30"],
+         ["Paused","Confirmed only","Mon–Thu 19:00 → 3:00<br>Fri 19:00 → Mon 3:00","Tue–Fri 8:00 → 16:00<br>Sat 8:00 → Mon 16:00","Tue–Fri 9:00 → 17:00<br>Sat 9:00 → Mon 17:00"]],
+   note:"Times are a guide to the updates. Cboe's values are about 15 minutes delayed, and GitHub's scheduler can run minutes to tens of minutes late or skip a run. Updates pause during the overnight session, when Cboe's free data barely moves. After the close, the day switches to its confirmed value once the official SKEW is out. US daylight time runs from the second Sunday of March to the first Sunday of November. No trading on US holidays."},asOfTime:v=>`as of ${v}`,spxNote:"S&amp;P 500 is the trend-corrected percentile",month:m=>["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1],chartAria:"Daily MRI chart",over80:"Days above 80",days:n=>n+(n===1?" day":" days"),date:"Date",none80:"No days above 80 in this period.",
   loadFail:"Could not load the data. Please reopen in a while.",loadFailShort:"Loading failed",switchTo:"日本語"}};
 const t=(k,...a)=>{const v=T[LANG][k]??T.ja[k];return typeof v==="function"?v(...a):v};
 // times: Japanese in Japan time; English in New York time (the market's), marked ET
@@ -1029,7 +1029,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v158";
+const APP_VER="mri-v159";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
