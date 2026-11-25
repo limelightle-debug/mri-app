@@ -1,7 +1,5 @@
-2026-11-25T08:03:25Z 03:03 ET mode=pre run=45572974847
-updated: 4288 days 20091102..20261125, MRI 0.2302 (VIX 28.98 SKEW 139.08 CAPE 37.39)
-breadth: 0 up / 0 down, sum 0.0%, top []
+2026-11-25T08:41:19Z 03:41 ET mode=pre run=45578454701
+updated: 4288 days 20091102..20261125, MRI 0.2439 (VIX 28.23 SKEW 139.59 CAPE 37.546)
+no change
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
-claims (DOL): 502 Server Error: Bad Gateway for url: https://oui.doleta.gov/unemploy/wkclaims/report.asp
-cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
