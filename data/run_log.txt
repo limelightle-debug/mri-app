@@ -1,5 +1,6 @@
-2026-11-25T14:08:09Z 09:08 ET mode=pre run=45630727361
-updated: 4288 days 20091102..20261125, MRI 0.2207 (VIX 31.43 SKEW 140.28 CAPE 37.043)
-no change
+2026-11-25T14:38:10Z 09:38 ET mode=open run=45636197890
+updated: 4288 days 20091102..20261125, MRI 0.2276 (VIX 31.77 SKEW 141.0 CAPE 37.08)
+breadth: 142 up / 358 down, sum -2.76%, top [['HPQ', 'HP', 10.99, 0.34, 0.0047]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
+cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))
