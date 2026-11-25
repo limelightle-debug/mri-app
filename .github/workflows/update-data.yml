@@ -1,13 +1,15 @@
 name: Update MRI data
 
 # One pass per run, started by the schedule below (no run keeps itself alive or starts the next one).
-# Every 10 minutes from 9:00 ET to the evening (summer and winter time both covered), every 30 minutes overnight
-# for VIX's night and early sessions. GitHub's scheduler sometimes fires late or skips; the next run catches up.
+# Realtime starts at the pre-session (3:00 ET): every 10 minutes from then to the evening, off the hour
+# (summer and winter time both covered: 07-21 UTC is 3:00-17:53 ET in summer, 2:03-16:53 ET in winter).
+# Then twice for the official SKEW (17:33 and 18:33 ET in winter, 18:33 and 19:33 in summer).
+# No runs overnight: Cboe's free data barely moves in VIX's night session.
+# GitHub's scheduler sometimes fires late or skips; the next run catches up.
 on:
   schedule:
-    - cron: "*/10 13-22 * * 1-5"
-    - cron: "5,35 0-12 * * 1-5"
-    - cron: "5,35 23 * * 0-4"
+    - cron: "3-53/10 7-21 * * 1-5"
+    - cron: "33 22,23 * * 1-5"
   workflow_dispatch:
 
 permissions:

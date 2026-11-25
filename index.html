@@ -343,7 +343,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <li><b>確定値：</b>3指標の公式の終値がそろった日までで計算した値です。SKEW の公式値は米国市場の終了後（米東部17時ごろ）に1日1回だけ出るので、それが出た日までが確定です。</li>
         <li><b>リアルタイム：</b>確定値に、いま進んでいる取引日の値を加えて計算した値です。米国市場の取引時間中と、VIX の夜間取引の時間に出ます。一部は推定です（下の「リアルタイムの推定」）。</li>
       </ul>
-      <p>SKEW の公式値が出てから夜間の値が届くまで（米東部17時ごろ〜20:30ごろ）と週末は、確定値しかないので切り替えは出ません。チャート・80を超えた日の一覧も、選んでいる方に合わせて表示します。</p>
+      <p>SKEW の公式値が出てから翌朝のプレセッションまで（米東部17時ごろ〜翌3:00）と週末は、確定値しかないので切り替えは出ません。チャート・80を超えた日の一覧も、選んでいる方に合わせて表示します。</p>
 
       <h3>使うデータ</h3>
       <table>
@@ -357,10 +357,11 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
       <h3>更新のタイミング</h3>
       <ul>
-        <li><b>米国市場の取引時間（米東部 9:15〜17:20）：</b>5分ごと。取引終了（16:15）のあとも、終値と SKEW の公式値（17:00ごろ）が入るまで続けます。</li>
-        <li><b>VIX の夜間取引（米東部 20:15〜翌9:15、日〜木曜の夜）：</b>15分ごと</li>
+        <li><b>プレセッションから引けまで（米東部 3:00〜17:00、平日）：</b>10分ごと</li>
+        <li><b>SKEW の公式値待ち：</b>米東部17:30と18:30ごろに1回ずつ</li>
+        <li><b>夜（米東部 19:00ごろ〜翌3:00）：</b>更新を休みます。夜間取引のあいだ Cboe の無料データはまばらにしか動かないためです。リアルタイムは日本時間17時（夏時間は16時）から始まります。</li>
       </ul>
-      <p>Cboe の値は約15分遅れです。そのため画面に出るのは、取引の開始から15分ほどあとからです（夜間は米東部20:30ごろから）。</p>
+      <p>Cboe の値は約15分遅れです。GitHub の定期実行は数分から数十分遅れることがあり、ときどき飛びます。</p>
       <p class="note">日本時間は、米国の夏時間中は米東部＋13時間、冬時間中は＋14時間です。</p>
 
       <h3>日々の値</h3>
@@ -437,7 +438,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <li><b>Confirmed:</b> calculated up to the last day for which all three official closes are in. Cboe publishes SKEW only once a day, after the US close (around 17:00 ET), so a day is confirmed once that value is out.</li>
         <li><b>Realtime:</b> the confirmed history plus the trading day in progress. Shown during the US session and VIX's overnight session. Some values are estimates (see "Realtime estimates").</li>
       </ul>
-      <p>Between the official SKEW and the first overnight values (about 17:00 to 20:30 ET) and at weekends there is only the confirmed value, so the switch is hidden. The chart and the list of days above 80 follow the selected view.</p>
+      <p>Between the official SKEW and the first overnight values (about 17:00 ET to 3:00 ET the next morning) and at weekends there is only the confirmed value, so the switch is hidden. The chart and the list of days above 80 follow the selected view.</p>
 
       <h3>Data</h3>
       <table>
@@ -451,10 +452,11 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
 
       <h3>When it updates</h3>
       <ul>
-        <li><b>US session (9:15 to 17:20 ET):</b> every 5 minutes, continuing after the 16:15 close until the closes and the official SKEW (about 17:00) are in</li>
-        <li><b>VIX overnight session (20:15 to 9:15 ET, Sunday to Thursday nights):</b> every 15 minutes</li>
+        <li><b>Pre-session to the close (3:00 to 17:00 ET, weekdays):</b> every 10 minutes</li>
+        <li><b>Waiting for the official SKEW:</b> once around 17:30 and 18:30 ET</li>
+        <li><b>Night (about 19:00 to 3:00 ET):</b> no updates, since Cboe's free data barely moves overnight. Realtime starts at 3:00 ET.</li>
       </ul>
-      <p>Cboe's values are about 15 minutes delayed, so they show up about 15 minutes after trading starts (around 20:30 ET overnight).</p>
+      <p>Cboe's values are about 15 minutes delayed. GitHub's scheduled runs can be minutes late and sometimes skip.</p>
 
       <h3>Daily values</h3>
       <p>Each day on the daily chart is the MRI calculated with that day's values. Realtime values are calculated the same way.</p>
@@ -539,8 +541,8 @@ const T={
   estNote:(a,b)=>`推定値は、最新の公式値（実質金利・インフレ期待 ${a}、OAS ${b}）に今日の ETF の値動きを足したもので、その日の公式値が出たら置き換わる。実質金利は TIP、OAS は HYG・LQD から IEF（国債）の動きを除いて、それぞれのデュレーションで割って求める。TIP は満期がまちまちで10年ではないので、目安として見る。`,
   loading:"読み込み中…",loadingData:"データを読み込んでいます…",tabMethod:"算出方法",sigTitle:"シグナル",sigBubble:"テクニカルバブル",sigBubbleShort:"バブル",sigFrom:d=>`${d}〜`,sigHist:"シグナル履歴",sigCape:"CAPE 単独",sigDDNote:"※ 最大下落・最大上昇は、シグナル点灯から12ヶ月の値",sigDD:"最大下落",sigUp:"最大上昇",sig12m:"(12ヶ月)",sigPitNote:"※ CAPE は後から改訂されますが、シグナルは当時のデータで点灯・リセットを記録しています",sigLevel:n=>`レベル ${n}`,sigOnAt:"点灯",sigTop:"最高レベル",sigReset:"リセット",sigOn:"点灯中",sigNone:"点灯なし",tabAna:"分析",distTitle:"MRI の分布",scLin:"通常",scLog:"対数",scBC:"Box-Cox",distSkew:"歪度",distLam:"λ（Box-Cox）",since2018:"2018年以降",distNow:"今",distPos:p=>`今の MRI は、過去の <b>${p}%</b> の日より高い`,distMean:"平均",distMed:"中央値",distHi:"80以上の日",distLo:"8以下の日",distBin:(a,b,p,n)=>`MRI ${a}〜${b}：<b>${p}%</b> の日（${n}日）`,indicators:"3つの窓",trend:"MRI の推移",daily:"日足",lab:"恐怖指数研究所",
   r3M:"3ヶ月",r1Y:"1年",r3Y:"3年",r5Y:"5年",rALL:"全期間",monthly:"月足",mOpen:"始",mHigh:"高",mLow:"安",mClose:"終",updated:t=>`更新 ${t}`,open:"米国市場 取引中",night:"VIX 夜間取引中",closed:"米国市場 時間外",stale:"更新が遅れています",
-  confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",nightWait:"・Cboe の更新待ち",vixInv:"<b>逆目盛</b>VIX↓でスコア↑",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",rtLast:" リアルタイムの最終値",
-  top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（夜間開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
+  confirmed:"確定値",realtime:"リアルタイム",chg:"前日比",updatedAt:t=>`${t} 更新`,nightTag:"・夜間",preTag:"・プレセッション",nightWait:"・Cboe の更新待ち",vixInv:"<b>逆目盛</b>VIX↓でスコア↑",close:" 終値",latest:" 最新値",nightAsof:" 夜間",prov:" 暫定",est:" 推定",carried:" 前日終値",rtLast:" リアルタイムの最終値",
+  top:"上",bottom:"下",intraTitle:"今日の MRI（リアルタイム）",intraPrev:"前日確定",intraFinal:"確定",intraDone:d=>`${d} のリアルタイム（終了）`,intraNote:(a,b)=>`日本時間 ${a}（プレセッション開始）〜 翌${b}（確定）`,paused:"停止中",nextStart:n=>`次の開始 ${n}`,
   sched:{title:"リアルタイムの稼働時間",nowSummer:"いまは米国の夏時間",nowWinter:"いまは米国の冬時間",
    period:(sm,a,b)=>`${sm?"夏時間":"冬時間"}：${a} 〜 ${b}`,next:(sm,d)=>`${d}（日）から${sm?"冬時間":"夏時間"}。日本時間では翌月曜の夜間取引から、表の時刻が1時間${sm?"遅く":"早く"}なります。`,ny:"ニューヨーク",jpS:"日本（米夏時間）",jpW:"日本（米冬時間）",
    rows:[["夜間取引","15分ごと・VIX と SKEW 推定","日〜木 20:30 → 翌 9:30","月〜金 9:30 → 22:30","月〜金 10:30 → 23:30"],
@@ -552,8 +554,8 @@ const T={
   estNote:(a,b)=>`Estimates are the latest official values (real yield and breakeven ${a}, OAS ${b}) plus today's ETF moves, replaced once the day's official value is out. The real yield from TIP; the OAS from HYG and LQD net of IEF (Treasuries), each divided by its duration. TIP holds a mix of maturities, not 10 years, so read it as a guide.`,
   loading:"Loading…",loadingData:"Loading data…",tabMethod:"Method",sigTitle:"Signals",sigBubble:"Technical bubble",sigBubbleShort:"Bubble",sigFrom:d=>`since ${d}`,sigHist:"Signal history",sigCape:"CAPE alone",sigDDNote:"* Max drawdown / max rise: over the 12 months after the signal came on",sigDD:"Max drawdown",sigUp:"Max rise",sig12m:"(12M)",sigPitNote:"* CAPE is revised later, but signals are recorded (on and reset) on the data as it was at the time",sigLevel:n=>`Level ${n}`,sigOnAt:"On",sigTop:"Highest",sigReset:"Reset",sigOn:"on",sigNone:"never on",tabAna:"Analysis",distTitle:"MRI distribution",scLin:"Linear",scLog:"Log",scBC:"Box-Cox",distSkew:"Skewness",distLam:"λ (Box-Cox)",since2018:"since 2018",distNow:"now",distPos:p=>`Today\u2019s MRI is above <b>${p}%</b> of past days`,distMean:"Mean",distMed:"Median",distHi:"Days at 80+",distLo:"Days at 8 or below",distBin:(a,b,p,n)=>`MRI ${a}–${b}: <b>${p}%</b> of days (${n})`,indicators:"Three windows",trend:"MRI history",daily:"Daily",lab:"Fear Index Research Institute",
   r3M:"3M",r1Y:"1Y",r3Y:"3Y",r5Y:"5Y",rALL:"All",monthly:"Monthly",mOpen:"O",mHigh:"H",mLow:"L",mClose:"C",updated:t=>`Updated ${t}`,open:"US market open",night:"VIX overnight",closed:"US market closed",stale:"Update delayed",
-  confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",nightWait:" · waiting for Cboe",vixInv:"<b>Inverted</b>VIX↓ score↑",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",rtLast:" last realtime",
-  top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (overnight open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
+  confirmed:"Confirmed",realtime:"Realtime",chg:"vs prev.",updatedAt:t=>`updated ${t}`,nightTag:" · overnight",preTag:" · pre-session",nightWait:" · waiting for Cboe",vixInv:"<b>Inverted</b>VIX↓ score↑",close:" close",latest:" latest",nightAsof:" overnight",prov:" provisional",est:" est.",carried:" prev. close",rtLast:" last realtime",
+  top:"Top",bottom:"Btm",intraTitle:"Today's MRI (realtime)",intraPrev:"prev. confirmed",intraFinal:"confirmed",intraDone:d=>`Realtime on ${d} (ended)`,intraNote:(a,b)=>`${a} (pre-session open) to ${b} (confirmed)`,paused:"Paused",nextStart:n=>`Next start ${n}`,
   sched:{title:"Realtime schedule",nowSummer:"US daylight time now",nowWinter:"US standard time now",
    period:(sm,a,b)=>`${sm?"Daylight time":"Standard time"}: ${a} to ${b}`,next:(sm,d)=>`${sm?"Standard":"Daylight"} time from Sun, ${d}: from the next overnight session, Japan times move one hour ${sm?"later":"earlier"}.`,ny:"New York (ET)",jpS:"Japan, US summer",jpW:"Japan, US winter",
    rows:[["Overnight","Every 15 min · VIX, SKEW estimate","Sun–Thu 20:30 → 9:30","Mon–Fri 9:30 → 22:30","Mon–Fri 10:30 → 23:30"],
@@ -605,6 +607,8 @@ function marketOpen(date=new Date()){const p=nyParts(date);return !["Sat","Sun"]
 function nyDate(s){const m=/^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d)/.exec(s||"");if(!m)return null;const u=Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5]);
   const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(new Date(u)).forEach(x=>p[x.type]=x.value);
   return new Date(u+(u-Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)))}
+// pre-session: 3:00 ET to the open on weekdays (realtime starts here; no updates overnight)
+function preSess(date=new Date()){const p=nyParts(date);return !["Sat","Sun"].includes(p.wd)&&p.min>=180&&p.min<570}
 function vixNight(date=new Date()){const p=nyParts(date),wd=p.wd;return (!["Sat","Sun"].includes(wd)&&p.min<555)||(["Sun","Mon","Tue","Wed","Thu"].includes(wd)&&p.min>=1215)}
 function renderStatus(){
   if(!D)return;
@@ -698,7 +702,7 @@ function renderTop(){
    // realtime paused: the values shown are the last confirmed ones, so no colour
    $("t-mri").classList.toggle("gray",paused);
    $("vtitle").className="vtitle"+(isLive?" live":paused?" paused":"");
-   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":vixNight()?t("nightTag")+(nightStale()?t("nightWait"):""):""}</span>`
+   $("vtitle").innerHTML=isLive?`<b>${t("realtime")}</b><span>${esc(t("updatedAt",tm))}${marketOpen()?"":preSess()?t("preTag"):vixNight()?t("nightTag")+(nightStale()?t("nightWait"):""):""}</span>`
      :paused?`<b>${t("realtime")}</b><span><i>${t("paused")}</i><i>${esc(t("nextStart",fmtTime(nextStart(),{month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit"})))}</i></span>`
      :`<b>${md(last.d)} ${t("confirmed")}</b>`;}
   $("asof").textContent=`${md(last.d)}${endRt!=null?t("rtLast"):!isLive?t("close"):marketOpen()?t("latest"):vixNight()?t("nightAsof"):t("prov")}`;
@@ -1015,17 +1019,17 @@ function renderIntra(){
 let _tc;function textW(str){_tc=_tc||document.createElement("canvas").getContext("2d");_tc.font=`11px ${getComputedStyle(document.documentElement).getPropertyValue("--f-tick")||"sans-serif"}`;try{_tc.fontStretch="semi-condensed"}catch(e){}return _tc.measureText(str).width}
 function nyOffset(d=new Date()){const p={};new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(d).forEach(x=>p[x.type]=x.value);
   return Math.round((Date.UTC(+p.year,p.month-1,+p.day,+p.hour%24,+p.minute)-d.getTime())/36e5)}
-// the next start of realtime: VIX's overnight session at 20:15 ET (Sun-Thu), or 9:15 ET if it is before that on a weekday
+// the next start of realtime: the pre-session at 3:00 ET on a weekday (no updates overnight)
 function nextStart(now=new Date()){
   for(let k=0;k<7*96;k++){const d=new Date(Math.ceil(now.getTime()/9e5)*9e5+k*9e5),p=nyParts(d),wk=!["Sat","Sun"].includes(p.wd);
-    // on screen (values 15 min delayed): 20:30 ET Sun-Thu to 9:30 ET, then the session to about 17:00 ET
-    if((wk&&p.min<1020)||(["Sun","Mon","Tue","Wed","Thu"].includes(p.wd)&&p.min>=1230))return d}
+    // updates from 3:00 ET to about 17:00 ET on weekdays
+    if(wk&&p.min>=180&&p.min<1020)return d}
   return now}
 
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v153";
+const APP_VER="mri-v158";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
