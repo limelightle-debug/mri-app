@@ -1,5 +1,5 @@
-2026-11-25T20:08:06Z 15:08 ET mode=open run=45691969564
-updated: 4288 days 20091102..20261125, MRI 0.2550 (VIX 27.96 SKEW 139.95 CAPE 37.744)
-breadth: 385 up / 117 down, sum -0.37%, top [['META', 'Meta Platforms', 2.96, 4.5, 0.0625]]
+2026-11-25T20:38:06Z 15:38 ET mode=open run=45696782452
+updated: 4288 days 20091102..20261125, MRI 0.2513 (VIX 27.99 SKEW 139.67 CAPE 37.716)
+breadth: 344 up / 158 down, sum -0.713%, top [['META', 'Meta Platforms', 2.29, 3.49, 0.0485]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-26&endDate=2026-11-25
 repo: rp/repo/propositions/search.json?startDate=2024-10-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-26
