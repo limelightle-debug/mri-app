@@ -383,7 +383,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
       <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= その日の S&amp;P500 終値 ÷ E10<sub>月</sub></div>
       <p>その日の株価で計算するので、S&amp;P500 が動けば CAPE も同じ割合で動きます（月次の CAPE は月平均の株価で計算するため、月末の日の値とは一致しません）。当月はまだ CAPE が確定していないので、E10 には<b>最後に確定した月（前月）の E10</b> を使います。シラーの表の当月の値は月初の数日分の株価で計算されているため、使いません。当日（リアルタイム）は、その時点の S&amp;P500 で計算します。</p>
-      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。シラーの表にその月の全日の株価が入ると（表の株価が Cboe の月平均終値と一致した時点）、その月は改定値として確定し、各日の CAPE はその値で計算し直されます。それまでは、表にあるその月の E10 と月平均終値から計算します。シラーの表にない月は multpl.com の値（停止前に取得したもの）、それもなければ直前の月の E10 で補います。</p>
+      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。シラーの表にその月の全日の株価が入ると（表の株価が Cboe の月平均終値と一致した時点）、その月は改定値として確定し、各日の CAPE はその値で計算し直されます。それまでは、表にあるその月の E10 と月平均終値から計算します。シラーの表が読めない日は、前回の値のまま計算します。</p>
 
       <h3>リアルタイムの推定</h3>
       <p><b>SKEW：</b>Cboe は SKEW を1日1回、取引終了後にしか計算しません。そこで、S&amp;P500 オプションの気配値から、Cboe が公開している計算方法で SKEW を計算し直します。自分で計算した値は公式値と完全には一致しないため、前日終値からの<b>変化分</b>だけを使います。</p>
@@ -477,7 +477,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>CAPE is only published monthly, so the daily value is calculated from the S&amp;P 500's daily closes:</p>
       <div class="eq">E10<sub>month</sub> (10-year average earnings)<br>　= the month's average S&amp;P 500 close ÷ the month's CAPE</div><div class="eq">CAPE<sub>day</sub><br>　= that day's S&amp;P 500 close ÷ E10<sub>month</sub></div>
       <p>Since it uses the day's price, CAPE moves in proportion to the S&amp;P 500 (the monthly CAPE uses the month's average price, so it does not equal the value on the month's last day). The current month's CAPE is not final yet, so its E10 is <b>that of the last completed month</b>. Shiller's current-month figure uses only the first days' prices, so it is not used. Today (realtime) uses the S&amp;P 500 at that moment.</p>
-      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. Once Shiller's table holds a month in full (its price for the month equals Cboe's average close), that month's revised value is final and its daily CAPE values are recalculated with it; until then, the month uses his E10 for it and the month's average close. Months his table lacks use multpl.com's values (fetched before it stopped), or failing that the E10 of the month before.</p>
+      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. Once Shiller's table holds a month in full (its price for the month equals Cboe's average close), that month's revised value is final and its daily CAPE values are recalculated with it; until then, the month uses his E10 for it and the month's average close. When his table cannot be read, the last values are kept.</p>
 
       <h3>Realtime estimates</h3>
       <p><b>SKEW:</b> Cboe calculates SKEW only once a day, after the close. So it is recalculated from S&amp;P 500 option quotes with Cboe's published method. The recalculated value does not match the official one exactly, so only its <b>change</b> since the previous close is used:</p>
@@ -1043,7 +1043,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v162";
+const APP_VER="mri-v163";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

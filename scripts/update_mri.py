@@ -8,12 +8,12 @@ Method (『VIXの声を聴け』, 第一章):
 
 As in the MRI workbook, today's value is the current month's row, so the 120 months include it;
 history is scored the same way, each day as its month's row. VIX and SKEW are Cboe's month-end
-closes; CAPE is multpl.com's monthly table (revised values) for completed months. A day's CAPE is
+closes; CAPE is Robert Shiller's monthly table (revised values) for completed months. A day's CAPE is
 that day's S&P 500 close divided by that month's E10; the current month uses the
-last completed month's E10, so multpl.com's current-month figures are not used.
+last completed month's E10, so his current-month figure (priced on its first days) is not used.
 
-Sources: Cboe (VIX and SKEW history, delayed quotes for VIX, SKEW and the S&P 500), multpl.com
-(monthly CAPE and S&P 500 price), FRED (S&P 500 daily closes). Runs in GitHub Actions.
+Sources: Cboe (VIX and SKEW history, delayed quotes for VIX, SKEW and the S&P 500), Shiller's
+ie_data.xls (monthly CAPE), FRED (S&P 500 daily closes). Runs in GitHub Actions.
 """
 import csv
 import io
@@ -88,25 +88,6 @@ def cboe_history(name):
             out[int(y) * 10000 + int(m) * 100 + int(d)] = v
     if len(out) < 1000:
         raise RuntimeError(f"Cboe {name}: only {len(out)} days")
-    return out
-
-
-def multpl_monthly(path):
-    """{yyyymm: value} from a multpl.com 'table/by-month' page. The newest row is the live estimate."""
-    html = get(f"https://www.multpl.com/{path}/table/by-month").text
-    out = {}
-    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S):
-        cells = [re.sub(r"<[^>]+>|&[#\w]+;", " ", c).strip() for c in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
-        if len(cells) < 2:
-            continue
-        m = re.search(r"([A-Z][a-z]{2}) (\d{1,2}), (\d{4})", cells[0])
-        v = re.search(r"\d[\d,]*\.?\d*", cells[1])
-        if not m or not v:
-            continue
-        dt = datetime.strptime(m.group(0), "%b %d, %Y")
-        out.setdefault(dt.year * 100 + dt.month, num(v.group(0)))  # first (newest) row of each month
-    if len(out) < 240:
-        raise RuntimeError(f"multpl {path}: only {len(out)} months")
     return out
 
 
@@ -365,7 +346,7 @@ def shiller_table():
 
 
 def monthly_cape():
-    """{yyyymm: CAPE} from the committed month-end table (multpl.com's finalised months)."""
+    """{yyyymm: CAPE} from the committed month-end table (Shiller's figures as last read)."""
     out = {}
     try:
         for line in MONTHLY_CSV.read_text(encoding="utf-8").splitlines()[1:]:
@@ -381,7 +362,7 @@ def load_sources(cache):
     if fresh and (datetime.now(timezone.utc) - datetime.fromisoformat(fresh)).total_seconds() < 3600:
         return cache, False
     out = {"fetchedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")}
-    # one source down (multpl.com refusing connections, say) must not stop the live values: fall back to what this
+    # one source down (a site refusing connections, say) must not stop the live values: fall back to what this
     # run already has, or for CAPE to the committed month-end table, and try the source again on the next pass
     partial = False
     failed = []
@@ -401,16 +382,9 @@ def load_sources(cache):
 
     keep("vix", lambda: cboe_history("VIX"))
     keep("skew", lambda: cboe_history("SKEW"))
-    # multpl.com is only needed in the first days of a month, while the month just ended gets finalised; after that
-    # the committed month-end table holds the same numbers, so the site is not asked at all
-    table = monthly_cape()
-    now = datetime.now(timezone.utc)
-    prev = (now.year - (now.month == 1)) * 100 + (12 if now.month == 1 else now.month - 1)
-    if now.day <= 7 or not table:
-        keep("cape_m", lambda: multpl_monthly("shiller-pe"), monthly_cape)
-        keep("spx_m", lambda: multpl_monthly("s-p-500-historical-prices"))
-    else:
-        out["cape_m"], out["spx_m"] = table, None
+    # CAPE comes from Shiller's own table, read in build() once a day; the committed month-end table is the base it
+    # revises (and what stays if his file cannot be read)
+    out["cape_m"], out["spx_m"] = monthly_cape() or {}, None
     if partial:
         out.pop("fetchedAt")
     spx = {int(k): v for k, v in (cache.get("spx") or {}).items()}
@@ -495,7 +469,7 @@ def build():
     src, refreshed = load_sources(cache)
     vix, skew, spx = dict(src["vix"]), dict(src["skew"]), dict(src["spx"])
     cape_m, spx_m = src["cape_m"], src["spx_m"]
-    if not spx_m:  # multpl.com's prices unavailable: its finished months equal Cboe's average closes
+    if not spx_m:  # finished months' prices are Cboe's average closes
         spx_m = {m: v for m, v in month_means(spx).items() if m in cape_m}
     try:
         closes = {int(d): v for d, v in json.loads(CLOSES.read_text(encoding="utf-8")).items()}
@@ -576,26 +550,44 @@ def build():
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
-    # month rows: VIX and SKEW at Cboe's month-end closes, CAPE from Shiller's revised table
-    # (multpl.com where his lacks); the current month holds today's values
+    # month rows: VIX and SKEW at Cboe's month-end closes, CAPE from Shiller's revised table;
+    # the current month holds today's values
     vme, kme = month_ends(vix), month_ends(skew)
     # completed months take Shiller's own revised CAPE (his table, read once a day into data/cape_vintage.json), so
     # the past follows his revisions; a month his table holds only part of (its price is not yet the month's average
-    # close) is rebuilt from his E10 for it and the month's average close. multpl.com's table (his figures as it last
-    # copied them) fills any month his table lacks
+    # close) is rebuilt from his E10 for it and the month's average close. The committed month-end table keeps the
+    # last values when his file cannot be read
     avg0 = month_means(spx)
     cape_m = dict(cape_m)
     shiller_ms = set()
+    vint_file = DATA / "cape_vintage.json"
     try:
-        vrows = json.loads((DATA / "cape_vintage.json").read_text(encoding="utf-8")).get("rows", {})
+        vint = json.loads(vint_file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        vrows = {}
+        vint = {}
+    vr = vint.setdefault("rows", {})
+    now = datetime.now(timezone.utc)
+    if vint.get("revAt") != str(now.date()) or not any("revE" in r for r in vr.values()):
+        try:
+            # rev is kept only for a month his table holds in full (a finished month whose price is its average
+            # close); a month he has only the first days of keeps just his E10 (revE), and its rev stays blank
+            for m, v in (src.get("shiller") or shiller_table()).items():
+                e = vr.setdefault(str(m), {})
+                e["revE"] = round(v[1], 4)
+                if m < cur_m and (m not in avg0 or abs(v[0] * v[1] / avg0[m] - 1) < .001):
+                    e["rev"] = v[0]
+                else:
+                    e.pop("rev", None)
+            vint["revAt"] = str(now.date())
+        except RuntimeError as e:
+            print(f"note: Shiller's table not read ({e}); CAPE keeps the last values", file=sys.stderr)
+    vrows = vr
     for k, r in vrows.items():
         m = int(k)
         if m < cur_m and m in avg0 and (r.get("rev") or r.get("revE")):
             cape_m[m] = r["rev"] if r.get("rev") else round(avg0[m] / r["revE"], 2)
             shiller_ms.add(m)
-    # months neither table has: carried with the last given month's E10, so their CAPE moves with the S&P 500 alone
+    # months his table lacks: carried with the last given month's E10, so their CAPE moves with the S&P 500 alone
     given = sorted(m for m in cape_m if m < cur_m and m in avg0)
     if given:
         e10_last, m = avg0[given[-1]] / cape_m[given[-1]], given[-1]
@@ -609,21 +601,12 @@ def build():
                       file=sys.stderr)
     months = {m: {"vix": vme[m], "skew": kme[m], "cape": cape_m[m]}
               for m in sorted(set(vme) & set(kme) & set(cape_m)) if m < cur_m}
-    # the current month does not use multpl.com's current-month figures (they update at random times,
-    # hours after the close, and its price and CAPE rows do not always update together): its E10 is the
-    # last completed month's (Cboe's average close for that month / multpl.com's CAPE for it), and its
-    # CAPE is this month's average close so far over that E10
+    # the current month does not use Shiller's current-month figure (priced on the first days only): its E10 is the
+    # last completed month's (Cboe's average close for that month / his CAPE for it), and its CAPE is this month's
+    # average close so far over that E10
     avg = month_means(spx)
     e10_m = {m: avg[m] / r["cape"] for m, r in months.items()}
-    # multpl.com finalises a month hours after its last close (later still when the month ends on a
-    # Friday: Saturday morning in Japan). Its price for a finished month is exactly Cboe's average close
-    # for that month, so until the two agree, the last month is not final yet: it keeps the E10 of the
-    # month before, like the current month
     prev_m = max(months)
-    if prev_m not in shiller_ms and abs(spx_m.get(prev_m, 0) - avg[prev_m]) > .006 and len(months) > 1:
-        e10_m[prev_m] = e10_m[max(m for m in months if m < prev_m)]
-        months[prev_m]["cape"] = avg[prev_m] / e10_m[prev_m]
-        print(f"note: multpl.com has not finalised {prev_m} yet", file=sys.stderr)
     e10_cur = e10_m[prev_m]
     if cur_m in vme and cur_m in kme and cur_m in avg:
         months[cur_m] = {"vix": vme[cur_m], "skew": kme[cur_m], "cape": avg[cur_m] / e10_cur}
@@ -650,7 +633,7 @@ def build():
         m = d // 100
         if m not in months:
             continue
-        # the day's CAPE: that day's close over the month's E10 (like multpl.com's current value), so it
+        # the day's CAPE: that day's close over the month's E10 (as a live CAPE quote does), so it
         # moves with the index; every day the same way, today included
         cape = spx[d] / e10_m.get(m, e10_cur)
         vr, sr, cr = ind["vix"].score(m, vix[d]), ind["skew"].score(m, skew[d]), ind["cape"].score(m, cape)
@@ -681,7 +664,7 @@ def build():
             v["at"] = datetime.strptime(v.get("time", ""), "%Y-%m-%d %H:%M").replace(tzinfo=NY).isoformat()
         except ValueError:
             pass
-    data = {"source": f"Cboe, multpl.com, {src.get('spxSource', '')}", "live": live, "liveDay": live_day, "daily": rows}
+    data = {"source": f"Cboe, Shiller, {src.get('spxSource', '')}", "live": live, "liveDay": live_day, "daily": rows}
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     # the realtime MRI through the session, one point per update: [time, MRI, VIX, SKEW, CAPE risk, VIX, SKEW, CAPE]
     intra = old.get("intraday") or {}
@@ -726,31 +709,10 @@ def build():
     # CAPE by month for the page's table (data/cape_vintage.json): the month-end value as it stood in real time
     # (rt: the last confirmed day's CAPE, written while that day's month is still the current month, so it freezes
     # when the month ends), beside Shiller's revised figure (rev, his own table, read once a day)
-    vint_file = DATA / "cape_vintage.json"
-    try:
-        vint = json.loads(vint_file.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        vint = {}
-    vr = vint.setdefault("rows", {})
     conf = [r for r in rows if r[0] != live_day]
     if conf and conf[-1][0] // 100 == now.year * 100 + now.month:
         d = conf[-1]
         vr.setdefault(str(d[0] // 100), {}).update({"rt": d[3], "rtDate": str(d[0])})
-    if vint.get("revAt") != str(now.date()) or not any("revE" in r for r in vr.values()):
-        try:
-            # rev is shown only for a month his table holds in full (a finished month whose price is its average
-            # close); a month he has only the first days of keeps just his E10 (revE), and its rev stays blank
-            for m, v in (src.get("shiller") or shiller_table()).items():
-                e = vr.setdefault(str(m), {})
-                e.pop("revP", None)
-                e["revE"] = round(v[1], 4)
-                if m < cur_m and (m not in avg0 or abs(v[0] * v[1] / avg0[m] - 1) < .001):
-                    e["rev"] = v[0]
-                else:
-                    e.pop("rev", None)
-            vint["revAt"] = str(now.date())
-        except RuntimeError as e:
-            print(f"note: CAPE table: {e}", file=sys.stderr)
     vint["rows"] = dict(sorted(vr.items()))
     vtext = json.dumps(vint, separators=(",", ":")) + "\n"
     if not vint_file.exists() or vint_file.read_text(encoding="utf-8") != vtext:
