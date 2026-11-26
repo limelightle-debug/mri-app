@@ -1,8 +1,8 @@
 """One-off: fill the month-end real-time CAPE of past months in data/cape_vintage.json from the Internet Archive's
 copies of multpl.com/shiller-pe ("Current Shiller PE Ratio: x"), as the page stood at each month's end.
 
-For each month, the last copy taken from the month's last day up to the next month's 2nd day (the page shows the
-previous close, so a copy on the 1st still carries the month-end value) is used; months without such a copy stay empty.
+For each month, the latest copy taken on the month's last 2 days (or, failing that, on the next month's 1st before
+the close, which still carries the month-end value) is used; months without such a copy stay empty.
 """
 import json
 import re
@@ -49,7 +49,8 @@ def main():
     for t in ts:
         d = date(int(t[:4]), int(t[4:6]), int(t[6:8]))
         # a copy belongs to month m if taken on m's last 2 days or on the next month's first 2 days
-        nxt = (d.replace(day=1) - timedelta(days=1)) if d.day <= 2 else None
+        # (a copy on the next month's 1st, before that day's close, still shows the month-end value)
+        nxt = (d.replace(day=1) - timedelta(days=1)) if d.day == 1 and int(t[8:10]) < 20 else None
         last = (d.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
         if d >= last - timedelta(days=1):
             by.setdefault(d.year * 100 + d.month, []).append((0, t))
@@ -60,7 +61,7 @@ def main():
         k = str(m)
         if rows.get(k, {}).get("rt") is not None and rows[k].get("rtSrc") != "wayback":
             continue  # this app's own record wins
-        for _, t in sorted(by[m], reverse=True):  # the latest copy first (next month's 1st-2nd, then the month's end)
+        for _, t in sorted(by[m], key=lambda x: (x[0], [-int(c) for c in x[1]])):  # month's end, latest first; then the 1st
             x = value(t, "multpl.com/shiller-pe")
             time.sleep(1.5)
             if x:
