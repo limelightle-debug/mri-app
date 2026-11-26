@@ -326,13 +326,14 @@ def shiller_cape():
     urls = []
     try:
         html = get(SHILLER_PAGE).text
-        urls = list(dict.fromkeys(re.findall(r'href="([^"]*ie_data[^"]*\.xls)"', html, re.I)))
+        urls = list(dict.fromkeys(re.findall(r'href="([^"]*ie_data[^"]*\.xls[^"]*)"', html, re.I)))
     except RuntimeError as e:
         print(f"warning: shillerdata.com: {e}", file=sys.stderr)
     last = None
     for u in urls + [SHILLER_OLD]:
         try:
-            raw = get(u if u.startswith("http") else "https://shillerdata.com" + u, timeout=60).content
+            raw = get(u if u.startswith("http") else ("https:" + u if u.startswith("//") else "https://shillerdata.com" + u),
+                      timeout=60).content
             ws = xlrd.open_workbook(file_contents=raw).sheet_by_name("Data")
             # the CAPE column is headed "CAPE"; the month comes from the date-fraction column (year + (month - 0.5) / 12),
             # since the Date column writes October as 2026.1
