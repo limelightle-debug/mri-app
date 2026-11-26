@@ -10,12 +10,19 @@ jobs:
       - run: pip install -q requests openpyxl xlrd
       - run: |
           cd scripts && python - <<'PY'
+          import re, requests, xlrd
           import update_mri as u
-          s = u.shiller_cape()
-          ks = sorted(s)
-          print("months", len(ks), ks[0], ks[-1])
-          print("last", [(k, s[k]) for k in ks[-4:]])
-          t = u.monthly_cape()
-          diff = [(k, t[k], s[k]) for k in sorted(t) if k in s and abs(t[k] - s[k]) > 0.015]
-          print("table vs shiller mismatches", len(diff), diff[-10:])
+          r = requests.get(u.SHILLER_PAGE, headers={"User-Agent": u.UA} if hasattr(u, "UA") else {}, timeout=30)
+          print("page", r.status_code, len(r.text))
+          print("links", re.findall(r'href="([^"]+)"', r.text)[:80])
+          print("xls-ish", [x for x in re.findall(r'(?:href|src|data-[a-z-]+)="([^"]+)"', r.text) if "xls" in x.lower() or "ie_data" in x.lower()])
+          for u2 in [x for x in re.findall(r'"(https?://[^"]+\.xlsx?)"', r.text)][:3] + [u.SHILLER_OLD]:
+              try:
+                  raw = requests.get(u2, timeout=60).content
+                  wb = xlrd.open_workbook(file_contents=raw); ws = wb.sheet_by_name("Data")
+                  print("URL", u2, ws.nrows, ws.ncols)
+                  for i in range(4, 10): print(i, [str(ws.cell_value(i, j))[:14] for j in range(min(ws.ncols, 22))])
+                  print("last", [str(ws.cell_value(ws.nrows - k, j))[:10] for k in (1, 2) for j in range(min(ws.ncols, 14))])
+              except Exception as e:
+                  print("ERR", u2, e)
           PY
