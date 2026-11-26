@@ -106,7 +106,8 @@ def _evening_session(d):
 
 def session_mode(now=None):
     """open: the regular session until the official SKEW is in (update every 5 minutes); pre: VIX's extended session
-    from 3:00 ET (every 5 minutes), also on a holiday's GTH morning until 11:30; night: an overnight session from 20:15
+    from 3:00 ET on a trading day (a holiday's GTH morning does not count: realtime starts with a trading day's
+    pre-session); night: an overnight session from 20:15
     ET (every 15 minutes); closed: no session (one update, then stop)."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -115,7 +116,7 @@ def session_mode(now=None):
     td = is_trading_day(d)
     if td and 9 * 60 + 15 <= m < 17 * 60 + 20:
         return "open"
-    if (td and 3 * 60 <= m < 9 * 60 + 15) or (gth_morning_holiday(d) and 3 * 60 <= m < 11 * 60 + 30):
+    if td and 3 * 60 <= m < 9 * 60 + 15:
         return "pre"
     if m >= 20 * 60 + 15 and _evening_session(d):
         return "night"
