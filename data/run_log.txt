@@ -1,7 +1,5 @@
-2026-11-26T07:50:59Z 02:50 ET mode=night run=45778369019
-note: cape_m not refreshed (https://www.multpl.com/shiller-pe/table/by-month: ConnectionError: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))); using the last values
-note: spx_m not refreshed (https://www.multpl.com/s-p-500-historical-prices/table/by-month: ConnectionError: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /s-p-500-historical-prices/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))); using the last values
-updated: 4288 days 20091102..20261125, MRI 0.2551 (VIX 28.29 SKEW 142.06 CAPE 37.118)
+2026-11-26T08:03:02Z 03:03 ET mode=pre run=45779895622
+updated: 4289 days 20091102..20261127, MRI 0.2805 (VIX 27.899 SKEW 142.06 CAPE 37.884)
 no change
 repo: rp/repo/all/results/search.json?startDate=2024-10-27&endDate=2026-11-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-27&endDate=2026-11-26
 repo: rp/repo/propositions/search.json?startDate=2024-10-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-27
