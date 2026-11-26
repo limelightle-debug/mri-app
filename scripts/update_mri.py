@@ -566,8 +566,8 @@ def build():
     except (OSError, ValueError):
         vint = {}
     vint_rows = vint.setdefault("rows", {})
-    now = datetime.now(timezone.utc)
-    if vint.get("revAt") != str(now.date()) or not any("revE" in r for r in vint_rows.values()):
+    utc_today = str(datetime.now(timezone.utc).date())
+    if vint.get("revAt") != utc_today or not any("revE" in r for r in vint_rows.values()):
         try:
             # rev is kept only for a month his table holds in full (a finished month whose price is its average
             # close); a month he has only the first days of keeps just his E10 (revE), and its rev stays blank
@@ -578,7 +578,7 @@ def build():
                     e["rev"] = v[0]
                 else:
                     e.pop("rev", None)
-            vint["revAt"] = str(now.date())
+            vint["revAt"] = utc_today
         except RuntimeError as e:
             print(f"note: Shiller's table not read ({e}); CAPE keeps the last values", file=sys.stderr)
     vrows = vint_rows
@@ -651,8 +651,7 @@ def build():
     live_day = today if rows[-1][0] == today and sk.get("date") == today and (sk.get("estimate") or sk.get("carried")) else None
     # realtime starts at the pre-session (3:00 ET); a run overnight (by hand) does not open the new day: the page
     # keeps the last session, paused, with its realtime chart
-    # the same on a holiday (Cboe's holiday-morning trading included): the new day opens only on its own date
-    if live_day and (mode == "night" or live_day > int(now.strftime("%Y%m%d"))):
+    if live_day and mode == "night":
         rows, live_day = rows[:-1], None
     # keep the last 30 confirmed days' closes (the provisional day is not confirmed)
     keep = {r[0]: [r[1], r[2], r[8]] for r in rows[-30:] if r[0] != live_day}

@@ -998,7 +998,10 @@ function renderIntra(){
   const P0=I.points.map(p=>({t:new Date(p[0]),v:p[1]})),pc=I.prevClose;
   const ds=String(I.day),day=`${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
   const pd=new Date(Date.UTC(+ds.slice(0,4),+ds.slice(4,6)-1,+ds.slice(6,8))-864e5).toISOString().slice(0,10);
-  const t0=nyDate(`${day} 03:00`),t1=nyDate(`${day} 17:00`);
+  // a holiday's morning (Cboe's GTH runs until 11:30 ET) belongs to the next trading day's realtime: the chart then
+  // starts at 3:00 ET on the holiday
+  const t1=nyDate(`${day} 17:00`),fd=P0.length?new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(P0[0].t):day;
+  const t0=nyDate(`${fd<day?fd:day} 03:00`),step=t1-t0>24*36e5?4:2;
   // points from before the pre-session (the old overnight updates) are left out
   const P=P0.filter(p=>p.t>=t0);if(!P.length){box.hidden=true;return}
   const W=Math.max(300,box.clientWidth-28),H=Math.round(W*.66)+12,ML=2,MR=30,MT=8,MB=34,PW=W-ML-MR,PH=H-MT-MB;
@@ -1014,11 +1017,12 @@ function renderIntra(){
   const md=d=>fmtTime(d,{month:"numeric",day:"numeric"}).replace(" ET","");
   g+=`<text class="ax" x="${ML}" y="${H-4}" text-anchor="start" style="fill:var(--ink2)">${md(t0)}</text>`;
   for(let d=new Date(Math.ceil(t0.getTime()/36e5)*36e5);d<t1;d=new Date(d.getTime()+36e5)){
-    const hh=+fmtTime(d,{hour:"numeric",hourCycle:"h23"}).replace(/\D/g,"");if(hh%2||d-t0<30*6e4)continue;
+    const hh=+fmtTime(d,{hour:"numeric",hourCycle:"h23"}).replace(/\D/g,"");if(hh%step||d-t0<30*6e4)continue;
     g+=`<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${MT}" y2="${MT+PH}" opacity="${hh?.3:.7}"/><text class="ax" x="${x(d)}" y="${MT+PH+13}" text-anchor="middle">${hh}</text>`;
     if(!hh)g+=`<text class="ax" x="${x(d)}" y="${H-4}" text-anchor="middle" style="fill:var(--ink2)">${md(d)}</text>`}
   if(pc!=null)g+=`<line x1="${ML}" x2="${ML+PW}" y1="${y(pc)}" y2="${y(pc)}" stroke="${COL.muted}" stroke-dasharray="4 4" stroke-width="1.2"/><text class="ax" x="${W}" y="${y(pc)+4}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${(pc*100).toFixed(2)}</text><line x1="${W-textW(t("intraPrev"))-22}" x2="${W-textW(t("intraPrev"))-5}" y1="${H-8}" y2="${H-8}" stroke="${COL.muted}" stroke-dasharray="4 3" stroke-width="1.2"/><text class="ax" x="${W}" y="${H-4}" text-anchor="end" style="fill:var(--ink2)">${esc(t("intraPrev"))}</text>`;
-  const path=P.map((p,i)=>(i?"L":"M")+x(p.t).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
+  // no line across a pause of 3 hours or more (a holiday's afternoon and night)
+  const path=P.map((p,i)=>(i&&p.t-P[i-1].t<3*36e5?"L":"M")+x(p.t).toFixed(1)+" "+y(p.v).toFixed(1)).join("");
   // the confirmed MRI of that day: a short line at the end of the session and its value
   const finMark=fin!=null?`<line x1="${ML+PW-30}" x2="${ML+PW}" y1="${y(fin)}" y2="${y(fin)}" stroke="#fff" stroke-width="2.6"/><text class="ax" x="${W}" y="${y(fin)+4+(pc!=null&&Math.abs(y(fin)-y(pc))<12?(y(fin)<y(pc)?-6:6):0)}" text-anchor="end" style="fill:#fff;font-weight:700">${(fin*100).toFixed(2)}</text>`:"";
   const lp=P[P.length-1];
@@ -1043,7 +1047,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v163";
+const APP_VER="mri-v164";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache

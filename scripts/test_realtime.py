@@ -104,13 +104,13 @@ for name, t, want in [
         ("Mon 18:00", datetime(2026, 10, 26, 18, 0), "closed"), ("Mon 21:00", datetime(2026, 10, 26, 21, 0), "night"),
         ("Tue 01:00", datetime(2026, 10, 27, 1, 0), "night"), ("Fri 21:00", datetime(2026, 10, 30, 21, 0), "closed"),
         ("Wed before Thanksgiving 21:00 (GTH runs into Thursday morning)", datetime(2026, 11, 25, 21, 0), "night"),
-        ("Thanksgiving 01:00", datetime(2026, 11, 26, 1, 0), "night"), ("Thanksgiving 10:00 (holiday: no realtime)", datetime(2026, 11, 26, 10, 0), "closed"),
+        ("Thanksgiving 01:00", datetime(2026, 11, 26, 1, 0), "night"), ("Thanksgiving 10:00 (GTH until 11:30)", datetime(2026, 11, 26, 10, 0), "pre"),
         ("Thanksgiving 13:00", datetime(2026, 11, 26, 13, 0), "closed"), ("Thanksgiving 21:00 (for Friday)", datetime(2026, 11, 26, 21, 0), "night"),
-        ("MLK Day 2027 10:00", datetime(2027, 1, 18, 10, 0), "closed"), ("MLK Day 2027 21:00", datetime(2027, 1, 18, 21, 0), "night"),
+        ("MLK Day 2027 10:00", datetime(2027, 1, 18, 10, 0), "pre"), ("MLK Day 2027 21:00", datetime(2027, 1, 18, 21, 0), "night"),
         ("Thu before Good Friday 21:00", datetime(2026, 4, 2, 21, 0), "closed"), ("Good Friday 10:00", datetime(2026, 4, 3, 10, 0), "closed"),
         ("Christmas Eve 21:00", datetime(2026, 12, 24, 21, 0), "closed"), ("New Year's Day 10:00", datetime(2026, 1, 1, 10, 0), "closed"),
         ("New Year's Day 21:00 (for Friday)", datetime(2026, 1, 1, 21, 0), "night"),
-        ("Juneteenth 2026 (Fri) 10:00", datetime(2026, 6, 19, 10, 0), "closed"), ("Juneteenth 2026 21:00", datetime(2026, 6, 19, 21, 0), "closed")]:
+        ("Juneteenth 2026 (Fri) 10:00", datetime(2026, 6, 19, 10, 0), "pre"), ("Juneteenth 2026 21:00", datetime(2026, 6, 19, 21, 0), "closed")]:
     got = session_mode(t.replace(tzinfo=NY))
     fails += got != want
     print(("ok  " if got == want else "FAIL"), "runs:", name, "" if got == want else got)
