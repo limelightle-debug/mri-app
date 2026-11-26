@@ -576,13 +576,27 @@ def build():
     last_day = max(set(vix) & set(skew))
     cur_m = max(cur_m, last_day // 100)
 
-    # month rows: VIX and SKEW at Cboe's month-end closes, CAPE from multpl.com's monthly table
-    # (with its revisions); the current month holds today's values
+    # month rows: VIX and SKEW at Cboe's month-end closes, CAPE from Shiller's revised table
+    # (multpl.com where his lacks); the current month holds today's values
     vme, kme = month_ends(vix), month_ends(skew)
-    # months multpl.com has not given (it was down from 2026-11-24): carried with the last given month's E10, so their
-    # CAPE moves with the S&P 500 alone; multpl.com's own figures replace them once it is back (days 1-7 of a month)
+    # completed months take Shiller's own revised CAPE (his table, read once a day into data/cape_vintage.json), so
+    # the past follows his revisions; a month his table holds only part of (its price is not yet the month's average
+    # close) is rebuilt from his E10 for it and the month's average close. multpl.com's table (his figures as it last
+    # copied them) fills any month his table lacks
     avg0 = month_means(spx)
     cape_m = dict(cape_m)
+    shiller_ms = set()
+    try:
+        vrows = json.loads((DATA / "cape_vintage.json").read_text(encoding="utf-8")).get("rows", {})
+    except (OSError, ValueError):
+        vrows = {}
+    for k, r in vrows.items():
+        m = int(k)
+        if m < cur_m and m in avg0 and r.get("rev") and r.get("revP"):
+            final = abs(r["revP"] / avg0[m] - 1) < .001
+            cape_m[m] = r["rev"] if final else round(avg0[m] * r["rev"] / r["revP"], 2)
+            shiller_ms.add(m)
+    # months neither table has: carried with the last given month's E10, so their CAPE moves with the S&P 500 alone
     given = sorted(m for m in cape_m if m < cur_m and m in avg0)
     if given:
         e10_last, m = avg0[given[-1]] / cape_m[given[-1]], given[-1]
@@ -592,7 +606,7 @@ def build():
                 break
             if m not in cape_m and m in avg0:
                 cape_m[m] = round(avg0[m] / e10_last, 2)
-                print(f"note: CAPE for {m} carried with {given[-1]}'s E10 ({e10_last:.2f}); multpl.com has not given it",
+                print(f"note: CAPE for {m} carried with {given[-1]}'s E10 ({e10_last:.2f}); no table has it",
                       file=sys.stderr)
     months = {m: {"vix": vme[m], "skew": kme[m], "cape": cape_m[m]}
               for m in sorted(set(vme) & set(kme) & set(cape_m)) if m < cur_m}
@@ -607,7 +621,7 @@ def build():
     # for that month, so until the two agree, the last month is not final yet: it keeps the E10 of the
     # month before, like the current month
     prev_m = max(months)
-    if abs(spx_m.get(prev_m, 0) - avg[prev_m]) > .006 and len(months) > 1:
+    if prev_m not in shiller_ms and abs(spx_m.get(prev_m, 0) - avg[prev_m]) > .006 and len(months) > 1:
         e10_m[prev_m] = e10_m[max(m for m in months if m < prev_m)]
         months[prev_m]["cape"] = avg[prev_m] / e10_m[prev_m]
         print(f"note: multpl.com has not finalised {prev_m} yet", file=sys.stderr)
@@ -723,10 +737,10 @@ def build():
     if conf and conf[-1][0] // 100 == now.year * 100 + now.month:
         d = conf[-1]
         vr.setdefault(str(d[0] // 100), {}).update({"rt": d[3], "rtDate": str(d[0])})
-    if vint.get("revAt") != str(now.date()):
+    if vint.get("revAt") != str(now.date()) or not any("revP" in r for r in vr.values()):
         try:
             for m, v in (src.get("shiller") or shiller_table()).items():
-                vr.setdefault(str(m), {})["rev"] = v[0]
+                vr.setdefault(str(m), {}).update({"rev": v[0], "revP": round(v[0] * v[1], 2)})
             vint["revAt"] = str(now.date())
         except RuntimeError as e:
             print(f"note: CAPE table: {e}", file=sys.stderr)
