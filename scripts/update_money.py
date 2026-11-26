@@ -155,9 +155,32 @@ def multpl_cape():
     return out
 
 
-def cape_gap():
-    c = multpl_cape()
-    ms = sorted(c)[:-1]  # the newest row is the live estimate
+def cape_gap(old_rows=None):
+    try:
+        c = multpl_cape()
+        ms = sorted(c)[:-1]  # the newest row is the live estimate
+    except Exception as e:  # noqa: BLE001
+        # multpl.com down (from 2026-11-24): MRI's committed month-end table (1990 on, with the months MRI filled from
+        # Shiller's own table), joined to the CAPE this file already holds; finished months only
+        log(f"cape: {e}; using MRI's month-end table")
+        c = {r[0]: r[1] for r in (old_rows or [])}
+        for line in (DATA / "monthly.csv").read_text(encoding="utf-8").splitlines()[1:]:
+            m, _, _, v = line.split(",")
+            c[m] = float(v)
+        ms = sorted(c)
+        rows = [list(r) for r in (old_rows or [])]
+        gap = {r[0]: r[2] / 100 for r in rows if r[2] is not None}
+        for m in ms:  # only months the old rows do not hold yet
+            if rows and m <= rows[-1][0]:
+                continue
+            w = [x for x in ms if x <= m][-120:]
+            if len(w) < 120:
+                continue
+            g = c[m] / statistics.mean(c[x] for x in w) - 1
+            gap[m] = g
+            gw = [gap[x] for x in sorted(gap) if x <= m][-120:]
+            rows.append([m, c[m], round(g * 100, 2), round((g - statistics.mean(gw)) * 100, 2)])
+        return rows
     gap = {}
     for i, m in enumerate(ms):
         if i >= 119:
@@ -450,7 +473,7 @@ def main():
         ("usdjpy", lambda: cnbc_monthly("JPY=")),
         ("jpcpi", lambda: [[d[:7], v] for d, v in fred("JPNCPIALLMINMEI", "1990-01-01")]),
         ("cpi", lambda: [[d[:7], v] for d, v in fred("CPIAUCSL", "1980-01-01")]),
-        ("cape", cape_gap),
+        ("cape", lambda: cape_gap(old.get("cape"))),
         ("lwnow", lw_now),
     ]
     for k, fn in parts:
