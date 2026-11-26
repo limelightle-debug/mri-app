@@ -1,0 +1,21 @@
+name: cape source test
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q requests openpyxl xlrd
+      - run: |
+          cd scripts && python - <<'PY'
+          import update_mri as u
+          s = u.shiller_cape()
+          ks = sorted(s)
+          print("months", len(ks), ks[0], ks[-1])
+          print("last", [(k, s[k]) for k in ks[-4:]])
+          t = u.monthly_cape()
+          diff = [(k, t[k], s[k]) for k in sorted(t) if k in s and abs(t[k] - s[k]) > 0.015]
+          print("table vs shiller mismatches", len(diff), diff[-10:])
+          PY

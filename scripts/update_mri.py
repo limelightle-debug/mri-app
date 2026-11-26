@@ -315,6 +315,78 @@ def spx_ratio(prev):
     return f0 / fb if fb else None
 
 
+SHILLER_PAGE = "https://shillerdata.com/"
+SHILLER_OLD = "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
+
+
+def shiller_cape():
+    """{yyyymm: CAPE} from Robert Shiller's own monthly table (ie_data.xls), the numbers multpl.com republishes
+    (they agree month for month). Its link is looked up on shillerdata.com, where the file now lives."""
+    import xlrd
+    urls = []
+    try:
+        html = get(SHILLER_PAGE).text
+        urls = list(dict.fromkeys(re.findall(r'href="([^"]*ie_data[^"]*\.xls)"', html, re.I)))
+    except RuntimeError as e:
+        print(f"warning: shillerdata.com: {e}", file=sys.stderr)
+    last = None
+    for u in urls + [SHILLER_OLD]:
+        try:
+            raw = get(u if u.startswith("http") else "https://shillerdata.com" + u, timeout=60).content
+            ws = xlrd.open_workbook(file_contents=raw).sheet_by_name("Data")
+            # the CAPE column is headed "CAPE"; the month comes from the date-fraction column (year + (month - 0.5) / 12),
+            # since the Date column writes October as 2026.1
+            cj = next(j for i in range(min(15, ws.nrows)) for j in range(ws.ncols) if str(ws.cell_value(i, j)).strip() == "CAPE")
+            out, fj = {}, None
+            for i in range(ws.nrows):
+                d0 = ws.cell_value(i, 0)
+                if not isinstance(d0, float) or d0 < 1871:
+                    continue
+                if fj is None:
+                    fj = next(j for j in range(4, ws.ncols) if isinstance(ws.cell_value(i, j), float)
+                              and int(ws.cell_value(i, j)) == int(d0) and 0 < ws.cell_value(i, j) - int(d0) < 1)
+                fr, cp = ws.cell_value(i, fj), ws.cell_value(i, cj)
+                if not isinstance(fr, float) or not isinstance(cp, float) or cp <= 0:
+                    continue
+                y = int(fr)
+                mo = int(round((fr - y) * 12 + .5))
+                if 1 <= mo <= 12:
+                    out[y * 100 + mo] = round(cp, 2)
+            if len(out) < 600:
+                raise RuntimeError(f"only {len(out)} months")
+            return out
+        except Exception as e:  # noqa: BLE001  (try the next link)
+            last = f"{u}: {e}"
+    raise RuntimeError(f"shiller: {last}")
+
+
+def cape_fallback(anchor_ms):
+    """The committed month-end table, with months it lacks (or holds only as an anchor estimate) taken from Shiller's
+    own table. Months the table already holds keep their values: later revisions are not written back."""
+    t = monthly_cape() or {}
+    try:
+        sh = shiller_cape()
+    except RuntimeError as e:
+        print(f"note: {e}", file=sys.stderr)
+        return t or None
+    for m, v in sh.items():
+        if m not in t or m in anchor_ms:
+            if m in anchor_ms:
+                print(f"note: CAPE for {m} now from Shiller's table ({v}), replacing the anchor estimate", file=sys.stderr)
+            t[m] = v
+    return t
+
+
+def anchor_e10():
+    """{yyyymm: E10} from data/cape_anchor.json ({"YYYY-MM": {"date", "cape", "spx"}}): a CAPE read elsewhere at a known
+    close, for a month multpl.com could not give (the site was down from 2026-11-24)."""
+    try:
+        return {int(k[:4]) * 100 + int(k[5:7]): v["spx"] / v["cape"]
+                for k, v in json.loads(CAPE_ANCHOR.read_text(encoding="utf-8")).items()}
+    except (OSError, ValueError, KeyError, ZeroDivisionError):
+        return {}
+
+
 def monthly_cape():
     """{yyyymm: CAPE} from the committed month-end table (multpl.com's finalised months)."""
     out = {}
@@ -353,8 +425,12 @@ def load_sources(cache):
     # multpl.com is only needed in the first days of a month, while the month just ended gets finalised; after that
     # the committed month-end table holds the same numbers, so the site is not asked at all
     table = monthly_cape()
-    if datetime.now(timezone.utc).day <= 7 or not table:
-        keep("cape_m", lambda: multpl_monthly("shiller-pe"), monthly_cape)
+    now = datetime.now(timezone.utc)
+    prev = (now.year - (now.month == 1)) * 100 + (12 if now.month == 1 else now.month - 1)
+    anchor_ms = set(anchor_e10())
+    if now.day <= 7 or not table or prev in anchor_ms:
+        # multpl.com first; when it is down, Shiller's own table fills the months the committed table lacks
+        keep("cape_m", lambda: multpl_monthly("shiller-pe"), lambda: cape_fallback(anchor_ms))
         keep("spx_m", lambda: multpl_monthly("s-p-500-historical-prices"))
     else:
         out["cape_m"], out["spx_m"] = table, None
@@ -530,11 +606,7 @@ def build():
     # a month multpl.com could not give (the site was down from 2026-11-24): its E10 from a CAPE read elsewhere at a
     # known close (data/cape_anchor.json {"YYYY-MM": {"date", "cape", "spx"}}), and its CAPE from that E10 and the
     # month's average close; multpl.com's own figure replaces it once the site is back
-    try:
-        anchor = {int(k[:4]) * 100 + int(k[5:7]): v["spx"] / v["cape"]
-                  for k, v in json.loads(CAPE_ANCHOR.read_text(encoding="utf-8")).items()}
-    except (OSError, ValueError, KeyError, ZeroDivisionError):
-        anchor = {}
+    anchor = anchor_e10()
     avg0 = month_means(spx)
     cape_m = dict(cape_m)
     for m, e10 in anchor.items():
