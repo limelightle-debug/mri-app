@@ -319,9 +319,11 @@ SHILLER_PAGE = "https://shillerdata.com/"
 SHILLER_OLD = "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
 
 
-def shiller_cape():
-    """{yyyymm: CAPE} from Robert Shiller's own monthly table (ie_data.xls), the numbers multpl.com republishes
-    (they agree month for month). Its link is looked up on shillerdata.com, where the file now lives."""
+def shiller_table():
+    """{yyyymm: (CAPE, E10)} from Robert Shiller's own monthly table (ie_data.xls), the numbers multpl.com republishes
+    (they agree month for month until his later revisions). E10 is the month's price over its CAPE: his newest month
+    carries only the first days' average price, so a month's CAPE is rebuilt from E10 and the full month's average close.
+    Its link is looked up on shillerdata.com, where the file now lives."""
     import xlrd
     urls = []
     try:
@@ -347,36 +349,19 @@ def shiller_cape():
                 if fj is None:
                     fj = next(j for j in range(4, ws.ncols) if isinstance(ws.cell_value(i, j), float)
                               and int(ws.cell_value(i, j)) == int(d0) and 0 < ws.cell_value(i, j) - int(d0) < 1)
-                fr, cp = ws.cell_value(i, fj), ws.cell_value(i, cj)
-                if not isinstance(fr, float) or not isinstance(cp, float) or cp <= 0:
+                fr, cp, pr = ws.cell_value(i, fj), ws.cell_value(i, cj), ws.cell_value(i, 1)
+                if not all(isinstance(v, float) for v in (fr, cp, pr)) or cp <= 0:
                     continue
                 y = int(fr)
                 mo = int(round((fr - y) * 12 + .5))
                 if 1 <= mo <= 12:
-                    out[y * 100 + mo] = round(cp, 2)
+                    out[y * 100 + mo] = (round(cp, 2), pr / cp)
             if len(out) < 600:
                 raise RuntimeError(f"only {len(out)} months")
             return out
         except Exception as e:  # noqa: BLE001  (try the next link)
             last = f"{u}: {e}"
     raise RuntimeError(f"shiller: {last}")
-
-
-def cape_fallback(anchor_ms):
-    """The committed month-end table, with months it lacks (or holds only as an anchor estimate) taken from Shiller's
-    own table. Months the table already holds keep their values: later revisions are not written back."""
-    t = monthly_cape() or {}
-    try:
-        sh = shiller_cape()
-    except RuntimeError as e:
-        print(f"note: {e}", file=sys.stderr)
-        return t or None
-    for m, v in sh.items():
-        if m not in t or m in anchor_ms:
-            if m in anchor_ms:
-                print(f"note: CAPE for {m} now from Shiller's table ({v}), replacing the anchor estimate", file=sys.stderr)
-            t[m] = v
-    return t
 
 
 def anchor_e10():
@@ -409,12 +394,14 @@ def load_sources(cache):
     # one source down (multpl.com refusing connections, say) must not stop the live values: fall back to what this
     # run already has, or for CAPE to the committed month-end table, and try the source again on the next pass
     partial = False
+    failed = []
 
     def keep(key, fetch, fallback=None):
         nonlocal partial
         try:
             out[key] = fetch()
         except RuntimeError as e:
+            failed.append(key)
             old = cache.get(key) or (fallback() if fallback else None)
             if key in ("vix", "skew") and not old:
                 raise
@@ -429,10 +416,15 @@ def load_sources(cache):
     table = monthly_cape()
     now = datetime.now(timezone.utc)
     prev = (now.year - (now.month == 1)) * 100 + (12 if now.month == 1 else now.month - 1)
-    anchor_ms = set(anchor_e10())
-    if now.day <= 7 or not table or prev in anchor_ms:
-        # multpl.com first; when it is down, Shiller's own table fills the months the committed table lacks
-        keep("cape_m", lambda: multpl_monthly("shiller-pe"), lambda: cape_fallback(anchor_ms))
+    anchor = anchor_e10()
+    if now.day <= 7 or not table or anchor:
+        # multpl.com first (an anchor file means it was found down); when it fails, Shiller's own table gives E10
+        keep("cape_m", lambda: multpl_monthly("shiller-pe"), monthly_cape)
+        if "cape_m" in failed:
+            try:
+                out["shiller"] = shiller_table()
+            except RuntimeError as e:
+                print(f"note: {e}", file=sys.stderr)
         keep("spx_m", lambda: multpl_monthly("s-p-500-historical-prices"))
     else:
         out["cape_m"], out["spx_m"] = table, None
@@ -608,13 +600,21 @@ def build():
     # a month multpl.com could not give (the site was down from 2026-11-24): its E10 from a CAPE read elsewhere at a
     # known close (data/cape_anchor.json {"YYYY-MM": {"date", "cape", "spx"}}), and its CAPE from that E10 and the
     # month's average close; multpl.com's own figure replaces it once the site is back
-    anchor = anchor_e10()
+    # E10 for months multpl.com could not give: Shiller's own table first (his newest month included), then the anchor
+    sh = {int(m): v for m, v in (src.get("shiller") or {}).items()}
+    anc = anchor_e10()
+    if sh:  # multpl.com down this run
+        e10_alt = dict(anc)
+        e10_alt.update({m: v[1] for m, v in sh.items() if m >= min(anc or [cur_m])})
+    else:  # multpl.com answered: the anchor only fills what it lacks
+        e10_alt = {m: e for m, e in anc.items() if m not in cape_m}
     avg0 = month_means(spx)
     cape_m = dict(cape_m)
-    for m, e10 in anchor.items():
-        if m < cur_m and m not in cape_m and m in avg0:
+    for m, e10 in sorted(e10_alt.items()):
+        if m < cur_m and m in avg0 and (m not in cape_m or (sh and m in anc)):
             cape_m[m] = round(avg0[m] / e10, 2)
-            print(f"note: CAPE for {m} estimated from the anchor (E10 {e10:.2f}); multpl.com has not given it", file=sys.stderr)
+            print(f"note: CAPE for {m} from E10 {e10:.2f} ({'Shiller' if m in sh else 'anchor'}); multpl.com has not given it",
+                  file=sys.stderr)
     months = {m: {"vix": vme[m], "skew": kme[m], "cape": cape_m[m]}
               for m in sorted(set(vme) & set(kme) & set(cape_m)) if m < cur_m}
     # the current month does not use multpl.com's current-month figures (they update at random times,
@@ -632,7 +632,7 @@ def build():
         e10_m[prev_m] = e10_m[max(m for m in months if m < prev_m)]
         months[prev_m]["cape"] = avg[prev_m] / e10_m[prev_m]
         print(f"note: multpl.com has not finalised {prev_m} yet", file=sys.stderr)
-    e10_cur = anchor.get(cur_m) or e10_m[prev_m]
+    e10_cur = e10_alt.get(cur_m) or e10_m[prev_m]
     if cur_m in vme and cur_m in kme and cur_m in avg:
         months[cur_m] = {"vix": vme[cur_m], "skew": kme[cur_m], "cape": avg[cur_m] / e10_cur}
         e10_m[cur_m] = e10_cur
