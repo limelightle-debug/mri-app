@@ -651,7 +651,8 @@ def build():
     live_day = today if rows[-1][0] == today and sk.get("date") == today and (sk.get("estimate") or sk.get("carried")) else None
     # realtime starts at the pre-session (3:00 ET); a run overnight (by hand) does not open the new day: the page
     # keeps the last session, paused, with its realtime chart
-    if live_day and mode == "night":
+    # the same on a holiday (Cboe's holiday-morning trading included): the new day opens only on its own date
+    if live_day and (mode == "night" or live_day > int(now.strftime("%Y%m%d"))):
         rows, live_day = rows[:-1], None
     # keep the last 30 confirmed days' closes (the provisional day is not confirmed)
     keep = {r[0]: [r[1], r[2], r[8]] for r in rows[-30:] if r[0] != live_day}
