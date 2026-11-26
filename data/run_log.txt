@@ -1,5 +1,5 @@
-2026-11-26T09:38:49Z 04:38 ET mode=pre run=45793880473
-error: AttributeError: 'float' object has no attribute 'setdefault'
+2026-11-26T09:40:03Z 04:40 ET mode=pre run=45794071024
+updated: 4289 days 20091102..20261127, MRI 0.2717 (VIX 27.25 SKEW 142.06 CAPE 37.458)
 no change
 repo: rp/repo/all/results/search.json?startDate=2024-10-27&endDate=2026-11-26 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-27&endDate=2026-11-26
 repo: rp/repo/propositions/search.json?startDate=2024-10-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-27

@@ -1,1 +1,1 @@
-{"ok": false, "error": "AttributeError: 'float' object has no attribute 'setdefault'", "at": "2026-11-26T09:38:56Z"}
+{"ok": true}
