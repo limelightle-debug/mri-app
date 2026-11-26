@@ -363,7 +363,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>VIX</td><td>Cboe 公式の日次終値（1990年〜）</td><td>Cboe の約15分遅れの値。夜間に Cboe の値が止まっている間は S&amp;P500 オプションか VIX 先物から推定</td></tr>
         <tr><td>SKEW</td><td>Cboe 公式の日次終値（1990年〜）</td><td>S&amp;P500 オプションから推定</td></tr>
         <tr><td>S&amp;P500</td><td>Cboe 公式の日次終値（1975年〜）</td><td>取引時間中は約15分遅れの値。夜間は S&amp;P500 先物から推定</td></tr>
-        <tr><td>CAPE</td><td>multpl.com の月次の値（改定後、1871年〜）</td><td>S&amp;P500 から計算（下の「日々の CAPE」）</td></tr>
+        <tr><td>CAPE</td><td>シラー教授の月次の表（ie_data.xls、改定後、1871年〜）</td><td>S&amp;P500 から計算（下の「日々の CAPE」）</td></tr>
       </table>
       <p class="note">S&amp;P500 オプションは、Cboe が公開している約15分遅れの気配値を使います。</p>
 
@@ -382,8 +382,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>日々の CAPE</h3>
       <p>CAPE は月次の値しか公表されていないため、日々の値は S&amp;P500 の日次終値から次のように計算します。</p>
       <div class="eq">E10<sub>月</sub>（10年平均利益）<br>　= その月の S&amp;P500 平均終値 ÷ その月の CAPE</div><div class="eq">CAPE<sub>日</sub><br>　= その日の S&amp;P500 終値 ÷ E10<sub>月</sub></div>
-      <p>その日の株価で計算するので、S&amp;P500 が動けば CAPE も同じ割合で動きます（月次の CAPE は月平均の株価で計算するため、月末の日の値とは一致しません）。当月はまだ CAPE が確定していないので、E10 には<b>最後に確定した月（前月）の E10</b> を使います。multpl.com の当月の値は更新時刻が決まっていない（米国の引けから数時間後）ため、計算には使いません。当日（リアルタイム）は、その時点の S&amp;P500 で計算します。</p>
-      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。また、multpl.com が表示している当月の CAPE とも、E10 の扱いの違いでわずかに異なることがあります。月が替わり multpl.com で前月の値が確定すると（その月の株価が Cboe の月平均終値と一致した時点）、前月の各日の CAPE はその値で計算し直されます。確定は月末の取引日から数時間後以降（金曜が月末なら日本時間の土曜朝以降）で、それまでは前月も前々月の E10 のまま計算します。</p>
+      <p>その日の株価で計算するので、S&amp;P500 が動けば CAPE も同じ割合で動きます（月次の CAPE は月平均の株価で計算するため、月末の日の値とは一致しません）。当月はまだ CAPE が確定していないので、E10 には<b>最後に確定した月（前月）の E10</b> を使います。シラーの表の当月の値は月初の数日分の株価で計算されているため、使いません。当日（リアルタイム）は、その時点の S&amp;P500 で計算します。</p>
+      <p class="note">過去の日の CAPE は、その月の確定値から逆算した推計です。当時その日に表示されていた値とはわずかに異なることがあります。シラーの表にその月の全日の株価が入ると（表の株価が Cboe の月平均終値と一致した時点）、その月は改定値として確定し、各日の CAPE はその値で計算し直されます。それまでは、表にあるその月の E10 と月平均終値から計算します。シラーの表にない月は multpl.com の値（停止前に取得したもの）、それもなければ直前の月の E10 で補います。</p>
 
       <h3>リアルタイムの推定</h3>
       <p><b>SKEW：</b>Cboe は SKEW を1日1回、取引終了後にしか計算しません。そこで、S&amp;P500 オプションの気配値から、Cboe が公開している計算方法で SKEW を計算し直します。自分で計算した値は公式値と完全には一致しないため、前日終値からの<b>変化分</b>だけを使います。</p>
@@ -399,7 +399,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>3つの窓の値の横に「推定」と出ているものはこの推定値、「前日終値」と出ているものは前日の公式終値で代用している値です。推定値は、その日の公式の終値が出た時点で公式値に置き換わります。</p>
 
       <h3>CAPE の改定と過去の値への影響</h3>
-      <p>multpl.com は、公表済みの直近の月の CAPE を後から改定します。S&amp;P500 の利益の確定や物価指数の反映によるものです。このアプリは<b>毎回、改定後の最新の値で全期間を計算し直します</b>。</p>
+      <p>シラー教授は、公表済みの直近の月の CAPE を後から改定します。S&amp;P500 の利益の確定や物価指数の反映によるものです。このアプリは<b>毎回、改定後の最新の値で全期間を計算し直します</b>。</p>
       <p>そのため CAPE が改定されると、すでに表示した値も次のように変わります。</p>
       <ul>
         <li><b>改定された月：</b>その月の CAPE、日々の CAPE（E10 が変わるため）、MRI が変わります。</li>
@@ -458,7 +458,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
         <tr><td>VIX</td><td>Cboe official daily close (from 1990)</td><td>Cboe quote, about 15 min delayed; overnight, while Cboe's quote stands still, estimated from S&amp;P 500 options or VIX futures</td></tr>
         <tr><td>SKEW</td><td>Cboe official daily close (from 1990)</td><td>Estimated from S&amp;P 500 options</td></tr>
         <tr><td>S&amp;P 500</td><td>Cboe official daily close (from 1975)</td><td>About 15 min delayed in the session; estimated from S&amp;P 500 futures overnight</td></tr>
-        <tr><td>CAPE</td><td>multpl.com monthly values (revised, from 1871)</td><td>Calculated from the S&amp;P 500 (see "Daily CAPE")</td></tr>
+        <tr><td>CAPE</td><td>Prof. Shiller's monthly table (ie_data.xls, revised, from 1871)</td><td>Calculated from the S&amp;P 500 (see "Daily CAPE")</td></tr>
       </table>
       <p class="note">S&amp;P 500 options: Cboe's public quotes, about 15 minutes delayed.</p>
 
@@ -476,8 +476,8 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <h3>Daily CAPE</h3>
       <p>CAPE is only published monthly, so the daily value is calculated from the S&amp;P 500's daily closes:</p>
       <div class="eq">E10<sub>month</sub> (10-year average earnings)<br>　= the month's average S&amp;P 500 close ÷ the month's CAPE</div><div class="eq">CAPE<sub>day</sub><br>　= that day's S&amp;P 500 close ÷ E10<sub>month</sub></div>
-      <p>Since it uses the day's price, CAPE moves in proportion to the S&amp;P 500 (the monthly CAPE uses the month's average price, so it does not equal the value on the month's last day). The current month's CAPE is not final yet, so its E10 is <b>that of the last completed month</b>. multpl.com's current-month figures update at no fixed time (hours after the US close), so they are not used. Today (realtime) uses the S&amp;P 500 at that moment.</p>
-      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. They can also differ slightly from the current-month CAPE shown on multpl.com, because E10 is handled differently. Once multpl.com finalises a month (when its price for the month equals Cboe's average close), that month's daily CAPE values are recalculated with it. That comes hours after the month's last close (on Saturday morning Japan time when the month ends on a Friday); until then, that month also keeps the E10 of the month before.</p>
+      <p>Since it uses the day's price, CAPE moves in proportion to the S&amp;P 500 (the monthly CAPE uses the month's average price, so it does not equal the value on the month's last day). The current month's CAPE is not final yet, so its E10 is <b>that of the last completed month</b>. Shiller's current-month figure uses only the first days' prices, so it is not used. Today (realtime) uses the S&amp;P 500 at that moment.</p>
+      <p class="note">Past daily CAPE values are reconstructed from the month's final value and can differ slightly from what was shown on that day. Once Shiller's table holds a month in full (its price for the month equals Cboe's average close), that month's revised value is final and its daily CAPE values are recalculated with it; until then, the month uses his E10 for it and the month's average close. Months his table lacks use multpl.com's values (fetched before it stopped), or failing that the E10 of the month before.</p>
 
       <h3>Realtime estimates</h3>
       <p><b>SKEW:</b> Cboe calculates SKEW only once a day, after the close. So it is recalculated from S&amp;P 500 option quotes with Cboe's published method. The recalculated value does not match the official one exactly, so only its <b>change</b> since the previous close is used:</p>
@@ -492,7 +492,7 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       <p>"Estimate" next to an indicator marks these estimates; "Prev. close" marks a value carried from the previous official close. Estimates are replaced by official values once the day's closes are out.</p>
 
       <h3>CAPE revisions and past values</h3>
-      <p>multpl.com revises the CAPE of recent months after publishing them, as S&amp;P 500 earnings become final and inflation data comes in. This app <b>recalculates the whole history with the latest revised values every time</b>.</p>
+      <p>Prof. Shiller revises the CAPE of recent months after publishing them, as S&amp;P 500 earnings become final and inflation data comes in. This app <b>recalculates the whole history with the latest revised values every time</b>.</p>
       <p>So when CAPE is revised, values already shown change:</p>
       <ul>
         <li><b>The revised month:</b> its CAPE, daily CAPE (E10 changes) and MRI change.</li>
@@ -1043,7 +1043,7 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v161";
+const APP_VER="mri-v162";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
@@ -1057,14 +1057,13 @@ function renderCV(){
   if(!CVT||!CVT.rows)return;
   const ja=LANG==="ja",R=CVT.rows,ks=Object.keys(R).filter(k=>R[k].rt!=null||R[k].rev!=null).sort().reverse();if(!ks.length)return;
   const now=new Date(),cur=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}`;
-  const revLast=ks.find(k=>R[k].rev!=null);
   const ml=k=>ja?`${k.slice(0,4)}年${+k.slice(4)}月`:`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+k.slice(4)-1]} ${k.slice(0,4)}`;
   const rows=ks.map(k=>{const r=R[k],live=k>=cur;
     const d=r.rt!=null&&r.rev!=null?r.rev-r.rt:null;
-    return `<tr class="${live?"cur":""}"><td>${ml(k)}</td><td class="${r.rt==null?"na":""}">${r.rt!=null?r.rt.toFixed(2)+(live?(ja?"（途中）":" (so far)"):""):"—"}</td><td class="${r.rev==null?"na":""}">${r.rev!=null?r.rev.toFixed(2)+(k===revLast?"*":""):"—"}</td><td class="${d==null||live?"na":d>.005?"up":d<-.005?"dn":""}">${d==null||live?"—":(d>=0?"+":"−")+Math.abs(d).toFixed(2)}</td></tr>`}).join("");
+    return `<tr class="${live?"cur":""}"><td>${ml(k)}</td><td class="${r.rt==null?"na":""}">${r.rt!=null?r.rt.toFixed(2)+(live?(ja?"（途中）":" (so far)"):""):"—"}</td><td class="${r.rev==null?"na":""}">${r.rev!=null?r.rev.toFixed(2):"—"}</td><td class="${d==null||live?"na":d>.005?"up":d<-.005?"dn":""}">${d==null||live?"—":(d>=0?"+":"−")+Math.abs(d).toFixed(2)}</td></tr>`}).join("");
   $("cvh").textContent=ja?"CAPE の月次":"CAPE by month";$("cvs").textContent=ja?"月末のリアルタイムと改定値":"Real time at month end vs revised";
   $("cvw").innerHTML=`<table><tr><th>${ja?"月":"Month"}</th><th>${ja?"月末のリアルタイム":"Real time"}</th><th>${ja?"改定値（シラー）":"Revised (Shiller)"}</th><th>${ja?"差":"Diff"}</th></tr>${rows}</table>`;
-  $("cvn").textContent=ja?`月末のリアルタイムは、その月の最後の取引日の CAPE を、その時点の E10 で計算した値（このアプリの記録、2026年10月から）。改定値はシラー本人の表（shillerdata.com）のいまの値で、毎日読み直す${CVT.revAt?`（${CVT.revAt.replace(/-/g,"/")}）`:""}。改定値は月平均の株価で計算するので、月末の日の値とは株価の動いた分だけ違う。* はシラーの最新の月で、月初の数日の株価までしか入っていない。`:`Real time: the CAPE of the month's last trading day, worked out with the E10 of that moment (this app's record, from Oct 2026). Revised: Shiller's own table (shillerdata.com) as it stands now, read daily${CVT.revAt?` (${CVT.revAt})`:""}. Revised values use the month's average price, so they differ from the last day's value by the price move. *: Shiller's newest month, priced on its first few days only.`;
+  $("cvn").textContent=ja?`月末のリアルタイムは、その月の最後の取引日の CAPE を、その時点の E10 で計算した値（2026年10月からはこのアプリの記録、それ以前は Internet Archive に残る multpl.com の月末の表示）。改定値はシラー本人の表（shillerdata.com）のいまの値で、毎日読み直す${CVT.revAt?`（${CVT.revAt.replace(/-/g,"/")}）`:""}。改定値は月平均の株価で計算するので、月末の日の値とは株価の動いた分だけ違う。シラーの表にその月の全日の株価が入るまで、改定値は空欄。`:`Real time: the CAPE of the month's last trading day, worked out with the E10 of that moment (this app's record from Oct 2026; before that, multpl.com's month-end page as kept by the Internet Archive). Revised: Shiller's own table (shillerdata.com) as it stands now, read daily${CVT.revAt?` (${CVT.revAt})`:""}. Revised values use the month's average price, so they differ from the last day's value by the price move. Revised stays blank until Shiller's table holds the month's full prices.`;
   $("capev").hidden=false;
 }
 async function load(){

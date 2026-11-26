@@ -592,9 +592,8 @@ def build():
         vrows = {}
     for k, r in vrows.items():
         m = int(k)
-        if m < cur_m and m in avg0 and r.get("rev") and r.get("revP"):
-            final = abs(r["revP"] / avg0[m] - 1) < .001
-            cape_m[m] = r["rev"] if final else round(avg0[m] * r["rev"] / r["revP"], 2)
+        if m < cur_m and m in avg0 and (r.get("rev") or r.get("revE")):
+            cape_m[m] = r["rev"] if r.get("rev") else round(avg0[m] / r["revE"], 2)
             shiller_ms.add(m)
     # months neither table has: carried with the last given month's E10, so their CAPE moves with the S&P 500 alone
     given = sorted(m for m in cape_m if m < cur_m and m in avg0)
@@ -737,10 +736,18 @@ def build():
     if conf and conf[-1][0] // 100 == now.year * 100 + now.month:
         d = conf[-1]
         vr.setdefault(str(d[0] // 100), {}).update({"rt": d[3], "rtDate": str(d[0])})
-    if vint.get("revAt") != str(now.date()) or not any("revP" in r for r in vr.values()):
+    if vint.get("revAt") != str(now.date()) or not any("revE" in r for r in vr.values()):
         try:
+            # rev is shown only for a month his table holds in full (a finished month whose price is its average
+            # close); a month he has only the first days of keeps just his E10 (revE), and its rev stays blank
             for m, v in (src.get("shiller") or shiller_table()).items():
-                vr.setdefault(str(m), {}).update({"rev": v[0], "revP": round(v[0] * v[1], 2)})
+                e = vr.setdefault(str(m), {})
+                e.pop("revP", None)
+                e["revE"] = round(v[1], 4)
+                if m < cur_m and (m not in avg0 or abs(v[0] * v[1] / avg0[m] - 1) < .001):
+                    e["rev"] = v[0]
+                else:
+                    e.pop("rev", None)
             vint["revAt"] = str(now.date())
         except RuntimeError as e:
             print(f"note: CAPE table: {e}", file=sys.stderr)
