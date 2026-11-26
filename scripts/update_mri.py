@@ -731,6 +731,30 @@ def build():
     if added or not pit_file.exists():
         pit_file.write_text(json.dumps(dict(sorted(pit.items())), separators=(",", ":")) + "\n", encoding="utf-8")
     data["pit"] = pit
+    # CAPE by month for the page's table (data/cape_vintage.json): the month-end value as it stood in real time
+    # (rt: the last confirmed day's CAPE, written while that day's month is still the current month, so it freezes
+    # when the month ends), beside Shiller's revised figure (rev, his own table, read once a day)
+    vint_file = DATA / "cape_vintage.json"
+    try:
+        vint = json.loads(vint_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        vint = {}
+    vr = vint.setdefault("rows", {})
+    conf = [r for r in rows if r[0] != live_day]
+    if conf and conf[-1][0] // 100 == now.year * 100 + now.month:
+        d = conf[-1]
+        vr.setdefault(str(d[0] // 100), {}).update({"rt": d[3], "rtDate": str(d[0])})
+    if vint.get("revAt") != str(now.date()):
+        try:
+            for m, v in (src.get("shiller") or shiller_table()).items():
+                vr.setdefault(str(m), {})["rev"] = v[0]
+            vint["revAt"] = str(now.date())
+        except RuntimeError as e:
+            print(f"note: CAPE table: {e}", file=sys.stderr)
+    vint["rows"] = dict(sorted(vr.items()))
+    vtext = json.dumps(vint, separators=(",", ":")) + "\n"
+    if not vint_file.exists() or vint_file.read_text(encoding="utf-8") != vtext:
+        vint_file.write_text(vtext, encoding="utf-8")
     try:
         data["certified"] = json.loads((DATA / "signals.json").read_text(encoding="utf-8")).get("certified", [])
     except (OSError, ValueError):

@@ -162,6 +162,13 @@ h1{white-space:nowrap;margin:0;font-family:var(--f-tick);font-stretch:82%;font-w
 .dstats div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px}
 .dstats b{font-family:var(--f-tick);font-stretch:82%;font-size:13.5px;color:var(--ink)}
 .dstats .wide{grid-column:1/-1}
+.cvw{max-height:372px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line);margin:0 -4px}
+.cvw table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.cvw th{position:sticky;top:0;background:var(--panel);color:var(--muted);font-weight:400;font-size:11.5px;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line)}
+.cvw th:first-child,.cvw td:first-child{text-align:left}
+.cvw td{text-align:right;padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--ink)}
+.cvw td.na{color:var(--muted)}.cvw td.up{color:#5fd08e}.cvw td.dn{color:#ff7a7a}.cvw tr.cur td{color:var(--ink2)}
+.cvn{font-size:11.5px;color:var(--muted);line-height:1.6;margin:8px 0 0}
 .hotlist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .hotlist h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--ink2);display:flex;justify-content:space-between}
 .hotlist h3 span{font-weight:400;color:var(--muted)}
@@ -324,6 +331,11 @@ html[lang=en] .l-ja,html[lang=ja] .l-en{display:none!important}
       </div>
       <div class="readout" id="mread"></div>
       <div class="chart" id="mchart"></div>
+    </section>
+    <section class="panel" id="capev" hidden>
+      <h2><i class="h2t" id="cvh">CAPE の月次</i> <span id="cvs">月末のリアルタイムと改定値</span></h2>
+      <div class="cvw" id="cvw"></div>
+      <p class="cvn" id="cvn"></p>
     </section>
     <section class="panel books" data-books="vix:3"></section>
    </div>
@@ -1031,12 +1043,29 @@ function nextStart(now=new Date()){
 /* ---------- loading ---------- */
 // When a newer version of the app is published, reload to pick it up (the version is the
 // service worker's cache name; bump both together).
-const APP_VER="mri-v160";
+const APP_VER="mri-v161";
 async function newerApp(){
   try{const t=await(await fetch("sw.js?ts="+Date.now(),{cache:"no-store"})).text();const m=t.match(/CACHE = "([^"]+)"/);
     // at most one reload per new version, in case the page itself is still served from a cache
     if(m&&m[1]!==APP_VER&&sessionStorage.getItem("reloadedFor")!==m[1]){sessionStorage.setItem("reloadedFor",m[1]);location.reload();return true}}catch(e){}
   return false;
+}
+/* ---------- CAPE by month: the month-end value in real time beside Shiller's revised figure ---------- */
+let CVT=null;
+async function loadCV(){try{const r=await fetch("data/cape_vintage.json?ts="+Date.now(),{cache:"no-store"});if(r.ok){CVT=await r.json();renderCV()}}catch(e){}}
+function renderCV(){
+  if(!CVT||!CVT.rows)return;
+  const ja=LANG==="ja",R=CVT.rows,ks=Object.keys(R).filter(k=>R[k].rt!=null||R[k].rev!=null).sort().reverse();if(!ks.length)return;
+  const now=new Date(),cur=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}`;
+  const revLast=ks.find(k=>R[k].rev!=null);
+  const ml=k=>ja?`${k.slice(0,4)}年${+k.slice(4)}月`:`${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+k.slice(4)-1]} ${k.slice(0,4)}`;
+  const rows=ks.map(k=>{const r=R[k],live=k>=cur;
+    const d=r.rt!=null&&r.rev!=null?r.rev-r.rt:null;
+    return `<tr class="${live?"cur":""}"><td>${ml(k)}</td><td class="${r.rt==null?"na":""}">${r.rt!=null?r.rt.toFixed(2)+(live?(ja?"（途中）":" (so far)"):""):"—"}</td><td class="${r.rev==null?"na":""}">${r.rev!=null?r.rev.toFixed(2)+(k===revLast?"*":""):"—"}</td><td class="${d==null||live?"na":d>.005?"up":d<-.005?"dn":""}">${d==null||live?"—":(d>=0?"+":"−")+Math.abs(d).toFixed(2)}</td></tr>`}).join("");
+  $("cvh").textContent=ja?"CAPE の月次":"CAPE by month";$("cvs").textContent=ja?"月末のリアルタイムと改定値":"Real time at month end vs revised";
+  $("cvw").innerHTML=`<table><tr><th>${ja?"月":"Month"}</th><th>${ja?"月末のリアルタイム":"Real time"}</th><th>${ja?"改定値（シラー）":"Revised (Shiller)"}</th><th>${ja?"差":"Diff"}</th></tr>${rows}</table>`;
+  $("cvn").textContent=ja?`月末のリアルタイムは、その月の最後の取引日の CAPE を、その時点の E10 で計算した値（このアプリの記録、2026年10月から）。改定値はシラー本人の表（shillerdata.com）のいまの値で、毎日読み直す${CVT.revAt?`（${CVT.revAt.replace(/-/g,"/")}）`:""}。改定値は月平均の株価で計算するので、月末の日の値とは株価の動いた分だけ違う。* はシラーの最新の月で、月初の数日の株価までしか入っていない。`:`Real time: the CAPE of the month's last trading day, worked out with the E10 of that moment (this app's record, from Oct 2026). Revised: Shiller's own table (shillerdata.com) as it stands now, read daily${CVT.revAt?` (${CVT.revAt})`:""}. Revised values use the month's average price, so they differ from the last day's value by the price move. *: Shiller's newest month, priced on its first few days only.`;
+  $("capev").hidden=false;
 }
 async function load(){
   if(await newerApp())return;
@@ -1046,7 +1075,7 @@ async function load(){
     if(!r.ok)throw new Error("HTTP "+r.status);
     const d=await r.json();
     if(!d||!Array.isArray(d.daily)||!d.daily.length)throw new Error("bad data");
-    if(!D||d.updatedAt!==D.updatedAt){setData(d);renderAll()}else renderStatus();
+    if(!D||d.updatedAt!==D.updatedAt){setData(d);renderAll();loadCV()}else renderStatus();
   }catch(e){
     if(!D){$("empty").textContent=t("loadFail");$("status").textContent=t("loadFailShort")}
   }finally{loading=false}
@@ -1110,7 +1139,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 // the data is published every 5 minutes during the US session; look for it every minute
 setInterval(()=>{if(document.visibilityState==="visible")load()},60*1000);
 setInterval(()=>{if(D)renderStatus()},60*1000);
-$("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;try{localStorage.setItem("lang",LANG)}catch(e){}applyLang();if(D)renderAll()});
+$("lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b||b.dataset.lang===LANG)return;LANG=b.dataset.lang;try{localStorage.setItem("lang",LANG)}catch(e){}applyLang();if(D)renderAll();renderCV()});
 applyLang();readColors();renderTabs();load();
 if(EMBED)renderTabs();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
