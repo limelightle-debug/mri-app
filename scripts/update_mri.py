@@ -431,6 +431,7 @@ def sig(x, n=6):
     return float(f"{x:.{n}g}")
 
 
+CAPE_ANCHOR = DATA / "cape_anchor.json"
 MONTHLY_CSV = DATA / "monthly.csv"  # month-end VIX, SKEW and CAPE used for the statistics
 
 
@@ -526,6 +527,20 @@ def build():
     # month rows: VIX and SKEW at Cboe's month-end closes, CAPE from multpl.com's monthly table
     # (with its revisions); the current month holds today's values
     vme, kme = month_ends(vix), month_ends(skew)
+    # a month multpl.com could not give (the site was down from 2026-11-24): its E10 from a CAPE read elsewhere at a
+    # known close (data/cape_anchor.json {"YYYY-MM": {"date", "cape", "spx"}}), and its CAPE from that E10 and the
+    # month's average close; multpl.com's own figure replaces it once the site is back
+    try:
+        anchor = {int(k[:4]) * 100 + int(k[5:7]): v["spx"] / v["cape"]
+                  for k, v in json.loads(CAPE_ANCHOR.read_text(encoding="utf-8")).items()}
+    except (OSError, ValueError, KeyError, ZeroDivisionError):
+        anchor = {}
+    avg0 = month_means(spx)
+    cape_m = dict(cape_m)
+    for m, e10 in anchor.items():
+        if m < cur_m and m not in cape_m and m in avg0:
+            cape_m[m] = round(avg0[m] / e10, 2)
+            print(f"note: CAPE for {m} estimated from the anchor (E10 {e10:.2f}); multpl.com has not given it", file=sys.stderr)
     months = {m: {"vix": vme[m], "skew": kme[m], "cape": cape_m[m]}
               for m in sorted(set(vme) & set(kme) & set(cape_m)) if m < cur_m}
     # the current month does not use multpl.com's current-month figures (they update at random times,
@@ -543,7 +558,7 @@ def build():
         e10_m[prev_m] = e10_m[max(m for m in months if m < prev_m)]
         months[prev_m]["cape"] = avg[prev_m] / e10_m[prev_m]
         print(f"note: multpl.com has not finalised {prev_m} yet", file=sys.stderr)
-    e10_cur = e10_m[prev_m]
+    e10_cur = anchor.get(cur_m) or e10_m[prev_m]
     if cur_m in vme and cur_m in kme and cur_m in avg:
         months[cur_m] = {"vix": vme[cur_m], "skew": kme[cur_m], "cape": avg[cur_m] / e10_cur}
         e10_m[cur_m] = e10_cur
