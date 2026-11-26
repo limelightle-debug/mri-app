@@ -104,6 +104,12 @@ def main():
     hist = [h for h in old.get("hist", []) if h[0] != day]
     hist.append([day] + [m["moves"] for m in res["meetings"][:4]] + [res["meetings"][0]["date"]])
     out["hist"] = sorted(hist)[-400:]
+    # one snapshot a day of the path's peak: [day, highest expected rate after any meeting, that meeting, the rate
+    # after the last meeting] (how far the priced hikes reach, and when they start to recede)
+    pk = max(res["meetings"], key=lambda m: m["after"])
+    ph = [h for h in old.get("peakHist", []) if h[0] != day]
+    ph.append([day, round(pk["after"], 3), pk["date"], round(res["meetings"][-1]["after"], 3)])
+    out["peakHist"] = sorted(ph)[-800:]
     if {k: v for k, v in old.items() if k != "updatedAt"} == out:
         return
     out["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
