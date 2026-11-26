@@ -565,14 +565,14 @@ def build():
         vint = json.loads(vint_file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         vint = {}
-    vr = vint.setdefault("rows", {})
+    vint_rows = vint.setdefault("rows", {})
     now = datetime.now(timezone.utc)
-    if vint.get("revAt") != str(now.date()) or not any("revE" in r for r in vr.values()):
+    if vint.get("revAt") != str(now.date()) or not any("revE" in r for r in vint_rows.values()):
         try:
             # rev is kept only for a month his table holds in full (a finished month whose price is its average
             # close); a month he has only the first days of keeps just his E10 (revE), and its rev stays blank
             for m, v in (src.get("shiller") or shiller_table()).items():
-                e = vr.setdefault(str(m), {})
+                e = vint_rows.setdefault(str(m), {})
                 e["revE"] = round(v[1], 4)
                 if m < cur_m and (m not in avg0 or abs(v[0] * v[1] / avg0[m] - 1) < .001):
                     e["rev"] = v[0]
@@ -581,7 +581,7 @@ def build():
             vint["revAt"] = str(now.date())
         except RuntimeError as e:
             print(f"note: Shiller's table not read ({e}); CAPE keeps the last values", file=sys.stderr)
-    vrows = vr
+    vrows = vint_rows
     for k, r in vrows.items():
         m = int(k)
         if m < cur_m and m in avg0 and (r.get("rev") or r.get("revE")):
@@ -712,8 +712,8 @@ def build():
     conf = [r for r in rows if r[0] != live_day]
     if conf and conf[-1][0] // 100 == now.year * 100 + now.month:
         d = conf[-1]
-        vr.setdefault(str(d[0] // 100), {}).update({"rt": d[3], "rtDate": str(d[0])})
-    vint["rows"] = dict(sorted(vr.items()))
+        vint_rows.setdefault(str(d[0] // 100), {}).update({"rt": d[3], "rtDate": str(d[0])})
+    vint["rows"] = dict(sorted(vint_rows.items()))
     vtext = json.dumps(vint, separators=(",", ":")) + "\n"
     if not vint_file.exists() or vint_file.read_text(encoding="utf-8") != vtext:
         vint_file.write_text(vtext, encoding="utf-8")
