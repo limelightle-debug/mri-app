@@ -337,7 +337,8 @@ def shiller_cape():
             ws = xlrd.open_workbook(file_contents=raw).sheet_by_name("Data")
             # the CAPE column is headed "CAPE"; the month comes from the date-fraction column (year + (month - 0.5) / 12),
             # since the Date column writes October as 2026.1
-            cj = next(j for i in range(min(15, ws.nrows)) for j in range(ws.ncols) if str(ws.cell_value(i, j)).strip() == "CAPE")
+            hr = next(i for i in range(min(15, ws.nrows)) if str(ws.cell_value(i, 0)).strip() == "Date")
+            cj = next(j for j in range(ws.ncols) if str(ws.cell_value(hr, j)).strip() == "CAPE")  # not "Excess CAPE Yield"
             out, fj = {}, None
             for i in range(ws.nrows):
                 d0 = ws.cell_value(i, 0)

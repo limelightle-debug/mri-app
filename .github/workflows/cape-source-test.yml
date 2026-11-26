@@ -23,7 +23,10 @@ jobs:
               print("PARSED", len(ks), ks[0], ks[-1], [(k, s[k]) for k in ks[-4:]])
               t = u.monthly_cape()
               diff = [(k, t[k], s[k]) for k in sorted(t) if k in s and abs(t[k] - s[k]) > 0.015]
-              print("MISMATCH", len(diff), diff[-12:])
+              print("MISMATCH", len(diff))
+              from collections import Counter
+              print("BYYEAR", sorted(Counter(k // 100 for k, a, b in diff).items()))
+              print("RECENT", [(k, t[k], s.get(k)) for k in sorted(t)[-30:]])
           except Exception as e:
               print("PARSEERR", e)
           PY
