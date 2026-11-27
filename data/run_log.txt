@@ -1,6 +1,6 @@
-2026-11-27T17:37:59Z 12:37 ET mode=open run=46043344400
-updated: 4289 days 20091102..20261127, MRI 0.3380 (VIX 24.54 SKEW 145.08 CAPE 37.835)
-breadth: 418 up / 81 down, sum 1.412%, top [['AMZN', 'Amazon.com', 4.36, 12.49, 0.1739]]
+2026-11-27T18:08:28Z 13:08 ET mode=open run=46047154080
+updated: 4289 days 20091102..20261127, MRI 0.3322 (VIX 24.67 SKEW 144.85 CAPE 37.769)
+breadth: 410 up / 92 down, sum 1.629%, top [['AMZN', 'Amazon.com', 3.96, 11.36, 0.1582]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27
 repo: rp/repo/propositions/search.json?startDate=2024-10-28 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-28
-claims (DOL): claims: no rows
+cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused")); using MRI's month-end table
