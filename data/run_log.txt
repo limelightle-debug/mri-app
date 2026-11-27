@@ -1,8 +1,5 @@
-2026-11-27T16:38:23Z 11:38 ET mode=open run=46035260251
-updated: 4289 days 20091102..20261127, MRI 0.3203 (VIX 25.29 SKEW 144.44 CAPE 37.72)
-breadth: 397 up / 104 down, sum 1.294%, top [['AMZN', 'Amazon.com', 3.8, 10.89, 0.1517]]
+2026-11-27T17:09:05Z 12:09 ET mode=open run=46039490491
+updated: 4289 days 20091102..20261127, MRI 0.3468 (VIX 24.41 SKEW 145.67 CAPE 37.874)
+breadth: 422 up / 78 down, sum 1.339%, top [['AMZN', 'Amazon.com', 3.9, 11.17, 0.1556]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27
 repo: rp/repo/propositions/search.json?startDate=2024-10-28 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-28
-pce: 403 Client Error: Forbidden for url: https://apps.bea.gov/national/Release/TXT/NipaDataM.txt
-claims (DOL): claims: no rows
-gdp: 403 Client Error: Forbidden for url: https://apps.bea.gov/national/Release/TXT/NipaDataQ.txt
