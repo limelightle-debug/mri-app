@@ -1,5 +1,5 @@
-2026-11-27T15:38:28Z 10:38 ET mode=open run=46026679838
-updated: 4289 days 20091102..20261127, MRI 0.2970 (VIX 26.62 SKEW 143.72 CAPE 37.576)
-breadth: 405 up / 94 down, sum 1.172%, top [['AMZN', 'Amazon.com', 3.33, 9.56, 0.133]]
+2026-11-27T16:09:03Z 11:09 ET mode=open run=46031096791
+updated: 4289 days 20091102..20261127, MRI 0.3145 (VIX 25.55 SKEW 144.08 CAPE 37.733)
+breadth: 373 up / 128 down, sum 1.198%, top [['AMZN', 'Amazon.com', 4.01, 11.48, 0.1598]]
 repo: rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27
 repo: rp/repo/propositions/search.json?startDate=2024-10-28 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-28
