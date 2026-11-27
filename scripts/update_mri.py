@@ -244,9 +244,19 @@ def futures_now():
     future's and the S&P 500 future's moves against their last settlement (the same moment as the indices' closes),
     as ratios, with the quote time; only when both quotes are fresh (within 20 minutes). Else None."""
     try:
-        j = get(CNBC_Q.format("@VX.1|@SP.1"), timeout=20, tries=2).json()
+        j = get(CNBC_Q.format("@VX.1|@SP.1|.VIX"), timeout=20, tries=2).json()
         qs = {q["symbol"]: q for q in j["FormattedQuoteResult"]["FormattedQuote"]}
         out = {}
+        # the VIX index itself (Cboe computes it in the extended session too): used when Cboe's own delayed quote
+        # stands still (after a holiday its feed can stay on the holiday's morning)
+        try:
+            v = qs[".VIX"]
+            vat = datetime.fromisoformat(v["last_time"].replace("Z", "+00:00")).astimezone(NY)
+            vv = num(str(v["last"]).replace(",", ""))
+            if vv and (datetime.now(NY) - vat).total_seconds() <= 20 * 60:
+                out["vix_spot"], out["vix_spot_at"] = vv, vat
+        except (KeyError, ValueError, TypeError):
+            pass
         for sym, key in (("@VX.1", "vix"), ("@SP.1", "spx")):
             q = qs[sym]
             last, prev = num(str(q["last"]).replace(",", "")), num(str(q["previous_day_closing"]).replace(",", ""))
@@ -491,7 +501,8 @@ def build():
         if q:
             live[name] = {"date": q[0], "value": q[1], "time": q[2]}
             series = {"vix": vix, "skew": skew, "spx": spx}[name]
-            series[q[3]] = q[4]  # the close keeps its own day
+            if is_trading_day(datetime.strptime(str(q[3]), "%Y%m%d").date()):
+                series[q[3]] = q[4]  # the close keeps its own day
             # a quote dated a market holiday (Cboe's GTH runs on some holiday mornings) is not a day of its own:
             # it neither makes a row nor serves as the close the next session is measured from
             if is_trading_day(datetime.strptime(str(q[0]), "%Y%m%d").date()):
@@ -521,9 +532,14 @@ def build():
     fut = futures_now() if mode in ("night", "pre") else None
     # Cboe's delayed VIX quote can still carry an earlier day in the pre-session (after a holiday its feed stays on
     # the holiday's morning): the futures then open today's row from the last close
+    if fut and fut.get("vix_spot") and mode == "pre" and (today not in vix or live.get("vix", {}).get("date") != today):
+        # Cboe's quote is not on today yet but the index is being computed: take the index itself
+        vix[today] = fut["vix_spot"]
+        live["vix"] = {"date": today, "value": round(fut["vix_spot"], 2), "time": fut["vix_spot_at"].strftime("%Y-%m-%d %H:%M"),
+                       "by": "CNBC"}
     if fut and today not in vix and vix and mode == "pre":
         vix[today] = vix[max(vix)]
-    if fut and today in vix:
+    if fut and today in vix and live.get("vix", {}).get("by") != "CNBC":
         prevv = max(d for d in vix if d < today)
         lv = live.get("vix", {})
         cboe_moved = not lv.get("estimate") and abs(vix[today] - vix[prevv]) > 1e-9
