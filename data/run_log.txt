@@ -1,4 +1,4 @@
-2026-11-27T21:37:53Z 16:37 ET mode=open run=46071540489
+2026-11-27T22:09:09Z 17:09 ET mode=open run=46074819844
 error: RuntimeError: cannot compute SPXW 2026-12-24 16:00:00-05:00
 skew_calc failed (1)
 no change
