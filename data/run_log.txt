@@ -1,7 +1,8 @@
-2026-11-27T22:38:14Z 17:38 ET mode=closed run=46077830184
+2026-11-27T23:01:22Z 18:01 ET mode=closed run=46080059380
 error: RuntimeError: cannot compute SPXW 2026-12-24 16:00:00-05:00
 skew_calc failed (1)
 no change
 no change
 repo: rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27
 repo: rp/repo/propositions/search.json?startDate=2024-10-28 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-28
+cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused")); using MRI's month-end table
