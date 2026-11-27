@@ -1,6 +1,7 @@
-2026-11-27T04:26:12Z 23:26 ET mode=night run=45939913609
+2026-11-27T08:08:46Z 03:08 ET mode=pre run=45963408322
 no change
-no change
+breadth: 0 up / 0 down, sum 0.0%, top []
 repo: rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/all/results/search.json?startDate=2024-10-28&endDate=2026-11-27
 repo: rp/repo/propositions/search.json?startDate=2024-10-28 400 Client Error: Bad Request for url: https://markets.newyorkfed.org/api/rp/repo/propositions/search.json?startDate=2024-10-28
+claims (DOL): 502 Server Error: Bad Gateway for url: https://oui.doleta.gov/unemploy/wkclaims/report.asp
 cape: HTTPSConnectionPool(host='www.multpl.com', port=443): Max retries exceeded with url: /shiller-pe/table/by-month (Caused by NewConnectionError("HTTPSConnection(host='www.multpl.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused")); using MRI's month-end table
