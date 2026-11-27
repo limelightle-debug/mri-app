@@ -492,7 +492,10 @@ def build():
             live[name] = {"date": q[0], "value": q[1], "time": q[2]}
             series = {"vix": vix, "skew": skew, "spx": spx}[name]
             series[q[3]] = q[4]  # the close keeps its own day
-            series[q[0]] = q[1]
+            # a quote dated a market holiday (Cboe's GTH runs on some holiday mornings) is not a day of its own:
+            # it neither makes a row nor serves as the close the next session is measured from
+            if is_trading_day(datetime.strptime(str(q[0]), "%Y%m%d").date()):
+                series[q[0]] = q[1]
 
     now = datetime.now(NY)
     today = session_day(now)
@@ -516,6 +519,10 @@ def build():
     from mkt_calendar import session_mode
     mode = session_mode(now)
     fut = futures_now() if mode in ("night", "pre") else None
+    # Cboe's delayed VIX quote can still carry an earlier day in the pre-session (after a holiday its feed stays on
+    # the holiday's morning): the futures then open today's row from the last close
+    if fut and today not in vix and vix and mode == "pre":
+        vix[today] = vix[max(vix)]
     if fut and today in vix:
         prevv = max(d for d in vix if d < today)
         lv = live.get("vix", {})
