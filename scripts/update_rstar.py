@@ -4,7 +4,7 @@ The New York Fed's estimates, quarterly, one-sided (as known at each date), US:
 - HLW: Holston, Laubach and Williams ("Measuring the Natural Rate of Interest after COVID-19", 2023)
 - LW: Laubach and Williams (2003), the baseline model
 with HLW's inputs for the federal funds rate (quarterly average, annualized) and the expected inflation it uses,
-so the real policy rate is ff - pie. Updated by the New York Fed four times a year; read at most once a day.
+so the real policy rate is ff - pie. Updated by the New York Fed four times a year (2 pm ET on release days); read at most every 3 hours.
 {"hist": [["YYYY-Qn", hlw, lw, ff, pie], ...], "final": "YYYY-Qn", "asof": note, "updatedAt", "checkedAt"}
 """
 import io
@@ -40,7 +40,7 @@ def num(v):
 def main(force=False):
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
     if not force and old.get("checkedAt") and time.time() - datetime.fromisoformat(
-            old["checkedAt"].replace("Z", "+00:00")).timestamp() < 86400:
+            old["checkedAt"].replace("Z", "+00:00")).timestamp() < 10800:
         return
     hlw, inp, lw, note = {}, {}, {}, ""
     wb = book("Holston_Laubach_Williams_current_estimates.xlsx")
